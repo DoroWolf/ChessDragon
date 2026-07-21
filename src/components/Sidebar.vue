@@ -1,5 +1,8 @@
 <template>
   <aside class="sidebar">
+    <ChessClock :white-time-seconds="whiteTimeSeconds" :black-time-seconds="blackTimeSeconds"
+      :active-color="activeColor" :test-id="clockTestId" />
+
     <div class="nes-container game-status">
       <div v-if="gameStatus" class="status-message">{{ gameStatus }}</div>
       <div v-else class="current-turn">{{ currentTurn === 'white' ? '白棋' : '黑棋' }}执子</div>
@@ -35,13 +38,13 @@
       </button>
     </div>
     <div v-else class="button-group">
-      <button type="button" class="nes-btn is-warning" :disabled="isButtonsDisabled" @click="$emit('undo')">
+      <button type="button" class="nes-btn is-warning" :disabled="isUndoDisabled" @click="$emit('undo')">
         悔棋
       </button>
-      <button type="button" class="nes-btn is-success" :disabled="isButtonsDisabled" @click="handleDrawClick">
+      <button type="button" class="nes-btn is-success" :disabled="isGameActionDisabled" @click="handleDrawClick">
         {{ isClaimableDraw ? '宣告和棋' : '申请和棋' }}
       </button>
-      <button type="button" class="nes-btn is-error" :disabled="isButtonsDisabled" @click="handleResignClick">
+      <button type="button" class="nes-btn is-error" :disabled="isGameActionDisabled" @click="handleResignClick">
         投降
       </button>
     </div>
@@ -71,8 +74,7 @@
           <div class="setting-item">
             <span class="setting-label">音效</span>
             <label class="nes-pointer">
-              <input type="checkbox" class="nes-checkbox" :checked="isSoundEnabled"
-                @change="$emit('update:isSoundEnabled', ($event.target as HTMLInputElement).checked)" />
+              <input type="checkbox" class="nes-checkbox" :checked="isSoundEnabled" @change="handleSoundChange" />
               <span></span>
             </label>
           </div>
@@ -81,8 +83,7 @@
           <div class="setting-item">
             <span class="setting-label">棋盘标志</span>
             <div class="nes-select is-small select-wrapper">
-              <select :value="coordinateLabelMode"
-                @change="$emit('update:coordinateLabelMode', ($event.target as HTMLSelectElement).value)">
+              <select :value="coordinateLabelMode" @change="handleCoordinateChange">
                 <option value="off">关闭</option>
                 <option value="inside">内侧</option>
                 <option value="outside">外侧</option>
@@ -112,8 +113,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import type { Color } from '../models/chess'
+import ChessClock from './ChessClock.vue'
 
 interface Props {
   moveHistory: string[]
@@ -125,6 +127,12 @@ interface Props {
   isFlipped: boolean
   isSoundEnabled: boolean
   coordinateLabelMode: 'off' | 'inside' | 'outside'
+  whiteTimeSeconds?: number | null
+  blackTimeSeconds?: number | null
+  activeColor?: Color | null
+  clockTestId?: string
+  // 新增：接收对局是否已经正式开始/进行的标志
+  hasGameStarted?: boolean
 }
 
 interface MovePair {
@@ -132,6 +140,12 @@ interface MovePair {
   white: string
   black?: string
 }
+
+// 定义 localStorage 的 Key 常量
+const STORAGE_KEYS = {
+  SOUND_ENABLED: 'chess_sound_enabled',
+  COORDINATE_MODE: 'chess_coordinate_mode',
+} as const
 
 const props = withDefaults(defineProps<Props>(), {
   gameStatus: undefined,
@@ -141,6 +155,11 @@ const props = withDefaults(defineProps<Props>(), {
   isFlipped: false,
   isSoundEnabled: true,
   coordinateLabelMode: 'inside',
+  whiteTimeSeconds: null,
+  blackTimeSeconds: null,
+  activeColor: null,
+  clockTestId: 'sidebar-chess-clock',
+  hasGameStarted: false,
 })
 
 const emit = defineEmits<{
@@ -153,6 +172,33 @@ const emit = defineEmits<{
   'update:coordinateLabelMode': [value: 'off' | 'inside' | 'outside']
 }>()
 
+// 组件挂载时，从 localStorage 读取持久化的设置并通知父组件同步状态
+onMounted(() => {
+  const savedSound = localStorage.getItem(STORAGE_KEYS.SOUND_ENABLED)
+  if (savedSound !== null) {
+    emit('update:isSoundEnabled', savedSound === 'true')
+  }
+
+  const savedMode = localStorage.getItem(STORAGE_KEYS.COORDINATE_MODE)
+  if (savedMode === 'off' || savedMode === 'inside' || savedMode === 'outside') {
+    emit('update:coordinateLabelMode', savedMode)
+  }
+})
+
+// 处理音效变更，更新本地存储并 emit 事件
+const handleSoundChange = (e: Event) => {
+  const checked = (e.target as HTMLInputElement).checked
+  localStorage.setItem(STORAGE_KEYS.SOUND_ENABLED, String(checked))
+  emit('update:isSoundEnabled', checked)
+}
+
+// 处理棋盘标志变更，更新本地存储并 emit 事件
+const handleCoordinateChange = (e: Event) => {
+  const value = (e.target as HTMLSelectElement).value as 'off' | 'inside' | 'outside'
+  localStorage.setItem(STORAGE_KEYS.COORDINATE_MODE, value)
+  emit('update:coordinateLabelMode', value)
+}
+
 const copyStatusText = ref('复制')
 
 const showConfirmModal = ref(false)
@@ -160,8 +206,13 @@ const showSettingsModal = ref(false)
 const confirmMessage = ref('')
 const pendingAction = ref<'draw' | 'resign' | null>(null)
 
-const isButtonsDisabled = computed(() => {
+const isUndoDisabled = computed(() => {
   return props.moveHistory.length === 0 || props.isGameOver || !!props.gameStatus
+})
+
+const isGameActionDisabled = computed(() => {
+  const isStarted = props.hasGameStarted || props.moveHistory.length > 0
+  return !isStarted || props.isGameOver || !!props.gameStatus
 })
 
 const isClaimableDraw = computed(() => {

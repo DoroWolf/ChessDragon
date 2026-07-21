@@ -69,14 +69,16 @@
     <!-- 侧边栏 -->
     <Sidebar :move-history="moveHistory" :current-turn="currentTurn" :game-status="gameStatusMessage"
       :halfmove-clock="halfmoveClock" :position-count="getPositionCount()" :is-game-over="isGameOver"
-      :is-flipped="isFlipped" v-model:is-sound-enabled="isSoundEnabled"
-      v-model:coordinate-label-mode="coordinateLabelMode" @toggle-flip="isFlipped = !isFlipped" @undo="handleUndo"
-      @draw="handleDrawOffer" @resign="handleResign" @restart="handleRestart" />
+      :is-flipped="isFlipped" :white-time-seconds="whiteTimeSeconds" :black-time-seconds="blackTimeSeconds"
+      :active-color="currentTurn" :clock-test-id="'sidebar-chess-clock'" v-model:is-sound-enabled="isSoundEnabled"
+      v-model:coordinate-label-mode="coordinateLabelMode" @toggle-flip="isFlipped = !isFlipped"
+      :has-game-started="hasGameStarted" @undo="handleUndo" @draw="handleDrawOffer" @resign="handleResign"
+      @restart="handleRestart" />
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import type { Board, Color, Piece, Move } from './models/chess'
 import {
   createInitialBoard,
@@ -94,10 +96,32 @@ import {
 import Promotion from './components/Promotion.vue'
 import Sidebar from './components/Sidebar.vue'
 
+// --- 存储 Key 常量 ---
+const STORAGE_KEYS = {
+  SOUND_ENABLED: 'chess_sound_enabled',
+  COORDINATE_MODE: 'chess_coordinate_mode',
+} as const
+
 // --- 棋盘设置控制 ---
 const isFlipped = ref(false)
-const isSoundEnabled = ref(true)
-const coordinateLabelMode = ref<'off' | 'inside' | 'outside'>('inside')
+
+// 1. 初始化时从 localStorage 获取数据（含默认兜底值）
+const savedSound = localStorage.getItem(STORAGE_KEYS.SOUND_ENABLED)
+const isSoundEnabled = ref<boolean>(savedSound !== null ? savedSound === 'true' : true)
+
+const savedMode = localStorage.getItem(STORAGE_KEYS.COORDINATE_MODE) as 'off' | 'inside' | 'outside' | null
+const coordinateLabelMode = ref<'off' | 'inside' | 'outside'>(
+  savedMode && ['off', 'inside', 'outside'].includes(savedMode) ? savedMode : 'inside'
+)
+
+// 2. 监听响应式变量变化并写入 localStorage
+watch(isSoundEnabled, (newValue) => {
+  localStorage.setItem(STORAGE_KEYS.SOUND_ENABLED, String(newValue))
+})
+
+watch(coordinateLabelMode, (newValue) => {
+  localStorage.setItem(STORAGE_KEYS.COORDINATE_MODE, newValue)
+})
 
 /** 视觉坐标转为逻辑坐标（行） */
 const getActualRow = (displayRow: number): number => {
@@ -145,9 +169,31 @@ const boardGridRef = ref<HTMLElement | null>(null)
 const lastMove = ref<{ from: { row: number; col: number }; to: { row: number; col: number } } | null>(null)
 const positionHistory = ref<string[]>([getPositionKey(board.value, currentTurn.value, lastMove.value)])
 const halfmoveClock = ref<number>(0)
+const INITIAL_CLOCK_SECONDS = 30 * 60
+const CLOCK_INCREMENT_SECONDS = 30
+const whiteTimeSeconds = ref(INITIAL_CLOCK_SECONDS)
+const blackTimeSeconds = ref(INITIAL_CLOCK_SECONDS)
+
+// 新增：表示对局是否已经正式开始（双方各走完一招后触发）
+const hasGameStarted = ref(false)
+const clockStarted = ref(false)
+const activeClockColor = ref<Color | null>(null)
+const timeoutWinner = ref<Color | null>(null)
+let clockTimer: number | null = null
 
 const moveHistory = ref<string[]>([])
-const boardHistory = ref<Array<{ board: Board; currentTurn: Color; lastMove: { from: { row: number; col: number }; to: { row: number; col: number } } | null; halfmoveClock: number }>>([])
+const boardHistory = ref<Array<{
+  board: Board
+  currentTurn: Color
+  lastMove: { from: { row: number; col: number }; to: { row: number; col: number } } | null
+  halfmoveClock: number
+  whiteTimeSeconds: number
+  blackTimeSeconds: number
+  hasGameStarted: boolean
+  clockStarted: boolean
+  activeClockColor: Color | null
+  timeoutWinner: Color | null
+}>>([])
 
 const isAgreedDraw = ref(false)
 const hasResigned = ref<Color | null>(null)
@@ -155,6 +201,11 @@ const gameStatusMessage = computed(() => {
   if (hasResigned.value) {
     const winner = hasResigned.value === 'white' ? '黑棋' : '白棋'
     return `${winner}胜利（对手投降）`
+  }
+
+  if (timeoutWinner.value) {
+    const winner = timeoutWinner.value === 'white' ? '白棋' : '黑棋'
+    return `${winner}胜利（超时）`
   }
 
   if (isCheckmate(board.value, currentTurn.value)) {
@@ -243,6 +294,7 @@ const isDraw = computed(
 const isGameOver = computed(() => {
   return (
     !!hasResigned.value ||
+    !!timeoutWinner.value ||
     isDraw.value ||
     isCheckmate(board.value, currentTurn.value)
   )
@@ -277,6 +329,145 @@ const triggerGameStateAudio = (isCapture: boolean, nextTurn: Color, nextBoard: B
     playSound('capture')
   } else {
     playSound('move')
+  }
+}
+
+const canOpponentCheckmate = (attackerColor: Color, victimColor: Color, boardState: Board): boolean => {
+  for (let row = 0; row < 8; row += 1) {
+    for (let col = 0; col < 8; col += 1) {
+      const piece = boardState[row]?.[col] ?? null
+      if (!piece || piece.color !== attackerColor) {
+        continue
+      }
+
+      const moves = getLegalMoves(boardState, row, col, {
+        lastMove: lastMove.value,
+        enPassantTarget: getEnPassantTarget(lastMove.value),
+      })
+
+      for (const move of moves) {
+        const nextBoard = cloneBoard(boardState)
+        const sourceRow = nextBoard[row]!
+        const targetRow = nextBoard[move.row]!
+        const selectedPiece = nextBoard[row]?.[col]
+
+        if (!selectedPiece) {
+          continue
+        }
+
+        if (move.special === 'castle' && move.rookFrom && move.rookTo) {
+          const rook = nextBoard[move.rookFrom.row]?.[move.rookFrom.col] ?? null
+          targetRow[move.col] = { ...selectedPiece, hasMoved: true }
+          sourceRow[col] = null
+          if (rook) {
+            nextBoard[move.rookFrom.row]![move.rookFrom.col] = null
+            nextBoard[move.rookTo.row]![move.rookTo.col] = { ...rook, hasMoved: true }
+          }
+        } else if (move.special === 'enPassant') {
+          targetRow[move.col] = { ...selectedPiece, hasMoved: true }
+          sourceRow[col] = null
+          nextBoard[row]![move.col] = null
+        } else {
+          targetRow[move.col] = { ...selectedPiece, hasMoved: true }
+          sourceRow[col] = null
+        }
+
+        if (isCheckmate(nextBoard, victimColor)) {
+          return true
+        }
+      }
+    }
+  }
+
+  return false
+}
+
+const stopClock = () => {
+  if (clockTimer !== null) {
+    window.clearInterval(clockTimer)
+    clockTimer = null
+  }
+
+  clockStarted.value = false
+  activeClockColor.value = null
+}
+
+const handleClockTimeout = (expiredColor: Color) => {
+  if (isGameOver.value) {
+    stopClock()
+    return
+  }
+
+  const opponentColor = expiredColor === 'white' ? 'black' : 'white'
+  const opponentCanMate = canOpponentCheckmate(opponentColor, expiredColor, board.value)
+
+  if (opponentCanMate) {
+    timeoutWinner.value = opponentColor
+  } else {
+    isAgreedDraw.value = true
+  }
+
+  stopClock()
+}
+
+const startClock = (color: Color) => {
+  if (isGameOver.value) {
+    stopClock()
+    return
+  }
+
+  stopClock()
+  clockStarted.value = true
+  activeClockColor.value = color
+
+  clockTimer = window.setInterval(() => {
+    if (!clockStarted.value || !activeClockColor.value || isGameOver.value) {
+      stopClock()
+      return
+    }
+
+    if (activeClockColor.value === 'white') {
+      whiteTimeSeconds.value = Math.max(0, whiteTimeSeconds.value - 1)
+      if (whiteTimeSeconds.value === 0) {
+        handleClockTimeout('white')
+      }
+    } else {
+      blackTimeSeconds.value = Math.max(0, blackTimeSeconds.value - 1)
+      if (blackTimeSeconds.value === 0) {
+        handleClockTimeout('black')
+      }
+    }
+  }, 1000)
+}
+
+const applyClockAfterMove = (moverColor: Color, nextTurn: Color, nextBoard: Board) => {
+  const terminalPosition =
+    isCheckmate(nextBoard, nextTurn) ||
+    isStalemate(nextBoard, nextTurn, {
+      lastMove: lastMove.value,
+      enPassantTarget: getEnPassantTarget(lastMove.value),
+    }) ||
+    hasInsufficientMaterial(nextBoard) ||
+    positionHistory.value.filter((key) => key === getPositionKey(nextBoard, nextTurn, lastMove.value)).length >= 5
+
+  if (terminalPosition) {
+    stopClock()
+    return
+  }
+
+  // 1. 如果对局在此之前已经正式开始，正常给走棋方加时
+  if (hasGameStarted.value) {
+    if (moverColor === 'white') {
+      whiteTimeSeconds.value += CLOCK_INCREMENT_SECONDS
+    } else {
+      blackTimeSeconds.value += CLOCK_INCREMENT_SECONDS
+    }
+    startClock(nextTurn)
+  }
+  // 2. 如果之前未开始，但刚走完第 2 步（双方各走一招），此时正式激活棋钟，但不加时
+  else if (moveHistory.value.length >= 2) {
+    hasGameStarted.value = true
+    startClock(nextTurn)
   }
 }
 
@@ -367,6 +558,12 @@ const applyPromotion = (newType: string) => {
     currentTurn: currentTurn.value,
     lastMove: lastMove.value,
     halfmoveClock: halfmoveClock.value,
+    whiteTimeSeconds: whiteTimeSeconds.value,
+    blackTimeSeconds: blackTimeSeconds.value,
+    hasGameStarted: hasGameStarted.value,
+    clockStarted: clockStarted.value,
+    activeClockColor: activeClockColor.value,
+    timeoutWinner: timeoutWinner.value,
   })
 
   board.value = nextBoard
@@ -378,6 +575,7 @@ const applyPromotion = (newType: string) => {
   selectedSquare.value = null
   currentTurn.value = nextTurn
 
+  applyClockAfterMove(selectedPiece.color, nextTurn, nextBoard)
   triggerGameStateAudio(isCapture, nextTurn, nextBoard)
 }
 
@@ -451,6 +649,12 @@ const handleSquareClick = (row: number, col: number): void => {
       currentTurn: currentTurn.value,
       lastMove: lastMove.value,
       halfmoveClock: halfmoveClock.value,
+      whiteTimeSeconds: whiteTimeSeconds.value,
+      blackTimeSeconds: blackTimeSeconds.value,
+      hasGameStarted: hasGameStarted.value,
+      clockStarted: clockStarted.value,
+      activeClockColor: activeClockColor.value,
+      timeoutWinner: timeoutWinner.value,
     })
 
     board.value = nextBoard
@@ -464,6 +668,7 @@ const handleSquareClick = (row: number, col: number): void => {
     selectedSquare.value = null
     currentTurn.value = nextTurn
 
+    applyClockAfterMove(selectedPiece.color, nextTurn, nextBoard)
     triggerGameStateAudio(isCapture, nextTurn, nextBoard)
   } else {
     if (targetPiece && targetPiece.color === currentTurn.value) {
@@ -580,6 +785,7 @@ onUnmounted(() => {
   if (boardResizeObserver) {
     boardResizeObserver.disconnect()
   }
+  stopClock()
 })
 
 const getPositionCount = (): number => {
@@ -597,6 +803,16 @@ const handleUndo = (): void => {
   currentTurn.value = previousState.currentTurn
   lastMove.value = previousState.lastMove
   halfmoveClock.value = previousState.halfmoveClock
+  whiteTimeSeconds.value = previousState.whiteTimeSeconds
+  blackTimeSeconds.value = previousState.blackTimeSeconds
+  timeoutWinner.value = previousState.timeoutWinner
+
+  // 若对局曾经启动过，保持 hasGameStarted 仍为 true
+  if (hasGameStarted.value) {
+    startClock(previousState.currentTurn)
+  } else {
+    stopClock()
+  }
 
   moveHistory.value.pop()
 
@@ -610,6 +826,7 @@ const handleUndo = (): void => {
 }
 
 const handleResign = (): void => {
+  stopClock()
   hasResigned.value = currentTurn.value
 
   if (currentTurn.value === playerColor.value) {
@@ -620,6 +837,7 @@ const handleResign = (): void => {
 }
 
 const handleDrawOffer = (): void => {
+  stopClock()
   isAgreedDraw.value = true
   playSound('draw')
 }
@@ -634,6 +852,11 @@ const handleRestart = (): void => {
   hoverSquare.value = null
   lastMove.value = null
   halfmoveClock.value = 0
+  whiteTimeSeconds.value = INITIAL_CLOCK_SECONDS
+  blackTimeSeconds.value = INITIAL_CLOCK_SECONDS
+  hasGameStarted.value = false
+  stopClock()
+  timeoutWinner.value = null
   moveHistory.value = []
   boardHistory.value = []
   isAgreedDraw.value = false
@@ -808,13 +1031,11 @@ const handleRestart = (): void => {
   top: 0;
   bottom: 0;
   left: -1.25rem;
-  /* 定位至棋盘左侧外侧 */
   width: 1rem;
 }
 
 .coordinate-label.outer-file {
   position: absolute;
-  /* (displayCol - 0.5) * 12.5% 已准确定位到格子中心，结合 translateX(-50%) 实现完美居中 */
   transform: translateX(-50%);
   font-size: 0.85rem;
   color: #333;
@@ -823,7 +1044,6 @@ const handleRestart = (): void => {
 
 .coordinate-label.outer-rank {
   position: absolute;
-  /* (displayRow - 0.5) * 12.5% 已准确定位到格子中心，结合 translateY(-50%) 实现完美居中 */
   transform: translateY(-50%);
   font-size: 0.85rem;
   color: #333;
