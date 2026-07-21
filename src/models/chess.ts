@@ -515,11 +515,10 @@ export const hasInsufficientMaterial = (board: Board): boolean => {
       }
     }
   }
+  // 1. 双王：死局
+  if (pieces.length === 0) return true
 
-  if (pieces.length === 0) {
-    return true
-  }
-
+  // 2. 含有兵、车、后：存在将死可能
   if (
     pieces.some(
       ({ piece }) => piece.type === 'pawn' || piece.type === 'rook' || piece.type === 'queen',
@@ -528,22 +527,22 @@ export const hasInsufficientMaterial = (board: Board): boolean => {
     return false
   }
 
-  const hasKnight = pieces.some(({ piece }) => piece.type === 'knight')
-  if (hasKnight) {
-    const whiteMinors = pieces.filter(({ piece }) => piece.color === 'white').length
-    const blackMinors = pieces.filter(({ piece }) => piece.color === 'black').length
-    return whiteMinors <= 1 && blackMinors <= 1
+  // 3. 全场只有一个轻子（K+B vs K 或 K+N vs K）：死局
+  if (pieces.length === 1) return true
+
+  // 4. 如果包含马（且轻子数 >= 2），在 FIDE 规则下均存在理论配合将死的可能
+  if (pieces.some(({ piece }) => piece.type === 'knight')) {
+    return false
   }
 
-  let firstBishopIsWhiteSquare: boolean | null = null
-
+  // 5. 剩余棋子全为象：仅当所有象都在相同颜色格时才是死局
+  let firstSquareIsWhite: boolean | null = null
   for (const { row, col } of pieces) {
-    const currentSquareIsWhite = isWhiteSquare(row, col)
-
-    if (firstBishopIsWhiteSquare === null) {
-      firstBishopIsWhiteSquare = currentSquareIsWhite
-    } else if (firstBishopIsWhiteSquare !== currentSquareIsWhite) {
-      return false
+    const currentIsWhite = isWhiteSquare(row, col)
+    if (firstSquareIsWhite === null) {
+      firstSquareIsWhite = currentIsWhite
+    } else if (firstSquareIsWhite !== currentIsWhite) {
+      return false // 存在异色格象，可以配合将死
     }
   }
 

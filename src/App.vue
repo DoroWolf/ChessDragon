@@ -169,8 +169,8 @@ const boardGridRef = ref<HTMLElement | null>(null)
 const lastMove = ref<{ from: { row: number; col: number }; to: { row: number; col: number } } | null>(null)
 const positionHistory = ref<string[]>([getPositionKey(board.value, currentTurn.value, lastMove.value)])
 const halfmoveClock = ref<number>(0)
-const INITIAL_CLOCK_SECONDS = 30 * 60
-const CLOCK_INCREMENT_SECONDS = 30
+const INITIAL_CLOCK_SECONDS = 60
+const CLOCK_INCREMENT_SECONDS = 0
 const whiteTimeSeconds = ref(INITIAL_CLOCK_SECONDS)
 const blackTimeSeconds = ref(INITIAL_CLOCK_SECONDS)
 
@@ -197,6 +197,33 @@ const boardHistory = ref<Array<{
 
 const isAgreedDraw = ref(false)
 const hasResigned = ref<Color | null>(null)
+
+const isDrawByStalemate = computed(
+  () =>
+    isStalemate(board.value, currentTurn.value, {
+      lastMove: lastMove.value,
+      enPassantTarget: getEnPassantTarget(lastMove.value),
+    }),
+)
+
+const isDrawByInsufficientMaterial = computed(() => hasInsufficientMaterial(board.value))
+
+const isDrawByFivefoldRepetition = computed(() => {
+  const currentKey = getPositionKey(board.value, currentTurn.value, lastMove.value)
+  return positionHistory.value.filter((key) => key === currentKey).length >= 5
+})
+
+const isDrawBy75MoveRule = computed(() => halfmoveClock.value >= 150)
+
+const isDraw = computed(
+  () =>
+    isAgreedDraw.value ||
+    isDrawByStalemate.value ||
+    isDrawByInsufficientMaterial.value ||
+    isDrawByFivefoldRepetition.value ||
+    isDrawBy75MoveRule.value,
+)
+
 const gameStatusMessage = computed(() => {
   if (hasResigned.value) {
     const winner = hasResigned.value === 'white' ? '黑棋' : '白棋'
@@ -245,51 +272,32 @@ const isSelectedSquare = (row: number, col: number): boolean => {
   return selectedSquare.value?.row === row && selectedSquare.value?.col === col
 }
 
+/* 【修改点 1】：国王贴图获取逻辑 */
 const getPieceImage = (piece: Piece): string => {
   if (piece.type === 'king') {
+    // 1. 和局贴图（包含协定和局、逼和、长打5次、75步规则、子力不足等）
     if (isDraw.value) {
       return `/texture/pieces/king_draw_${piece.color}.png`
     }
-    if (hasResigned.value) {
-      if (piece.color === hasResigned.value) {
-        return `/texture/pieces/king_checkmate_${piece.color}.png`
-      }
+    // 2. 投降贴图
+    if (hasResigned.value && piece.color === hasResigned.value) {
+      return `/texture/pieces/king_checkmate_${piece.color}.png`
     }
+    // 3. 超时输棋贴图（超时方国王判定为 defeat 贴图）
+    if (timeoutWinner.value && piece.color !== timeoutWinner.value) {
+      return `/texture/pieces/king_checkmate_${piece.color}.png`
+    }
+    // 4. 被将死贴图
     if (isCheckmate(board.value, piece.color)) {
       return `/texture/pieces/king_checkmate_${piece.color}.png`
     }
+    // 5. 被将军贴图
     if (isKingInCheck(board.value, piece.color)) {
       return `/texture/pieces/king_check_${piece.color}.png`
     }
   }
   return `/texture/pieces/${piece.type}_${piece.color}.png`
 }
-
-const isDrawByStalemate = computed(
-  () =>
-    isStalemate(board.value, currentTurn.value, {
-      lastMove: lastMove.value,
-      enPassantTarget: getEnPassantTarget(lastMove.value),
-    }),
-)
-
-const isDrawByInsufficientMaterial = computed(() => hasInsufficientMaterial(board.value))
-
-const isDrawByFivefoldRepetition = computed(() => {
-  const currentKey = getPositionKey(board.value, currentTurn.value, lastMove.value)
-  return positionHistory.value.filter((key) => key === currentKey).length >= 5
-})
-
-const isDrawBy75MoveRule = computed(() => halfmoveClock.value >= 150)
-
-const isDraw = computed(
-  () =>
-    isAgreedDraw.value ||
-    isDrawByStalemate.value ||
-    isDrawByInsufficientMaterial.value ||
-    isDrawByFivefoldRepetition.value ||
-    isDrawBy75MoveRule.value,
-)
 
 const isGameOver = computed(() => {
   return (
@@ -314,7 +322,9 @@ const triggerGameStateAudio = (isCapture: boolean, nextTurn: Color, nextBoard: B
   const checkDraw =
     isStalemate(nextBoard, nextTurn, { lastMove: lastMove.value, enPassantTarget: getEnPassantTarget(lastMove.value) }) ||
     hasInsufficientMaterial(nextBoard) ||
-    halfmoveClock.value >= 150
+    halfmoveClock.value >= 150 ||
+    positionHistory.value.filter((key) => key === getPositionKey(nextBoard, nextTurn, lastMove.value)).length >= 5
+
   if (checkDraw) {
     playSound('draw')
     return
@@ -332,51 +342,37 @@ const triggerGameStateAudio = (isCapture: boolean, nextTurn: Color, nextBoard: B
   }
 }
 
-const canOpponentCheckmate = (attackerColor: Color, victimColor: Color, boardState: Board): boolean => {
-  for (let row = 0; row < 8; row += 1) {
-    for (let col = 0; col < 8; col += 1) {
-      const piece = boardState[row]?.[col] ?? null
-      if (!piece || piece.color !== attackerColor) {
-        continue
-      }
+const canColorCheckmate = (
+  board: Board,
+  attackerColor: Color,
+): boolean => {
+  const attackerPieces: Piece[] = []
+  const victimPieces: Piece[] = []
 
-      const moves = getLegalMoves(boardState, row, col, {
-        lastMove: lastMove.value,
-        enPassantTarget: getEnPassantTarget(lastMove.value),
-      })
-
-      for (const move of moves) {
-        const nextBoard = cloneBoard(boardState)
-        const sourceRow = nextBoard[row]!
-        const targetRow = nextBoard[move.row]!
-        const selectedPiece = nextBoard[row]?.[col]
-
-        if (!selectedPiece) {
-          continue
-        }
-
-        if (move.special === 'castle' && move.rookFrom && move.rookTo) {
-          const rook = nextBoard[move.rookFrom.row]?.[move.rookFrom.col] ?? null
-          targetRow[move.col] = { ...selectedPiece, hasMoved: true }
-          sourceRow[col] = null
-          if (rook) {
-            nextBoard[move.rookFrom.row]![move.rookFrom.col] = null
-            nextBoard[move.rookTo.row]![move.rookTo.col] = { ...rook, hasMoved: true }
-          }
-        } else if (move.special === 'enPassant') {
-          targetRow[move.col] = { ...selectedPiece, hasMoved: true }
-          sourceRow[col] = null
-          nextBoard[row]![move.col] = null
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const piece = board[r]?.[c]
+      if (piece && piece.type !== 'king') {
+        if (piece.color === attackerColor) {
+          attackerPieces.push(piece)
         } else {
-          targetRow[move.col] = { ...selectedPiece, hasMoved: true }
-          sourceRow[col] = null
-        }
-
-        if (isCheckmate(nextBoard, victimColor)) {
-          return true
+          victimPieces.push(piece)
         }
       }
     }
+  }
+
+  if (attackerPieces.length === 0) return false
+
+  if (
+    attackerPieces.some((p) => p.type === 'pawn' || p.type === 'rook' || p.type === 'queen') ||
+    attackerPieces.length >= 2
+  ) {
+    return true
+  }
+
+  if (attackerPieces.length === 1) {
+    return victimPieces.length > 0
   }
 
   return false
@@ -392,6 +388,7 @@ const stopClock = () => {
   activeClockColor.value = null
 }
 
+/* 【修改点 2】：超时逻辑增加音效触发 */
 const handleClockTimeout = (expiredColor: Color) => {
   if (isGameOver.value) {
     stopClock()
@@ -399,12 +396,20 @@ const handleClockTimeout = (expiredColor: Color) => {
   }
 
   const opponentColor = expiredColor === 'white' ? 'black' : 'white'
-  const opponentCanMate = canOpponentCheckmate(opponentColor, expiredColor, board.value)
+  const opponentCanMate = canColorCheckmate(board.value, opponentColor)
 
   if (opponentCanMate) {
     timeoutWinner.value = opponentColor
+    // 播放超时胜负音效
+    if (opponentColor === playerColor.value) {
+      playSound('victory')
+    } else {
+      playSound('defeat')
+    }
   } else {
     isAgreedDraw.value = true
+    // 对方无足够子力，超时判和，播放和局音效
+    playSound('draw')
   }
 
   stopClock()
@@ -455,7 +460,6 @@ const applyClockAfterMove = (moverColor: Color, nextTurn: Color, nextBoard: Boar
     return
   }
 
-  // 1. 如果对局在此之前已经正式开始，正常给走棋方加时
   if (hasGameStarted.value) {
     if (moverColor === 'white') {
       whiteTimeSeconds.value += CLOCK_INCREMENT_SECONDS
@@ -464,7 +468,6 @@ const applyClockAfterMove = (moverColor: Color, nextTurn: Color, nextBoard: Boar
     }
     startClock(nextTurn)
   }
-  // 2. 如果之前未开始，但刚走完第 2 步（双方各走一招），此时正式激活棋钟，但不加时
   else if (moveHistory.value.length >= 2) {
     hasGameStarted.value = true
     startClock(nextTurn)
@@ -807,7 +810,6 @@ const handleUndo = (): void => {
   blackTimeSeconds.value = previousState.blackTimeSeconds
   timeoutWinner.value = previousState.timeoutWinner
 
-  // 若对局曾经启动过，保持 hasGameStarted 仍为 true
   if (hasGameStarted.value) {
     startClock(previousState.currentTurn)
   } else {
