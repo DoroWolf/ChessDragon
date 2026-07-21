@@ -1,7 +1,7 @@
 <template>
   <aside class="sidebar">
-    <ChessClock :white-time-seconds="whiteTimeSeconds" :black-time-seconds="blackTimeSeconds"
-      :active-color="activeColor" :test-id="clockTestId" />
+    <ChessClock :is-clock-enabled="isClockEnabled" :white-time-seconds="whiteTimeSeconds"
+      :black-time-seconds="blackTimeSeconds" :active-color="activeColor" :test-id="clockTestId" />
 
     <div class="nes-container game-status">
       <div v-if="gameStatus" class="status-message">{{ gameStatus }}</div>
@@ -118,6 +118,7 @@ import type { Color } from '../models/chess'
 import ChessClock from './ChessClock.vue'
 
 interface Props {
+  isClockEnabled?: boolean
   moveHistory: string[]
   currentTurn: Color
   gameStatus?: string
@@ -131,7 +132,6 @@ interface Props {
   blackTimeSeconds?: number | null
   activeColor?: Color | null
   clockTestId?: string
-  // 新增：接收对局是否已经正式开始/进行的标志
   hasGameStarted?: boolean
 }
 
@@ -148,6 +148,7 @@ const STORAGE_KEYS = {
 } as const
 
 const props = withDefaults(defineProps<Props>(), {
+  isClockEnabled: true,
   gameStatus: undefined,
   halfmoveClock: 0,
   positionCount: 1,
@@ -480,7 +481,6 @@ const cancelConfirm = () => {
 
 .moves-list::-webkit-scrollbar-thumb {
   background: #888;
-  border-radius: 4px;
 }
 
 .moves-list::-webkit-scrollbar-thumb:hover {
@@ -587,9 +587,6 @@ const cancelConfirm = () => {
   border: 2px solid #212529 !important;
   /* 使用实心线代替 NES 的图像边框 */
   border-image: none !important;
-  /* 移除 NES CSS 默认的像素 image-border */
-  border-radius: 0;
-  /* 保留直角风格 */
   background-color: #fff;
 
   /* 取消 CSS pixelated 光标 */

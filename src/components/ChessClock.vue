@@ -1,5 +1,5 @@
 <template>
-    <div v-if="shouldShowClock" class="clock-grid" :data-testid="testId">
+    <div v-if="isClockEnabled" class="clock-grid" :data-testid="testId">
         <div class="clock-side side-white" :class="{ 'is-active': activeColor === 'white' }">
             <span class="clock-time">{{ formattedWhiteTime }}</span>
         </div>
@@ -14,6 +14,7 @@ import { computed } from 'vue'
 import type { Color } from '../models/chess'
 
 interface Props {
+    isClockEnabled?: boolean
     whiteTimeSeconds?: number | null
     blackTimeSeconds?: number | null
     activeColor?: Color | null
@@ -21,17 +22,11 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+    isClockEnabled: true,
     whiteTimeSeconds: null,
     blackTimeSeconds: null,
     activeColor: null,
     testId: 'chess-clock',
-})
-
-const shouldShowClock = computed(() => {
-    const whiteValue = props.whiteTimeSeconds ?? null
-    const blackValue = props.blackTimeSeconds ?? null
-
-    return (whiteValue !== null && whiteValue >= 0) || (blackValue !== null && blackValue >= 0)
 })
 
 const formatTime = (value: number | null | undefined) => {

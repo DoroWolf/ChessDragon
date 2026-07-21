@@ -2,6 +2,8 @@
   <section class="game-container" :class="{ 'global-dragging': isMouseDown && dragStartSquare }"
     :style="{ '--piece-scale': pieceScale }">
 
+    <GameSetup v-if="showSetup" @start="handleGameSetupStart" />
+
     <!-- 棋盘主面板 -->
     <div class="game-panel">
       <div class="board-frame" :class="{ 'coordinates-outside': coordinateLabelMode === 'outside' }">
@@ -67,13 +69,13 @@
     </div>
 
     <!-- 侧边栏 -->
-    <Sidebar :move-history="moveHistory" :current-turn="currentTurn" :game-status="gameStatusMessage"
-      :halfmove-clock="halfmoveClock" :position-count="getPositionCount()" :is-game-over="isGameOver"
-      :is-flipped="isFlipped" :white-time-seconds="whiteTimeSeconds" :black-time-seconds="blackTimeSeconds"
-      :active-color="currentTurn" :clock-test-id="'sidebar-chess-clock'" v-model:is-sound-enabled="isSoundEnabled"
-      v-model:coordinate-label-mode="coordinateLabelMode" @toggle-flip="isFlipped = !isFlipped"
-      :has-game-started="hasGameStarted" @undo="handleUndo" @draw="handleDrawOffer" @resign="handleResign"
-      @restart="handleRestart" />
+    <Sidebar :is-clock-enabled="isClockEnabled" :move-history="moveHistory" :current-turn="currentTurn"
+      :game-status="gameStatusMessage" :halfmove-clock="halfmoveClock" :position-count="getPositionCount()"
+      :is-game-over="isGameOver" :is-flipped="isFlipped" :white-time-seconds="whiteTimeSeconds"
+      :black-time-seconds="blackTimeSeconds" :active-color="currentTurn" :clock-test-id="'sidebar-chess-clock'"
+      v-model:is-sound-enabled="isSoundEnabled" v-model:coordinate-label-mode="coordinateLabelMode"
+      @toggle-flip="isFlipped = !isFlipped" :has-game-started="hasGameStarted" @undo="handleUndo"
+      @draw="handleDrawOffer" @resign="handleResign" @restart="handleRestart" />
   </section>
 </template>
 
@@ -95,6 +97,7 @@ import {
 } from './models/chess'
 import Promotion from './components/Promotion.vue'
 import Sidebar from './components/Sidebar.vue'
+import GameSetup from './components/GameSetup.vue'
 
 // --- 存储 Key 常量 ---
 const STORAGE_KEYS = {
@@ -103,6 +106,7 @@ const STORAGE_KEYS = {
 } as const
 
 // --- 棋盘设置控制 ---
+const isClockEnabled = ref(true)
 const isFlipped = ref(false)
 
 // 1. 初始化时从 localStorage 获取数据（含默认兜底值）
@@ -150,6 +154,79 @@ const sounds = {
   draw: new Audio('./sound/Draw.ogg'),
 }
 
+interface GameSetupConfig {
+  boardMode: 'standard' | 'custom'
+  fen: string
+  timeMinutes: number
+  incrementSeconds: number
+  starter: 'black' | 'random' | 'white'
+}
+
+const parseFenToBoard = (fen: string): Board | null => {
+  const trimmedFen = fen.trim()
+  const parts = trimmedFen.split(/\s+/)
+  const boardPart = parts[0]
+  if (!boardPart) {
+    return null
+  }
+
+  const rows = boardPart.split('/')
+  if (rows.length !== 8) {
+    return null
+  }
+
+  const nextBoard: Board = Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => null))
+
+  for (let rowIndex = 0; rowIndex < 8; rowIndex += 1) {
+    let colIndex = 0
+    const row = rows[rowIndex]
+    if (!row) {
+      return null
+    }
+
+    for (const char of row) {
+      if (/\d/.test(char)) {
+        const emptyCount = Number.parseInt(char, 10)
+        colIndex += emptyCount
+        continue
+      }
+
+      const pieceColor = char === char.toLowerCase() ? 'black' : 'white'
+      const pieceTypeMap: Record<string, Piece['type']> = {
+        p: 'pawn',
+        n: 'knight',
+        b: 'bishop',
+        r: 'rook',
+        q: 'queen',
+        k: 'king',
+      }
+      const pieceType = pieceTypeMap[char.toLowerCase()]
+      if (!pieceType) {
+        return null
+      }
+
+      nextBoard[rowIndex]![colIndex] = { type: pieceType, color: pieceColor, hasMoved: false }
+      colIndex += 1
+    }
+
+    if (colIndex !== 8) {
+      return null
+    }
+  }
+
+  return nextBoard
+}
+
+const getStarterColor = (starter: GameSetupConfig['starter']): Color => {
+  if (starter === 'black') {
+    return 'black'
+  }
+  if (starter === 'white') {
+    return 'white'
+  }
+  return Math.random() > 0.5 ? 'white' : 'black'
+}
+
 const playSound = (soundName: keyof typeof sounds) => {
   if (!isSoundEnabled.value) return
 
@@ -160,6 +237,7 @@ const playSound = (soundName: keyof typeof sounds) => {
   }
 }
 
+const showSetup = ref(true)
 const playerColor = ref<Color>('white')
 const board = ref<Board>(createInitialBoard())
 const currentTurn = ref<Color>('white')
@@ -169,12 +247,53 @@ const boardGridRef = ref<HTMLElement | null>(null)
 const lastMove = ref<{ from: { row: number; col: number }; to: { row: number; col: number } } | null>(null)
 const positionHistory = ref<string[]>([getPositionKey(board.value, currentTurn.value, lastMove.value)])
 const halfmoveClock = ref<number>(0)
-const INITIAL_CLOCK_SECONDS = 60
-const CLOCK_INCREMENT_SECONDS = 0
+const INITIAL_CLOCK_SECONDS = null
+const clockIncrementSeconds = ref(0)
 const whiteTimeSeconds = ref(INITIAL_CLOCK_SECONDS)
 const blackTimeSeconds = ref(INITIAL_CLOCK_SECONDS)
 
-// 新增：表示对局是否已经正式开始（双方各走完一招后触发）
+const applyGameSetup = (config: GameSetupConfig) => {
+  const parsedBoard = config.boardMode === 'custom' ? parseFenToBoard(config.fen) : createInitialBoard()
+  if (!parsedBoard) {
+    return
+  }
+
+  isClockEnabled.value = config.timeMinutes > 0
+
+  const starterColor = getStarterColor(config.starter)
+
+  // 先手为黑方时，自动翻转棋盘
+  isFlipped.value = starterColor === 'black'
+
+  board.value = parsedBoard
+  currentTurn.value = starterColor
+  selectedSquare.value = null
+  hoverSquare.value = null
+  lastMove.value = null
+  halfmoveClock.value = 0
+
+  // 限时设置
+  whiteTimeSeconds.value = config.timeMinutes * 60
+  blackTimeSeconds.value = config.timeMinutes * 60
+  clockIncrementSeconds.value = config.incrementSeconds
+
+  hasGameStarted.value = false
+  stopClock()
+  timeoutWinner.value = null
+  moveHistory.value = []
+  boardHistory.value = []
+  isAgreedDraw.value = false
+  hasResigned.value = null
+  promotionPending.value = null
+  promotionStyle.value = {}
+  positionHistory.value = [getPositionKey(board.value, currentTurn.value, lastMove.value)]
+  showSetup.value = false
+}
+
+const handleGameSetupStart = (config: GameSetupConfig) => {
+  applyGameSetup(config)
+}
+
 const hasGameStarted = ref(false)
 const clockStarted = ref(false)
 const activeClockColor = ref<Color | null>(null)
@@ -272,26 +391,20 @@ const isSelectedSquare = (row: number, col: number): boolean => {
   return selectedSquare.value?.row === row && selectedSquare.value?.col === col
 }
 
-/* 【修改点 1】：国王贴图获取逻辑 */
 const getPieceImage = (piece: Piece): string => {
   if (piece.type === 'king') {
-    // 1. 和局贴图（包含协定和局、逼和、长打5次、75步规则、子力不足等）
     if (isDraw.value) {
       return `/texture/pieces/king_draw_${piece.color}.png`
     }
-    // 2. 投降贴图
     if (hasResigned.value && piece.color === hasResigned.value) {
       return `/texture/pieces/king_checkmate_${piece.color}.png`
     }
-    // 3. 超时输棋贴图（超时方国王判定为 defeat 贴图）
     if (timeoutWinner.value && piece.color !== timeoutWinner.value) {
       return `/texture/pieces/king_checkmate_${piece.color}.png`
     }
-    // 4. 被将死贴图
     if (isCheckmate(board.value, piece.color)) {
       return `/texture/pieces/king_checkmate_${piece.color}.png`
     }
-    // 5. 被将军贴图
     if (isKingInCheck(board.value, piece.color)) {
       return `/texture/pieces/king_check_${piece.color}.png`
     }
@@ -307,7 +420,7 @@ const isGameOver = computed(() => {
     isCheckmate(board.value, currentTurn.value)
   )
 })
-const canInteract = computed(() => !isGameOver.value)
+const canInteract = computed(() => !showSetup.value && !isGameOver.value)
 
 const triggerGameStateAudio = (isCapture: boolean, nextTurn: Color, nextBoard: Board) => {
   if (isCheckmate(nextBoard, nextTurn)) {
@@ -388,7 +501,6 @@ const stopClock = () => {
   activeClockColor.value = null
 }
 
-/* 【修改点 2】：超时逻辑增加音效触发 */
 const handleClockTimeout = (expiredColor: Color) => {
   if (isGameOver.value) {
     stopClock()
@@ -400,7 +512,6 @@ const handleClockTimeout = (expiredColor: Color) => {
 
   if (opponentCanMate) {
     timeoutWinner.value = opponentColor
-    // 播放超时胜负音效
     if (opponentColor === playerColor.value) {
       playSound('victory')
     } else {
@@ -408,7 +519,6 @@ const handleClockTimeout = (expiredColor: Color) => {
     }
   } else {
     isAgreedDraw.value = true
-    // 对方无足够子力，超时判和，播放和局音效
     playSound('draw')
   }
 
@@ -416,7 +526,8 @@ const handleClockTimeout = (expiredColor: Color) => {
 }
 
 const startClock = (color: Color) => {
-  if (isGameOver.value) {
+  // 如果设定限时为 0，则不启用棋钟
+  if (whiteTimeSeconds.value === 0 || isGameOver.value) {
     stopClock()
     return
   }
@@ -455,16 +566,16 @@ const applyClockAfterMove = (moverColor: Color, nextTurn: Color, nextBoard: Boar
     hasInsufficientMaterial(nextBoard) ||
     positionHistory.value.filter((key) => key === getPositionKey(nextBoard, nextTurn, lastMove.value)).length >= 5
 
-  if (terminalPosition) {
+  if (terminalPosition || whiteTimeSeconds.value === 0) {
     stopClock()
     return
   }
 
   if (hasGameStarted.value) {
     if (moverColor === 'white') {
-      whiteTimeSeconds.value += CLOCK_INCREMENT_SECONDS
+      whiteTimeSeconds.value += clockIncrementSeconds.value
     } else {
-      blackTimeSeconds.value += CLOCK_INCREMENT_SECONDS
+      blackTimeSeconds.value += clockIncrementSeconds.value
     }
     startClock(nextTurn)
   }
@@ -845,11 +956,12 @@ const handleDrawOffer = (): void => {
 }
 
 const handleRestart = (): void => {
-  board.value = createInitialBoard()
-  currentTurn.value = 'white'
   isFlipped.value = !isFlipped.value
   playerColor.value = playerColor.value === 'white' ? 'black' : 'white'
+  showSetup.value = true
 
+  board.value = createInitialBoard()
+  currentTurn.value = 'white'
   selectedSquare.value = null
   hoverSquare.value = null
   lastMove.value = null
