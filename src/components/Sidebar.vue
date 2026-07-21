@@ -113,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref } from 'vue'
 import type { Color } from '../models/chess'
 import ChessClock from './ChessClock.vue'
 
@@ -141,12 +141,6 @@ interface MovePair {
   black?: string
 }
 
-// 定义 localStorage 的 Key 常量
-const STORAGE_KEYS = {
-  SOUND_ENABLED: 'chess_sound_enabled',
-  COORDINATE_MODE: 'chess_coordinate_mode',
-} as const
-
 const props = withDefaults(defineProps<Props>(), {
   isClockEnabled: true,
   gameStatus: undefined,
@@ -173,30 +167,15 @@ const emit = defineEmits<{
   'update:coordinateLabelMode': [value: 'off' | 'inside' | 'outside']
 }>()
 
-// 组件挂载时，从 localStorage 读取持久化的设置并通知父组件同步状态
-onMounted(() => {
-  const savedSound = localStorage.getItem(STORAGE_KEYS.SOUND_ENABLED)
-  if (savedSound !== null) {
-    emit('update:isSoundEnabled', savedSound === 'true')
-  }
-
-  const savedMode = localStorage.getItem(STORAGE_KEYS.COORDINATE_MODE)
-  if (savedMode === 'off' || savedMode === 'inside' || savedMode === 'outside') {
-    emit('update:coordinateLabelMode', savedMode)
-  }
-})
-
-// 处理音效变更，更新本地存储并 emit 事件
+// 音效变更处理 — 仅 emit，持久化由父组件 useSettings 负责
 const handleSoundChange = (e: Event) => {
   const checked = (e.target as HTMLInputElement).checked
-  localStorage.setItem(STORAGE_KEYS.SOUND_ENABLED, String(checked))
   emit('update:isSoundEnabled', checked)
 }
 
-// 处理棋盘标志变更，更新本地存储并 emit 事件
+// 棋盘标志变更处理 — 仅 emit，持久化由父组件 useSettings 负责
 const handleCoordinateChange = (e: Event) => {
   const value = (e.target as HTMLSelectElement).value as 'off' | 'inside' | 'outside'
-  localStorage.setItem(STORAGE_KEYS.COORDINATE_MODE, value)
   emit('update:coordinateLabelMode', value)
 }
 
