@@ -249,8 +249,8 @@ const positionHistory = ref<string[]>([getPositionKey(board.value, currentTurn.v
 const halfmoveClock = ref<number>(0)
 const INITIAL_CLOCK_SECONDS = null
 const clockIncrementSeconds = ref(0)
-const whiteTimeSeconds = ref(INITIAL_CLOCK_SECONDS)
-const blackTimeSeconds = ref(INITIAL_CLOCK_SECONDS)
+const whiteTimeSeconds = ref<number | null>(INITIAL_CLOCK_SECONDS)
+const blackTimeSeconds = ref<number | null>(INITIAL_CLOCK_SECONDS)
 
 const applyGameSetup = (config: GameSetupConfig) => {
   const parsedBoard = config.boardMode === 'custom' ? parseFenToBoard(config.fen) : createInitialBoard()
