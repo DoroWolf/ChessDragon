@@ -15,19 +15,28 @@
       </div>
 
       <div class="moves-list">
-        <!-- 按回合渲染：每行格式为 "1. e4 e5" -->
         <div v-for="turn in movePairs" :key="turn.number"
-          :class="['move-pair', { 'last-move-pair': turn.number === movePairs.length }]">
+          :class="['move-pair', { 'last-move-pair': turn.number === movePairs.length && !gameResult }]">
           <span class="move-number">{{ turn.number }}.</span>
           <span class="move-white">{{ turn.white }}</span>
           <span class="move-black">{{ turn.black || '' }}</span>
         </div>
+
+        <!-- 将对局结果放在序号位置 -->
+        <div v-if="gameResult" class="move-pair game-result-move-pair">
+          <span class="move-number game-result-text">{{ gameResult }}</span>
+        </div>
+
         <div v-if="moveHistory.length === 0" class="no-moves">游戏未开始</div>
       </div>
     </div>
 
-    <!-- 控制按钮 -->
-    <div class="button-group">
+    <div v-if="isGameOver" class="button-group Single-btn">
+      <button type="button" class="nes-btn is-primary restart-btn" @click="$emit('restart')">
+        重赛
+      </button>
+    </div>
+    <div v-else class="button-group">
       <button type="button" class="nes-btn is-warning" :disabled="isButtonsDisabled" @click="$emit('undo')">
         悔棋
       </button>
@@ -63,6 +72,7 @@ interface Props {
   gameStatus?: string
   halfmoveClock?: number
   positionCount?: number
+  isGameOver?: boolean
 }
 
 interface MovePair {
@@ -75,32 +85,30 @@ const props = withDefaults(defineProps<Props>(), {
   gameStatus: undefined,
   halfmoveClock: 0,
   positionCount: 1,
+  isGameOver: false,
 })
 
 const emit = defineEmits<{
   undo: []
   draw: []
   resign: []
+  restart: []
 }>()
 
 const copyStatusText = ref('复制')
 
-// 确认弹窗状态
 const showConfirmModal = ref(false)
 const confirmMessage = ref('')
 const pendingAction = ref<'draw' | 'resign' | null>(null)
 
-// 当游戏未开始（无历史）或游戏已结束（有 status 消息）时禁用按钮
 const isButtonsDisabled = computed(() => {
-  return props.moveHistory.length === 0 || !!props.gameStatus
+  return props.moveHistory.length === 0 || props.isGameOver || !!props.gameStatus
 })
 
-// 是否达到「宣告和棋」的条件（50步规则，即100半步；或3次重复局面）
 const isClaimableDraw = computed(() => {
   return props.halfmoveClock >= 100 || props.positionCount >= 3
 })
 
-// 将单步数组格式化为两步一回合的结构
 const movePairs = computed<MovePair[]>(() => {
   const pairs: MovePair[] = []
   for (let i = 0; i < props.moveHistory.length; i += 2) {
@@ -113,15 +121,33 @@ const movePairs = computed<MovePair[]>(() => {
   return pairs
 })
 
-// 生成标准 PGN 格式文本 (例: "1. e4 e5 2. Nf3 Nc6")
+const gameResult = computed(() => {
+  if (!props.isGameOver && !props.gameStatus) return ''
+
+  if (props.gameStatus?.includes('白棋胜利')) {
+    return '1-0'
+  }
+  if (props.gameStatus?.includes('黑棋胜利')) {
+    return '0-1'
+  }
+  if (props.gameStatus?.includes('和棋')) {
+    return '1/2-1/2'
+  }
+  return ''
+})
+
 const pgnText = computed(() => {
-  return movePairs.value
+  const moves = movePairs.value
     .map((pair) => {
       return pair.black
         ? `${pair.number}. ${pair.white} ${pair.black}`
         : `${pair.number}. ${pair.white}`
     })
     .join(' ')
+
+  if (!moves) return ''
+
+  return gameResult.value ? `${moves} ${gameResult.value}` : moves
 })
 
 const copyPGN = async () => {
@@ -255,6 +281,17 @@ const cancelConfirm = () => {
   background-color: #fffacd;
 }
 
+/* 对局结果样式 */
+.game-result-move-pair {
+  background-color: #e9ecef;
+  margin-top: 0.25rem;
+}
+
+.game-result-text {
+  color: #212529;
+  width: auto;
+}
+
 .no-moves {
   text-align: center;
   color: #999;
@@ -288,11 +325,24 @@ const cancelConfirm = () => {
   text-align: center;
 }
 
-/* 修改：控制按钮排为单行，并缩小内边距和字号 */
+.restart-btn {
+  font-size: 0.85rem !important;
+  padding: 0.5rem !important;
+}
+
+/* 控制按钮排为单行，并缩小内边距和字号 */
 .button-group {
   display: flex;
   flex-direction: row;
   gap: 0.25rem;
+  width: 100%;
+}
+
+.button-group.Single-btn {
+  display: block;
+}
+
+.button-group.Single-btn .restart-btn {
   width: 100%;
 }
 

@@ -1,7 +1,7 @@
 <template>
   <section class="game-container" :class="{ 'global-dragging': isMouseDown && dragStartSquare }"
     :style="{ '--piece-scale': pieceScale }">
-    
+
     <!-- 棋盘主面板 -->
     <div class="game-panel">
       <!-- 控制面板 / 翻转按钮 -->
@@ -58,16 +58,9 @@
     </div>
 
     <!-- 侧边栏 -->
-    <Sidebar
-      :move-history="moveHistory"
-      :current-turn="currentTurn"
-      :game-status="gameStatusMessage"
-      :halfmove-clock="halfmoveClock"
-      :position-count="getPositionCount()"
-      @undo="handleUndo"
-      @draw="handleDrawOffer"
-      @resign="handleResign"
-    />
+    <Sidebar :move-history="moveHistory" :current-turn="currentTurn" :game-status="gameStatusMessage"
+      :halfmove-clock="halfmoveClock" :position-count="getPositionCount()" :is-game-over="isGameOver" @undo="handleUndo"
+      @draw="handleDrawOffer" @resign="handleResign" @restart="handleRestart" />
   </section>
 </template>
 
@@ -232,7 +225,13 @@ const isDraw = computed(
     isDrawBy75MoveRule.value,
 )
 
-const isGameOver = computed(() => isDraw.value || isCheckmate(board.value, currentTurn.value))
+const isGameOver = computed(() => {
+  return (
+    !!hasResigned.value || // 包含投降
+    isDraw.value ||        // 包含和棋（包含了 isAgreedDraw 及各種規則和棋）
+    isCheckmate(board.value, currentTurn.value) // 包含將死
+  )
+})
 const canInteract = computed(() => !isGameOver.value)
 
 /**
@@ -337,7 +336,7 @@ const applyPromotion = (newType: string) => {
   nextBoard[from.row]![from.col] = null
 
   const nextTurn = currentTurn.value === 'white' ? 'black' : 'white'
-  
+
   // 记录走棋
   const notation = generateMoveNotation(
     board.value,
@@ -355,7 +354,7 @@ const applyPromotion = (newType: string) => {
     lastMove: lastMove.value,
     halfmoveClock: halfmoveClock.value,
   })
-  
+
   board.value = nextBoard
   lastMove.value = { from: { row: from.row, col: from.col }, to: { row: to.row, col: to.col } }
   halfmoveClock.value = 0
@@ -570,7 +569,7 @@ const getPositionCount = (): number => {
 
 const handleUndo = (): void => {
   if (boardHistory.value.length === 0) return
-  
+
   const previousState = boardHistory.value.pop()
   if (!previousState) return
 
@@ -578,9 +577,9 @@ const handleUndo = (): void => {
   currentTurn.value = previousState.currentTurn
   lastMove.value = previousState.lastMove
   halfmoveClock.value = previousState.halfmoveClock
-  
+
   moveHistory.value.pop()
-  
+
   // 从位置历史中移除最后一个位置
   if (positionHistory.value.length > 1) {
     positionHistory.value.pop()
@@ -607,6 +606,32 @@ const handleDrawOffer = (): void => {
   playSound('draw')
 }
 
+const handleRestart = (): void => {
+  // 1. 重置棋盘与回合
+  board.value = createInitialBoard()
+  currentTurn.value = 'white'
+
+  // 2. 自动翻转棋盘
+  isFlipped.value = !isFlipped.value
+
+  // 3. 将己方颜色切换为黑方（或在白/黑之间自动切替）
+  playerColor.value = playerColor.value === 'white' ? 'black' : 'white'
+
+  // 4. 重置游戏记录与标志位
+  selectedSquare.value = null
+  hoverSquare.value = null
+  lastMove.value = null
+  halfmoveClock.value = 0
+  moveHistory.value = []
+  boardHistory.value = []
+  isAgreedDraw.value = false
+  hasResigned.value = null
+  promotionPending.value = null
+  promotionStyle.value = {}
+
+  // 5. 重新初始化局面历史记录
+  positionHistory.value = [getPositionKey(board.value, currentTurn.value, lastMove.value)]
+}
 </script>
 
 <style scoped>
