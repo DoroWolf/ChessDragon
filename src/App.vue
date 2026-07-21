@@ -247,7 +247,7 @@ const boardGridRef = ref<HTMLElement | null>(null)
 const lastMove = ref<{ from: { row: number; col: number }; to: { row: number; col: number } } | null>(null)
 const positionHistory = ref<string[]>([getPositionKey(board.value, currentTurn.value, lastMove.value)])
 const halfmoveClock = ref<number>(0)
-const INITIAL_CLOCK_SECONDS = null
+const INITIAL_CLOCK_SECONDS: number | null = null
 const clockIncrementSeconds = ref(0)
 const whiteTimeSeconds = ref<number | null>(INITIAL_CLOCK_SECONDS)
 const blackTimeSeconds = ref<number | null>(INITIAL_CLOCK_SECONDS)
@@ -306,8 +306,8 @@ const boardHistory = ref<Array<{
   currentTurn: Color
   lastMove: { from: { row: number; col: number }; to: { row: number; col: number } } | null
   halfmoveClock: number
-  whiteTimeSeconds: number
-  blackTimeSeconds: number
+  whiteTimeSeconds: number | null
+  blackTimeSeconds: number | null
   hasGameStarted: boolean
   clockStarted: boolean
   activeClockColor: Color | null
@@ -526,8 +526,8 @@ const handleClockTimeout = (expiredColor: Color) => {
 }
 
 const startClock = (color: Color) => {
-  // 如果设定限时为 0，则不启用棋钟
-  if (whiteTimeSeconds.value === 0 || isGameOver.value) {
+  // 如果设定限时为 0 或未设置限时，则不启用棋钟
+  if (whiteTimeSeconds.value === null || whiteTimeSeconds.value === 0 || isGameOver.value) {
     stopClock()
     return
   }
@@ -543,14 +543,18 @@ const startClock = (color: Color) => {
     }
 
     if (activeClockColor.value === 'white') {
-      whiteTimeSeconds.value = Math.max(0, whiteTimeSeconds.value - 1)
-      if (whiteTimeSeconds.value === 0) {
-        handleClockTimeout('white')
+      if (whiteTimeSeconds.value !== null) {
+        whiteTimeSeconds.value = Math.max(0, whiteTimeSeconds.value - 1)
+        if (whiteTimeSeconds.value === 0) {
+          handleClockTimeout('white')
+        }
       }
     } else {
-      blackTimeSeconds.value = Math.max(0, blackTimeSeconds.value - 1)
-      if (blackTimeSeconds.value === 0) {
-        handleClockTimeout('black')
+      if (blackTimeSeconds.value !== null) {
+        blackTimeSeconds.value = Math.max(0, blackTimeSeconds.value - 1)
+        if (blackTimeSeconds.value === 0) {
+          handleClockTimeout('black')
+        }
       }
     }
   }, 1000)
@@ -573,9 +577,13 @@ const applyClockAfterMove = (moverColor: Color, nextTurn: Color, nextBoard: Boar
 
   if (hasGameStarted.value) {
     if (moverColor === 'white') {
-      whiteTimeSeconds.value += clockIncrementSeconds.value
+      if (whiteTimeSeconds.value !== null) {
+        whiteTimeSeconds.value += clockIncrementSeconds.value
+      }
     } else {
-      blackTimeSeconds.value += clockIncrementSeconds.value
+      if (blackTimeSeconds.value !== null) {
+        blackTimeSeconds.value += clockIncrementSeconds.value
+      }
     }
     startClock(nextTurn)
   }
