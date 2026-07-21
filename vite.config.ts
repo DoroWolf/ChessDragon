@@ -6,7 +6,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/chess-dragon/',
+  base: process.env.NODE_ENV === 'production' ? '/chess-dragon/' : '/',
   plugins: [vue(), vueDevTools()],
   resolve: {
     alias: {
