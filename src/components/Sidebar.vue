@@ -3,26 +3,12 @@
     <ChessClock :is-clock-enabled="isClockEnabled" :white-time-seconds="whiteTimeSeconds"
       :black-time-seconds="blackTimeSeconds" :active-color="activeColor" :test-id="clockTestId" />
 
-    <div class="card no-select game-status">
+    <div 
+      class="card no-select game-status"
+      :class="{ 'turn-black': currentTurn === 'black', 'turn-white': currentTurn === 'white' }"
+    >
       <div v-if="gameStatus" class="status-message">{{ gameStatus }}</div>
       <div v-else class="current-turn">{{ currentTurn === 'white' ? '白棋' : '黑棋' }}执子</div>
-    </div>
-
-    <!-- 棋谱显示区 -->
-    <div class="card with-title">
-      <div class="moves-list">
-        <div v-for="turn in movePairs" :key="turn.number"
-          :class="['move-pair', { 'last-move-pair': turn.number === movePairs.length && !gameResult }]">
-          <span class="move-number">{{ turn.number }}.</span>
-          <span class="move-white">{{ turn.white }}</span>
-          <span class="move-black">{{ turn.black || '' }}</span>
-        </div>
-
-        <!-- 将对局结果放在序号位置 -->
-        <div v-if="gameResult" class="move-pair">
-          <span class="move-number game-result-text">{{ gameResult }}</span>
-        </div>
-      </div>
     </div>
 
     <div v-if="isGameOver" class="button-group">
@@ -32,19 +18,32 @@
       <button type="button" class="btn btn-primary" @click="$emit('restart')">
         重赛
       </button>
+      <button type="button" class="btn btn-info" :disabled="!pgnText" @click="copyPGN">
+        {{ copyStatusText === '复制' ? '复制 PGN' : copyStatusText }}
+      </button>
     </div>
     <div v-else class="button-group">
       <button type="button" class="btn btn-warning" :disabled="isUndoDisabled" @click="$emit('undo')">
         悔棋
       </button>
-      <button type="button" class="btn btn-success" :disabled="isGameActionDisabled" @click="handleDrawClick">
+      <button
+        type="button"
+        class="btn"
+        :class="isClaimableDraw ? 'btn-success' : 'btn-primary'"
+        :disabled="isGameActionDisabled"
+        @click="handleDrawClick"
+      >
         {{ isClaimableDraw ? '宣告和棋' : '申请和棋' }}
       </button>
       <button type="button" class="btn btn-danger" :disabled="isGameActionDisabled" @click="handleResignClick">
-        投降
+        认输
       </button>
     </div>
 
+    <div class="no-select material-diff">
+      <span v-if="materialDiffText">{{ materialDiffText }}</span>
+      <span v-else></span>
+    </div>
 
     <!-- 二次确认弹窗 Modal -->
     <div v-if="showConfirmModal" class="modal-backdrop">
@@ -62,7 +61,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { Color } from '../models/chess'
+import type { Board, Color, PieceType } from '../models/chess'
 import ChessClock from './ChessClock.vue'
 
 interface Props {
@@ -76,6 +75,8 @@ interface Props {
   isFlipped: boolean
   isSoundEnabled: boolean
   coordinateLabelMode: 'off' | 'inside' | 'outside'
+  board?: Board | null
+  playerColor?: Color
   whiteTimeSeconds?: number | null
   blackTimeSeconds?: number | null
   activeColor?: Color | null
@@ -98,6 +99,8 @@ const props = withDefaults(defineProps<Props>(), {
   isFlipped: false,
   isSoundEnabled: true,
   coordinateLabelMode: 'inside',
+  board: null,
+  playerColor: 'white',
   whiteTimeSeconds: null,
   blackTimeSeconds: null,
   activeColor: null,
@@ -127,8 +130,7 @@ const isUndoDisabled = computed(() => {
 })
 
 const isGameActionDisabled = computed(() => {
-  const isStarted = props.hasGameStarted || props.moveHistory.length > 0
-  return !isStarted || props.isGameOver || !!props.gameStatus
+  return !props.hasGameStarted || props.isGameOver || !!props.gameStatus
 })
 
 const isClaimableDraw = computed(() => {
@@ -208,7 +210,7 @@ const handleDrawClick = () => {
 
 const handleResignClick = () => {
   const turnName = props.currentTurn === 'white' ? '白棋' : '黑棋'
-  confirmMessage.value = `确定要让 ${turnName} 投降吗？`
+  confirmMessage.value = `确定要让 ${turnName} 认输吗？`
   pendingAction.value = 'resign'
   showConfirmModal.value = true
 }
@@ -227,6 +229,136 @@ const cancelConfirm = () => {
   confirmMessage.value = ''
   pendingAction.value = null
 }
+
+const PIECE_UNICODE: Record<PieceType, { white: string; black: string }> = {
+  pawn: { white: '♙', black: '♟' },
+  rook: { white: '♖', black: '♜' },
+  knight: { white: '♘', black: '♞' },
+  bishop: { white: '♗', black: '♝' },
+  queen: { white: '♕', black: '♛' },
+  king: { white: '♔', black: '♚' },
+}
+
+const PIECE_VALUE: Record<PieceType, number> = {
+  pawn: 1,
+  knight: 3,
+  bishop: 3,
+  rook: 5,
+  queen: 9,
+  king: 0,
+}
+
+const INITIAL_PIECES: Record<PieceType, number> = {
+  pawn: 8,
+  rook: 2,
+  knight: 2,
+  bishop: 2,
+  queen: 1,
+  king: 1,
+}
+
+const materialDiffText = computed(() => {
+  if (!props.board) return ''
+
+  // 统计当前棋盘上双方存活棋子数量
+  const whiteCounts: Record<PieceType, number> = {
+    pawn: 0, rook: 0, knight: 0, bishop: 0, queen: 0, king: 0,
+  }
+  const blackCounts: Record<PieceType, number> = {
+    pawn: 0, rook: 0, knight: 0, bishop: 0, queen: 0, king: 0,
+  }
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const piece = props.board[r]?.[c] ?? null
+      if (piece && piece.type !== 'king') {
+        if (piece.color === 'white') {
+          whiteCounts[piece.type]++
+        } else {
+          blackCounts[piece.type]++
+        }
+      }
+    }
+  }
+
+  // 计算被吃掉的棋子：初始数量 - 存活数量
+  const whiteLost: Record<PieceType, number> = {
+    pawn: INITIAL_PIECES.pawn - whiteCounts.pawn,
+    rook: INITIAL_PIECES.rook - whiteCounts.rook,
+    knight: INITIAL_PIECES.knight - whiteCounts.knight,
+    bishop: INITIAL_PIECES.bishop - whiteCounts.bishop,
+    queen: INITIAL_PIECES.queen - whiteCounts.queen,
+    king: 0,
+  }
+  const blackLost: Record<PieceType, number> = {
+    pawn: INITIAL_PIECES.pawn - blackCounts.pawn,
+    rook: INITIAL_PIECES.rook - blackCounts.rook,
+    knight: INITIAL_PIECES.knight - blackCounts.knight,
+    bishop: INITIAL_PIECES.bishop - blackCounts.bishop,
+    queen: INITIAL_PIECES.queen - blackCounts.queen,
+    king: 0,
+  }
+
+  // 计算纯子力差距（白方视角）：白方被吃 = 黑方获得，黑方被吃 = 白方获得
+  // 正值 = 白方优势
+  let netScore = 0
+  for (const type of ['pawn', 'knight', 'bishop', 'rook', 'queen'] as PieceType[]) {
+    netScore += (blackLost[type] - whiteLost[type]) * PIECE_VALUE[type]
+  }
+
+  // 抵消完全相同类型的棋子
+  const whiteDisplay: string[] = []
+  const blackDisplay: string[] = []
+
+  const displayOrder: PieceType[] = ['queen', 'rook', 'bishop', 'knight', 'pawn']
+
+  for (const type of displayOrder) {
+    // 白方被吃 = 黑方持有的优势显示为黑色棋子
+    const wLost = whiteLost[type]
+    // 黑方被吃 = 白方持有的优势显示为白色棋子
+    const bLost = blackLost[type]
+
+    // 互相抵消
+    const net = wLost - bLost
+    if (net > 0) {
+      // 白方多丢了此类型棋子，黑方优势，显示黑色棋子
+      for (let i = 0; i < net; i++) {
+        blackDisplay.push(PIECE_UNICODE[type].black)
+      }
+    } else if (net < 0) {
+      // 黑方多丢了此类型棋子，白方优势，显示白色棋子
+      for (let i = 0; i < -net; i++) {
+        whiteDisplay.push(PIECE_UNICODE[type].white)
+      }
+    }
+  }
+
+  if (whiteDisplay.length === 0 && blackDisplay.length === 0) {
+    return ''
+  }
+
+  // 根据玩家颜色决定显示顺序
+  const isWhitePlayer = props.playerColor === 'white'
+  const myPieces = isWhitePlayer ? whiteDisplay : blackDisplay
+  const opponentPieces = isWhitePlayer ? blackDisplay : whiteDisplay
+
+  const scoreFromMyPerspective = isWhitePlayer ? netScore : -netScore
+  const scoreSign = scoreFromMyPerspective > 0 ? '+' : scoreFromMyPerspective < 0 ? '' : ''
+  const scoreStr = scoreFromMyPerspective !== 0 ? `${scoreSign}${scoreFromMyPerspective}` : ''
+
+  const parts: string[] = []
+  if (opponentPieces.length > 0) {
+    parts.push(opponentPieces.join(''))
+  }
+  if (myPieces.length > 0) {
+    parts.push(myPieces.join(''))
+  }
+  if (scoreStr) {
+    parts.push(scoreStr)
+  }
+
+  return parts.join(' ')
+})
 </script>
 
 <style scoped>
@@ -245,65 +377,46 @@ const cancelConfirm = () => {
   color: #222;
 }
 
-.copy-btn {
-  font-size: 0.7rem;
-  padding: 2px 6px;
-  margin-right: 0.25rem;
-}
-
-/* 棋谱显示区 */
-.moves-list {
-  height: 240px;
-  overflow-y: auto;
-  padding: 0.5rem;
-  background-color: #fff;
-  border: 2px solid #212529;
-  margin-top: 1rem;
-  font-family: 'Unifont', monospace;
-}
-
-.move-pair {
-  display: flex;
-  padding: 0.25rem;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  font-family: 'Unifont', monospace;
-}
-
-.move-number {
-  font-weight: bold;
-  width: 2.5em;
-  color: #666;
-  flex-shrink: 0;
-}
-
-.move-white,
-.move-black {
-  flex: 1;
-  color: #212529;
-}
-
-.move-pair.last-move-pair {
-  background-color: #fffacd;
-}
-
-.game-result-text {
-  color: #666;
-  width: auto;
-}
-
 .game-status {
   padding: 0.75rem;
   text-align: center;
   font-weight: bold;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.game-status.turn-black {
+  background-color: #484A4B;
+  color: #F3F9FC;
+}
+
+.game-status.turn-black .status-message,
+.game-status.turn-black .current-turn {
+  color: #F3F9FC;
+}
+
+.game-status.turn-white {
+  background-color: #F3F9FC;
+  color: #484A4B;
+}
+
+.game-status.turn-white .status-message,
+.game-status.turn-white .current-turn {
+  color: #484A4B;
 }
 
 .status-message,
 .current-turn {
-  color: #212529;
   font-size: 0.9rem;
 }
 
+.material-diff {
+  font-size: 1rem;
+  min-height: 1.5rem; 
+  line-height: 1.5rem;
+  display: flex;
+  align-items: center;
+  margin-left: 2px;
+}
 
 .button-group {
   display: flex;
@@ -324,22 +437,6 @@ const cancelConfirm = () => {
   flex: 1;
   width: auto;
   padding: 0.35rem 0.15rem;
-}
-
-.moves-list::-webkit-scrollbar {
-  width: 8px;
-}
-
-.moves-list::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-.moves-list::-webkit-scrollbar-thumb {
-  background: #888;
-}
-
-.moves-list::-webkit-scrollbar-thumb:hover {
-  background: #555;
 }
 
 /* 弹窗布局专有样式 */

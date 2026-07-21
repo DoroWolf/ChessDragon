@@ -356,7 +356,7 @@ export function useGameState(
   const gameStatusMessage = computed(() => {
     if (hasResigned.value) {
       const winner = hasResigned.value === 'white' ? '黑棋' : '白棋'
-      return `${winner}胜利（对手投降）`
+      return `${winner}胜利（对手认输）`
     }
     if (timeoutWinner.value) {
       const winner = timeoutWinner.value === 'white' ? '白棋' : '黑棋'
@@ -714,7 +714,7 @@ export function useGameState(
   }
 
   // ============================================================
-  // 游戏操作：悔棋 / 投降 / 和棋 / 重新开始
+  // 游戏操作：悔棋 / 认输 / 和棋 / 重新开始
   // ============================================================
   const handleUndo = (): void => {
     if (boardHistory.value.length === 0) return

@@ -25,7 +25,8 @@
     <!-- 侧边栏 -->
     <Sidebar :is-clock-enabled="isClockEnabled" :move-history="moveHistory" :current-turn="currentTurn"
       :game-status="gameStatusMessage" :halfmove-clock="halfmoveClock" :position-count="getPositionCount()"
-      :is-game-over="isGameOver" :is-flipped="isFlipped" :white-time-seconds="whiteTimeSeconds"
+      :is-game-over="isGameOver" :is-flipped="isFlipped" :board="board" :player-color="playerColor"
+      :white-time-seconds="whiteTimeSeconds"
       :black-time-seconds="blackTimeSeconds" :active-color="currentTurn" :clock-test-id="'sidebar-chess-clock'"
       v-model:is-sound-enabled="isSoundEnabled" v-model:coordinate-label-mode="coordinateLabelMode"
       @toggle-flip="isFlipped = !isFlipped" :has-game-started="hasGameStarted" @undo="handleUndo"
@@ -79,6 +80,7 @@ const game = useGameState(isSoundEnabled, isFlipped)
 // 从 game 中解构所有模板所需的变量/函数
 const {
   showSetup,
+  playerColor,
   isClockEnabled,
   board,
   currentTurn,
