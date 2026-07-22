@@ -999,6 +999,13 @@ export function useGameState(
     }
 
     const config = lastSetupConfig.value
+
+    // 本地双人对战：不交换先手方，白方始终先行，不翻转棋盘
+    if (config.gameMode === 'human') {
+      applyGameSetup(config)
+      return
+    }
+
     const swappedStarter: GameSetupConfig['starter'] =
       config.starter === 'black' ? 'white' : config.starter === 'white' ? 'black' : config.starter
     const swappedConfig: GameSetupConfig = { ...config, starter: swappedStarter }

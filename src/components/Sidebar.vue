@@ -18,7 +18,7 @@
       :class="{ 'turn-black': currentTurn === 'black', 'turn-white': currentTurn === 'white' }"
     >
       <div v-if="gameStatus" class="status-message">{{ gameStatus }}</div>
-      <div v-else class="current-turn">{{ currentTurn === 'white' ? '白棋' : '黑棋' }}执子</div>
+      <div v-else class="current-turn">{{ currentTurn === 'white' ? '白方' : '黑方' }}执子</div>
     </div>
 
     <div v-if="isGameOver" class="button-group">
@@ -53,7 +53,6 @@
     <!-- 二次确认弹窗 Modal -->
     <div v-if="showConfirmModal" class="modal-backdrop">
       <div class="card dialog-box">
-        <p class="dialog-title">确认提示</p>
         <p class="dialog-message">{{ confirmMessage }}</p>
         <div class="dialog-buttons">
           <button type="button" class="btn" @click="cancelConfirm">取消</button>
@@ -219,15 +218,19 @@ const handleDrawClick = () => {
   if (isClaimableDraw.value) {
     emit('draw')
   } else if (props.gameMode !== 'ai') {
-    confirmMessage.value = '确定要向对手提议和棋吗？'
+    confirmMessage.value = '确定要提议和棋吗？'
     pendingAction.value = 'draw'
     showConfirmModal.value = true
   }
 }
 
 const handleResignClick = () => {
-  const turnName = props.currentTurn === 'white' ? '白棋' : '黑棋'
-  confirmMessage.value = `确定要让 ${turnName} 认输吗？`
+  if (props.gameMode === 'human') {
+    const turnName = props.currentTurn === 'white' ? '白方' : '黑方'
+    confirmMessage.value = `确定要让${turnName}认输吗？`
+  } else {
+    confirmMessage.value = '确定要认输吗？'
+  }
   pendingAction.value = 'resign'
   showConfirmModal.value = true
 }
@@ -495,11 +498,6 @@ const materialDiffText = computed(() => {
   max-width: 280px;
   width: 90%;
   text-align: center;
-}
-
-.dialog-title {
-  font-weight: bold;
-  margin-bottom: 0.75rem;
 }
 
 .dialog-message {
