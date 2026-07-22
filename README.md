@@ -1,8 +1,8 @@
-# 象棋龙 ChessDragon
-
 <p align="center">
-  <img src="public/logo.png" alt="ChessDragon Logo" width="200"/>
+  <img src="public/logo.png" alt="ChessDragon Logo" width="800"/>
 </p>
+
+# 象棋龙 ChessDragon
 
 一个纯前端实现的像素风格国际象棋小游戏，使用 Vue 3 打造。棋子是我自己画的像素风拟龙原创角色（OC）。
 
