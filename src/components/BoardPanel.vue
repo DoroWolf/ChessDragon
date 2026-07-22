@@ -14,9 +14,9 @@
               :src="isWhiteSquare(actualRow(displayRow - 1), actualCol(displayCol - 1)) ? './texture/board/board_white.png' : './texture/board/board_black.png'"
               alt="" />
 
-            <img v-if="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove)"
+            <img v-if="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove, canPremove)"
               class="square-background overlay" draggable="false"
-              :src="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove)!" alt="" />
+              :src="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove, canPremove)!" alt="" />
 
             <img v-if="board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]" class="piece"
               draggable="false" :class="{
@@ -88,6 +88,7 @@ const props = defineProps<{
   isFlipped: boolean
   premove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null
   lastMove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null
+  canPremove?: boolean
   getOverlayTexture: (
     board: Board,
     selectedSquare: { row: number; col: number } | null,
@@ -98,6 +99,7 @@ const props = defineProps<{
     col: number,
     premove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null,
     lastMove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null,
+    canPremove?: boolean,
   ) => string | null
   getPieceImage: (
     piece: Piece,

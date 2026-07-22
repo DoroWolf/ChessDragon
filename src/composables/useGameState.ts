@@ -428,15 +428,9 @@ export function useGameState(
   // 走棋逻辑
   // ============================================================
   const possibleMoves = computed<Move[]>(() => {
-    if (!canInteract.value || !selectedSquare.value) return []
-    const { row, col } = selectedSquare.value
-    const enPassantTarget = getEnPassantTarget(lastMove.value)
-    return getLegalMoves(board.value, row, col, { lastMove: lastMove.value, enPassantTarget })
-  })
-
-  // premove 期间选中棋子的合法走法
-  const premovePossibleMoves = computed<Move[]>(() => {
-    if (!canPremove.value || !selectedSquare.value) return []
+    if (!selectedSquare.value) return []
+    // 允许正常交互模式 或 premove 模式下计算合法走法
+    if (!canInteract.value && !canPremove.value) return []
     const { row, col } = selectedSquare.value
     const enPassantTarget = getEnPassantTarget(lastMove.value)
     return getLegalMoves(board.value, row, col, { lastMove: lastMove.value, enPassantTarget })
@@ -446,15 +440,11 @@ export function useGameState(
     new Set(possibleMoves.value.map((move) => `${move.row}-${move.col}`)),
   )
 
-  const premoveHighlightedPositions = computed(() =>
-    new Set(premovePossibleMoves.value.map((move) => `${move.row}-${move.col}`)),
-  )
-
   const canMoveTo = (row: number, col: number): boolean =>
     highlightedPositions.value.has(`${row}-${col}`)
 
   const canPremoveTo = (row: number, col: number): boolean =>
-    premoveHighlightedPositions.value.has(`${row}-${col}`)
+    highlightedPositions.value.has(`${row}-${col}`)
 
   const isSelectedSquare = (row: number, col: number): boolean =>
     selectedSquare.value?.row === row && selectedSquare.value?.col === col
@@ -752,6 +742,13 @@ export function useGameState(
   // ============================================================
   const handleMouseDown = (row: number, col: number, event: MouseEvent) => {
     if (event.button !== 0) return
+
+    // premove 模式下允许点击交互（但不支持拖拽）
+    if (canPremove.value) {
+      handleSquareClick(row, col)
+      return
+    }
+
     if (!canInteract.value) return
 
     const piece = board.value[row]?.[col]
@@ -1117,7 +1114,12 @@ export function useGameState(
     cancelAIMove()
     isAIThinking.value = true
 
-    // 使用 setTimeout 让 UI 先更新，避免阻塞渲染
+    // 模拟 AI 思考延迟（让棋钟有时间走动）
+    // 基础延迟 500ms + 根据难度随机追加 0~difficulty*500ms
+    const baseDelay = 500
+    const randomExtra = Math.random() * (6 - aiDifficulty.value) * 500
+    const thinkDelay = baseDelay + randomExtra
+
     aiMoveTimer = window.setTimeout(() => {
       aiMoveTimer = null
       if (isGameOver.value) {
@@ -1149,7 +1151,7 @@ export function useGameState(
           })
         }
       }
-    }, 300)
+    }, thinkDelay)
   }
 
   const checkAndTriggerAI = () => {
@@ -1224,6 +1226,7 @@ export function useGameState(
     gameStatusMessage,
     isGameOver,
     canInteract,
+    canPremove,
     isAITurn,
 
     // 走棋

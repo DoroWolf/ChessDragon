@@ -13,6 +13,7 @@
       :is-flipped="isFlipped"
       :premove="premove"
       :last-move="lastMove"
+      :can-premove="canPremove"
       :get-overlay-texture="getOverlayTexture"
       :get-piece-image="getPieceImage"
       :get-square-label="getSquareLabel"
@@ -108,6 +109,7 @@ const {
   dragStartSquare,
   mousePos,
   premove,
+  canPremove,
   handleMouseDown,
   handleUndo,
   handleResign,

@@ -34,7 +34,8 @@ export function useBoardDisplay() {
     col: number,
     premove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null,
     lastMove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null,
-  ): string | null => {
+    canPremove?: boolean,
+  ): string | null =>{
     // 上一步移动的高亮（起始格和目标格），优先于其他高亮
     if (lastMove) {
       if (
@@ -47,11 +48,7 @@ export function useBoardDisplay() {
 
     // Premove 高亮 - 目标格
     if (premove && premove.to.row === row && premove.to.col === col) {
-      const targetPiece = board[row]?.[col] ?? null
-      if (targetPiece !== null) {
-        return './texture/board/board_premove_capture.png'
-      }
-      return './texture/board/board_premove_placeable.png'
+      return './texture/board/board_premove_highlighted.png'
     }
 
     // Premove 高亮 - 起始格
@@ -59,8 +56,11 @@ export function useBoardDisplay() {
       return './texture/board/board_premove_hover.png'
     }
 
+    // 当前选中格高亮（premove 模式下使用 premove 版纹理）
     if (selectedSquare?.row === row && selectedSquare?.col === col) {
-      return './texture/board/board_hover.png'
+      return canPremove
+        ? './texture/board/board_premove_hover.png'
+        : './texture/board/board_hover.png'
     }
 
     const move = possibleMoves.find(
@@ -74,9 +74,13 @@ export function useBoardDisplay() {
 
       const targetPiece = board[row]?.[col] ?? null
       if (targetPiece !== null) {
-        return './texture/board/board_capture.png'
+        return canPremove
+          ? './texture/board/board_premove_capture.png'
+          : './texture/board/board_capture.png'
       }
-      return './texture/board/board_placeable.png'
+      return canPremove
+        ? './texture/board/board_premove_placeable.png'
+        : './texture/board/board_placeable.png'
     }
 
     return null
