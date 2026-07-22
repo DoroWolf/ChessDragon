@@ -1,48 +1,44 @@
-# chess dragon
+# 象棋龙 ChessDragon
 
-This template should help get you started developing with Vue 3 in Vite.
+<p align="center">
+  <img src="logo.png" alt="ChessDragon Logo" width="200"/>
+</p>
 
-## Recommended IDE Setup
+一个纯前端实现的像素风格国际象棋小游戏，使用 Vue 3 打造。棋子是我自己画的像素风拟龙原创角色（OC）。
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+（虽然画技还得修炼XD）  
 
-## Recommended Browser Setup
+界面布局模仿了 Chess.com / Lichess 的对局体验，底层**从零实现了一套完整的国际象棋引擎**，零外部象棋库依赖。
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+---
 
-## Type Support for `.vue` Imports in TS
+<p align="center">
+  <img src="screenshot.jpg" alt="Screenshot" width="700"/>
+</p>
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+## 特性
 
-## Customize configuration
+- **原创像素棋子** – 每枚棋子都是手绘的像素拟龙角色，自带萌系气场  
+- **完整规则引擎** – 包含王车易位、吃过路兵、升变、逼和、三次重复局面、50 步规则等，严格遵循国际象棋标准  
+- **人机对弈 AI** – 基于 Minimax + Alpha-Beta 剪枝的 AI，具备多级难度，全由自己实现  
+- **舒适布局** – 仿主流象棋平台的界面设计，棋盘、走子提示、着法列表一应俱全  
+<!-- **轻量纯前端** – Vue 3 + Vite，响应式适配 桌面与移动端-->
+- **开箱即玩** – 已部署到 GitHub Pages，浏览器打开就能玩
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+## Demo
+[立即体验](https://dorowolf.github.io/chess-dragon)
 
-## Project Setup
+## 本地运行
 
-```sh
+```bash
+git clone https://github.com/<你的用户名>/chess-dragon.git
+cd chess-dragon
 npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+## 许可与版权
 
-```sh
-npm run build
-```
+本项目代码使用 [MIT License](LICENSE) 开源。
 
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+所有美术设计的版权归原作者所有。角色的二次创作无须授权。
