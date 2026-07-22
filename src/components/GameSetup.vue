@@ -4,7 +4,7 @@
         <section v-if="screen === 'home'" class="home-panel">
             <div class="logo-section">
                 <!-- 修改处：将文字标题替换为图片 Logo -->
-                <img src="./texture/logo.png" alt="Chess Dragon" class="logo-img" />
+                <img src="/texture/logo.png" alt="Chess Dragon" class="logo-img" />
             </div>
             <div class="home-buttons">
                 <button class="btn btn-home" @click="startSetup('ai')">人机对战</button>
