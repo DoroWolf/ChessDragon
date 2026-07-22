@@ -371,7 +371,7 @@ const handleStart = () => {
     overflow: auto;
     padding: 20px;
     background: #fff;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    box-shadow: 2px 2px 0 #909294;
 }
 
 .title {
