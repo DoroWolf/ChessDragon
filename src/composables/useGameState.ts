@@ -119,10 +119,14 @@ export function useGameState(
     return Math.random() > 0.5 ? 'white' : 'black'
   }
 
-  const parseFenToBoard = (fen: string): Board | null => {
+  const parseFenToBoard = (fen: string): { board: Board; turn: Color } | null => {
     const parts = fen.trim().split(/\s+/)
     const boardPart = parts[0]
     if (!boardPart) return null
+
+    // 解析走棋方（FEN 第二部分）
+    const turnPart = parts[1]
+    const fenTurn: Color = turnPart === 'b' ? 'black' : 'white'
 
     const rows = boardPart.split('/')
     if (rows.length !== 8) return null
@@ -159,7 +163,7 @@ export function useGameState(
       if (colIndex !== 8) return null
     }
 
-    return nextBoard
+    return { board: nextBoard, turn: fenTurn }
   }
 
   // ============================================================
@@ -1012,9 +1016,17 @@ export function useGameState(
   // 对局初始化
   // ============================================================
   const applyGameSetup = (config: GameSetupConfig) => {
-    const parsedBoard =
-      config.boardMode === 'standard' ? createInitialBoard() : parseFenToBoard(config.fen)
-    if (!parsedBoard) return
+    let initialBoard: Board
+    let fenTurn: Color | null = null
+
+    if (config.boardMode === 'standard') {
+      initialBoard = createInitialBoard()
+    } else {
+      const parsed = parseFenToBoard(config.fen)
+      if (!parsed) return
+      initialBoard = parsed.board
+      fenTurn = parsed.turn
+    }
 
     cancelAIMove()
 
@@ -1030,13 +1042,17 @@ export function useGameState(
 
     isClockEnabled.value = config.timeMinutes > 0
 
-    const starterColor = getStarterColor(config.starter)
-    // 先手为黑方时，自动翻转棋盘
-    isFlipped.value = starterColor === 'black'
-    playerColor.value = starterColor
+    board.value = initialBoard
 
-    board.value = parsedBoard
+    // 自定义棋盘时使用 FEN 中的走棋方，否则使用随机/手动指定的走棋方
+    const starterColor = fenTurn ?? getStarterColor(config.starter)
     currentTurn.value = starterColor
+
+    // 非 AI 模式下，playerColor 直接等于先手方；AI 模式在下方的代码块中单独处理
+    if (config.gameMode !== 'ai') {
+      isFlipped.value = starterColor === 'black'
+      playerColor.value = starterColor
+    }
     selectedSquare.value = null
     hoverSquare.value = null
     lastMove.value = null
@@ -1059,25 +1075,25 @@ export function useGameState(
     positionHistory.value = [getPositionKey(board.value, currentTurn.value, lastMove.value)]
     showSetup.value = false
 
-    // ---- AI 模式下，玩家执黑棋时 AI 先下 ----
+    // ---- AI 模式下，确定玩家执棋方 ----
+    // currentTurn 已在上面由 fenTurn（FEN 自定义棋盘）或 starterColor 设定，此处仅设定 playerColor
     if (config.gameMode === 'ai') {
       const resolvedPlayerColor = getStarterColor(config.starter)
 
       if (config.starter === 'black') {
         playerColor.value = 'black'
         isFlipped.value = true
-        currentTurn.value = 'white'
       } else if (config.starter === 'white') {
         playerColor.value = 'white'
         isFlipped.value = false
-        currentTurn.value = 'white'
       } else {
         playerColor.value = resolvedPlayerColor
         isFlipped.value = resolvedPlayerColor === 'black'
+      }
+
+      // 标准棋盘（无 FEN）时，始终白方先行
+      if (!fenTurn) {
         currentTurn.value = 'white'
-        if (resolvedPlayerColor === 'black') {
-          currentTurn.value = 'white'
-        }
       }
     }
 
