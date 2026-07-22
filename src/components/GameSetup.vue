@@ -2,9 +2,9 @@
     <div class="setup-overlay">
         <!-- 首页：上方 Logo，下方三个按钮 -->
         <section v-if="screen === 'home'" class="home-panel">
-            <div class="logo-section">
+            <div class="title-section">
                 <!-- 修改处：将文字标题替换为图片 Logo -->
-                <img src="/texture/logo.png" alt="Chess Dragon" class="logo-img" />
+                <img src="/texture/title.png" alt="Chess Dragon" class="title-img" />
             </div>
             <div class="home-buttons">
                 <button class="btn btn-home" @click="startSetup('ai')">人机对战</button>
@@ -206,14 +206,14 @@ const handleStart = () => {
     text-align: center;
 }
 
-.logo-section {
+.title-section {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 8px;
 }
 
-.logo-img {
+.title-img {
     max-width: 60vh;
     height: auto;
     object-fit: contain;
