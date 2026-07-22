@@ -7,7 +7,7 @@
       class="promote-btn" 
       @click="$emit('select', p)"
     >
-      <img :src="`./texture/promotion/promotion_${p}_${color}.png`" :alt="p" draggable="false" />
+      <img :src="`./texture/promotion/promotion_${p}_${color}.png`" :alt="p" />
     </button>
   </div>
 </template>

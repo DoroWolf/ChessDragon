@@ -40,10 +40,10 @@
         type="button"
         class="btn"
         :class="isClaimableDraw ? 'btn-success' : 'btn-primary'"
-        :disabled="isGameActionDisabled"
+        :disabled="isDrawOfferDisabled"
         @click="handleDrawClick"
       >
-        {{ isClaimableDraw ? '宣告和棋' : '申请和棋' }}
+        {{ isClaimableDraw ? '宣告和棋' : '提议和棋' }}
       </button>
       <button type="button" class="btn btn-danger" :disabled="isGameActionDisabled" @click="handleResignClick">
         认输
@@ -87,6 +87,7 @@ interface Props {
   activeColor?: Color | null
   clockTestId?: string
   hasGameStarted?: boolean
+  gameMode?: 'ai' | 'human' | 'remote'
 }
 
 interface MovePair {
@@ -111,6 +112,7 @@ const props = withDefaults(defineProps<Props>(), {
   activeColor: null,
   clockTestId: 'sidebar-chess-clock',
   hasGameStarted: false,
+  gameMode: 'human',
 })
 
 const emit = defineEmits<{
@@ -136,6 +138,16 @@ const isUndoDisabled = computed(() => {
 
 const isGameActionDisabled = computed(() => {
   return !props.hasGameStarted || props.isGameOver || !!props.gameStatus
+})
+
+// AI 对战时禁用"提议和棋"，但"宣告和棋"仍可用
+const isDrawOfferDisabled = computed(() => {
+  if (isGameActionDisabled.value) return true
+  // "宣告和棋"（满足条件时）总是可用
+  if (isClaimableDraw.value) return false
+  // "提议和棋"在 AI 模式下禁用
+  if (props.gameMode === 'ai') return true
+  return false
 })
 
 const isClaimableDraw = computed(() => {
@@ -206,8 +218,8 @@ const copyPGN = async () => {
 const handleDrawClick = () => {
   if (isClaimableDraw.value) {
     emit('draw')
-  } else {
-    confirmMessage.value = '确定要向对手申请和棋吗？'
+  } else if (props.gameMode !== 'ai') {
+    confirmMessage.value = '确定要向对手提议和棋吗？'
     pendingAction.value = 'draw'
     showConfirmModal.value = true
   }

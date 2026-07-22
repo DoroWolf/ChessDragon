@@ -11,6 +11,8 @@
       :promotion-pending="promotionPending" :promotion-style="promotionStyle" :is-draw="isDraw"
       :has-resigned="hasResigned" :timeout-winner="timeoutWinner" :coordinate-label-mode="coordinateLabelMode"
       :is-flipped="isFlipped"
+      :premove="premove"
+      :last-move="lastMove"
       :get-overlay-texture="getOverlayTexture"
       :get-piece-image="getPieceImage"
       :get-square-label="getSquareLabel"
@@ -28,6 +30,7 @@
       :is-game-over="isGameOver" :is-flipped="isFlipped" :board="board" :player-color="playerColor"
       :white-time-seconds="whiteTimeSeconds"
       :black-time-seconds="blackTimeSeconds" :active-color="currentTurn" :clock-test-id="'sidebar-chess-clock'"
+      :game-mode="gameMode"
       v-model:is-sound-enabled="isSoundEnabled" v-model:coordinate-label-mode="coordinateLabelMode"
       @toggle-flip="isFlipped = !isFlipped" :has-game-started="hasGameStarted" @undo="handleUndo"
       @draw="handleDrawOffer" @resign="handleResign" @restart="handleRestart" @back-to-setup="handleBackToSetup" />
@@ -81,6 +84,7 @@ const {
   showSetup,
   playerColor,
   isClockEnabled,
+  gameMode,
   board,
   currentTurn,
   selectedSquare,
@@ -103,6 +107,7 @@ const {
   isDragging,
   dragStartSquare,
   mousePos,
+  premove,
   handleMouseDown,
   handleUndo,
   handleResign,

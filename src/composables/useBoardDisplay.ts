@@ -23,7 +23,7 @@ export function useBoardDisplay() {
     return `${8 - getActualRow(displayRow - 1)}`
   }
 
-  // --- Overlay 纹理：用于高亮选中格子与合法走法 ---
+  // --- Overlay 纹理：用于高亮选中格子、合法走法、premove、上一步移动 ---
   const getOverlayTexture = (
     board: Board,
     selectedSquare: { row: number; col: number } | null,
@@ -32,7 +32,33 @@ export function useBoardDisplay() {
     hoverSquare: { row: number; col: number } | null,
     row: number,
     col: number,
+    premove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null,
+    lastMove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null,
   ): string | null => {
+    // 上一步移动的高亮（起始格和目标格），优先于其他高亮
+    if (lastMove) {
+      if (
+        (lastMove.from.row === row && lastMove.from.col === col) ||
+        (lastMove.to.row === row && lastMove.to.col === col)
+      ) {
+        return './texture/board/board_hover.png'
+      }
+    }
+
+    // Premove 高亮 - 目标格
+    if (premove && premove.to.row === row && premove.to.col === col) {
+      const targetPiece = board[row]?.[col] ?? null
+      if (targetPiece !== null) {
+        return './texture/board/board_premove_capture.png'
+      }
+      return './texture/board/board_premove_placeable.png'
+    }
+
+    // Premove 高亮 - 起始格
+    if (premove && premove.from.row === row && premove.from.col === col) {
+      return './texture/board/board_premove_hover.png'
+    }
+
     if (selectedSquare?.row === row && selectedSquare?.col === col) {
       return './texture/board/board_hover.png'
     }

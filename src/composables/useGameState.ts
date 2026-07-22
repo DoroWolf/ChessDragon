@@ -107,6 +107,9 @@ export function useGameState(
   const isAIThinking = ref(false)
   let aiMoveTimer: number | null = null
 
+  // ---- Premove 状态 ----
+  const premove = ref<{ from: { row: number; col: number }; to: { row: number; col: number } } | null>(null)
+
   // ============================================================
   // 辅助函数
   // ============================================================
@@ -412,6 +415,15 @@ export function useGameState(
       !isAITurn.value,
   )
 
+  // premove 允许在 AI 回合时点击己方棋子并预设走法
+  const canPremove = computed(
+    () =>
+      !showSetup.value &&
+      !isGameOver.value &&
+      isAITurn.value &&
+      gameMode.value === 'ai',
+  )
+
   // ============================================================
   // 走棋逻辑
   // ============================================================
@@ -422,12 +434,27 @@ export function useGameState(
     return getLegalMoves(board.value, row, col, { lastMove: lastMove.value, enPassantTarget })
   })
 
+  // premove 期间选中棋子的合法走法
+  const premovePossibleMoves = computed<Move[]>(() => {
+    if (!canPremove.value || !selectedSquare.value) return []
+    const { row, col } = selectedSquare.value
+    const enPassantTarget = getEnPassantTarget(lastMove.value)
+    return getLegalMoves(board.value, row, col, { lastMove: lastMove.value, enPassantTarget })
+  })
+
   const highlightedPositions = computed(() =>
     new Set(possibleMoves.value.map((move) => `${move.row}-${move.col}`)),
   )
 
+  const premoveHighlightedPositions = computed(() =>
+    new Set(premovePossibleMoves.value.map((move) => `${move.row}-${move.col}`)),
+  )
+
   const canMoveTo = (row: number, col: number): boolean =>
     highlightedPositions.value.has(`${row}-${col}`)
+
+  const canPremoveTo = (row: number, col: number): boolean =>
+    premoveHighlightedPositions.value.has(`${row}-${col}`)
 
   const isSelectedSquare = (row: number, col: number): boolean =>
     selectedSquare.value?.row === row && selectedSquare.value?.col === col
@@ -515,7 +542,83 @@ export function useGameState(
     })
   }
 
+  // ---- Premove 执行逻辑 ----
+  // 在 AI 走棋后，尝试执行预设的 premove
+  const tryExecutePremove = () => {
+    if (!premove.value) return
+
+    const { from, to } = premove.value
+    const piece = board.value[from.row]?.[from.col]
+
+    // 检查 premove 是否仍然合法
+    if (!piece || piece.color !== playerColor.value) {
+      premove.value = null
+      selectedSquare.value = null
+      return
+    }
+
+    const enPassantTarget = getEnPassantTarget(lastMove.value)
+    const legalMoves = getLegalMoves(board.value, from.row, from.col, {
+      lastMove: lastMove.value,
+      enPassantTarget,
+    })
+
+    const matchingMove = legalMoves.find((m) => m.row === to.row && m.col === to.col)
+
+    if (!matchingMove) {
+      // premove 不再合法，清除
+      premove.value = null
+      selectedSquare.value = null
+      return
+    }
+
+    // 执行 premove
+    const targetPiece = board.value[to.row]?.[to.col] ?? null
+    const isPawnMove = piece.type === 'pawn'
+    const isCapture = targetPiece !== null || matchingMove.special === 'enPassant'
+
+    // 兵升变：premove 不支持自动升变（需要玩家选择），清除 premove
+    if (isPawnMove && (to.row === 0 || to.row === 7)) {
+      premove.value = null
+      selectedSquare.value = { row: from.row, col: from.col }
+      return
+    }
+
+    premove.value = null
+
+    const nextBoard = cloneBoard(board.value)
+    executeMove(nextBoard, matchingMove, { row: from.row, col: from.col }, isPawnMove, isCapture)
+  }
+
   const handleSquareClick = (row: number, col: number): void => {
+    // ---- Premove 模式：在 AI 回合时预设走法 ----
+    if (canPremove.value) {
+      const targetPiece = board.value[row]?.[col] ?? null
+      const selected = selectedSquare.value
+      const selectedPiece = selected ? board.value[selected.row]?.[selected.col] ?? null : null
+
+      if (selected && selectedPiece && canPremoveTo(row, col)) {
+        // 设置 premove
+        premove.value = {
+          from: { row: selected.row, col: selected.col },
+          to: { row, col },
+        }
+        selectedSquare.value = null
+        return
+      }
+
+      // 选中己方棋子用于 premove
+      if (targetPiece && targetPiece.color === playerColor.value) {
+        selectedSquare.value = { row, col }
+        premove.value = null
+      } else {
+        selectedSquare.value = null
+        premove.value = null
+      }
+      return
+    }
+
+    // ---- 正常模式 ----
     if (!canInteract.value) return
 
     const targetPiece = board.value[row]?.[col] ?? null
@@ -541,6 +644,9 @@ export function useGameState(
         computePromotionStyle(row, col)
         return
       }
+
+      // 清除 premove（如果玩家手动走棋）
+      premove.value = null
 
       const nextBoard = cloneBoard(board.value)
       executeMove(nextBoard, move, { row: selected.row, col: selected.col }, isPawnMove, isCapture)
@@ -758,6 +864,9 @@ export function useGameState(
   const handleUndo = (): void => {
     if (boardHistory.value.length === 0) return
 
+    // 清除 premove
+    premove.value = null
+
     // AI 对战中，悔棋撤回两步（撤消 AI 的走棋 + 玩家的上一步）
     if (gameMode.value === 'ai') {
       // 取消可能正在等待的 AI 走棋
@@ -886,6 +995,7 @@ export function useGameState(
     hoverSquare.value = null
     lastMove.value = null
     halfmoveClock.value = 0
+    premove.value = null
 
     whiteTimeSeconds.value = config.timeMinutes * 60
     blackTimeSeconds.value = config.timeMinutes * 60
@@ -903,48 +1013,24 @@ export function useGameState(
     positionHistory.value = [getPositionKey(board.value, currentTurn.value, lastMove.value)]
     showSetup.value = false
 
-    // ---- 黑方时 AI 先下 ----
-    // 如果玩家执黑方，先手方是黑方，即当前轮次轮到黑方（玩家）
-    // 但棋盘已经翻转了（isFlipped = true），所以应该等玩家走第一步
-    // 实际上：starterColor 就是当前轮次。白方先手时 currentTurn = 'white'
-    // 黑方先手时 currentTurn = 'black'，此时玩家执黑先走
-    // 不，重新检查逻辑：
-    // getStarterColor('black') => 'black', playerColor = 'black', currentTurn = 'black'
-    // 这是黑方先手，玩家执黑，黑棋是玩家。
-    // getStarterColor('white') => 'white', playerColor = 'white', currentTurn = 'white'
-    // 这是白方先手，玩家执白，白棋是玩家。
-    // 问题：用户说的"执棋方为黑棋时让AI先下"是什么意思？
-    // 用户想执黑棋，让 AI 执白棋先走。即用户选 black，AI 执白先走。
-    // 当前代码：选 black => playerColor = black, currentTurn = black (玩家先走)
-    // 需要改为：选 black => playerColor = black, 但白方(currentTurn=white)先走
-    // 同时需要 isFlipped = true
-    // 修改：如果 gameMode === 'ai'，starter === 'black' 或 'white' 决定了谁先手
-    // 黑方 = AI 执白先手，白方 = 玩家执白先手
+    // ---- AI 模式下，玩家执黑棋时 AI 先下 ----
     if (config.gameMode === 'ai') {
-      // 人机对战：用 starter 来确定玩家的颜色
-      // 如果玩家选 black，则 AI 执白（先手），棋盘翻转
-      // 如果玩家选 white，则玩家执白（先手），棋盘不翻转（除非先手是黑色）
       const resolvedPlayerColor = getStarterColor(config.starter)
 
-      // 在 AI 模式中，如果 starter 是固定值：
       if (config.starter === 'black') {
-        // 玩家执黑，AI 执白先手
         playerColor.value = 'black'
         isFlipped.value = true
-        currentTurn.value = 'white' // AI 先下
+        currentTurn.value = 'white'
       } else if (config.starter === 'white') {
-        // 玩家执白，玩家先手
         playerColor.value = 'white'
         isFlipped.value = false
         currentTurn.value = 'white'
       } else {
-        // 随机
         playerColor.value = resolvedPlayerColor
         isFlipped.value = resolvedPlayerColor === 'black'
-        // 随机模式保持先手与玩家颜色一致（白方先手是 convention）
-        currentTurn.value = 'white' // 总是白方先手
+        currentTurn.value = 'white'
         if (resolvedPlayerColor === 'black') {
-          currentTurn.value = 'white' // AI 先下
+          currentTurn.value = 'white'
         }
       }
     }
@@ -1056,8 +1142,14 @@ export function useGameState(
 
       if (bestMove) {
         executeAIMoveOnBoard(bestMove)
+        // AI 走棋完成后，尝试执行玩家预设的 premove
+        if (!isGameOver.value && gameMode.value === 'ai') {
+          void nextTick(() => {
+            tryExecutePremove()
+          })
+        }
       }
-    }, 300) // 300ms 延迟让 UI 看起来更自然
+    }, 300)
   }
 
   const checkAndTriggerAI = () => {
@@ -1095,6 +1187,7 @@ export function useGameState(
     isClockEnabled,
     gameMode,
     isAIThinking,
+    premove,
 
     // 核心状态
     board,
