@@ -143,12 +143,9 @@ const isGameActionDisabled = computed(() => {
   return !props.hasGameStarted || props.isGameOver || !!props.gameStatus
 })
 
-// AI 对战时禁用"提议和棋"，但"宣告和棋"仍可用
 const isDrawOfferDisabled = computed(() => {
   if (isGameActionDisabled.value) return true
-  // "宣告和棋"（满足条件时）总是可用
   if (isClaimableDraw.value) return false
-  // "提议和棋"在 AI 模式下禁用
   if (props.gameMode === 'ai') return true
   return false
 })
@@ -277,6 +274,14 @@ const INITIAL_PIECES: Record<PieceType, number> = {
   king: 1,
 }
 
+// 辅助函数：当棋子数量超过 10 个时截断并加上省略号
+const formatPieceIcons = (pieces: string[], limit = 10): string => {
+  if (pieces.length <= limit) {
+    return pieces.join('')
+  }
+  return pieces.slice(0, limit).join('') + '…'
+}
+
 const materialDiffText = computed(() => {
   if (!props.board) return ''
 
@@ -357,8 +362,8 @@ const materialDiffText = computed(() => {
     return ''
   }
 
-  // 根据玩家颜色决定显示顺序
-  const isWhitePlayer = props.playerColor === 'white'
+  const useWhitePerspective = props.gameMode === 'human' || props.playerColor === 'white'
+  const isWhitePlayer = useWhitePerspective
   const myPieces = isWhitePlayer ? whiteDisplay : blackDisplay
   const opponentPieces = isWhitePlayer ? blackDisplay : whiteDisplay
 
@@ -368,10 +373,10 @@ const materialDiffText = computed(() => {
 
   const parts: string[] = []
   if (opponentPieces.length > 0) {
-    parts.push(opponentPieces.join(''))
+    parts.push(formatPieceIcons(opponentPieces, 10))
   }
   if (myPieces.length > 0) {
-    parts.push(myPieces.join(''))
+    parts.push(formatPieceIcons(myPieces, 10))
   }
   if (scoreStr) {
     parts.push(scoreStr)

@@ -45,13 +45,13 @@
             <div class="setup-section">
                 <h3>棋钟</h3>
                 <label class="slider-row">
-                    <span>限时（分钟）</span>
+                    <span>限时</span>
                     <input v-model.number="timeMinutes" type="range" min="0" max="180" step="1" />
                     <strong>{{ timeMinutes === 0 ? '无限制' : `${timeMinutes} 分钟` }}</strong>
                 </label>
 
                 <label v-if="timeMinutes > 0" class="slider-row">
-                    <span>每步加时（秒）</span>
+                    <span>每步加时</span>
                     <input v-model.number="incrementSeconds" type="range" min="0" max="30" step="1" />
                     <strong>{{ incrementSeconds }} 秒</strong>
                 </label>
