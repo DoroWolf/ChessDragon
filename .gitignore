@@ -40,3 +40,4 @@ __screenshots__/
 
 # Opening book binary files
 public/opening_books/*.bin
+!public/opening_books/Performance.bin
