@@ -30,13 +30,13 @@ self.addEventListener('unhandledrejection', (evt) => {
 // ============================================================
 // Worker 入口
 // ============================================================
-self.onmessage = (e: MessageEvent<WorkerRequest>) => {
+self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
   if (e.data.type !== 'findBestMove') return
 
   const { board, color, difficulty, style, lastMove } = e.data
 
   try {
-    const move = getBestAIMove(
+    const move = await getBestAIMove(
       board as Board,
       color as Color,
       difficulty as 1 | 2 | 3 | 4 | 5,

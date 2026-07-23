@@ -13,6 +13,7 @@ import {
   getEnPassantTarget,
   isWhiteSquare,
 } from './chess'
+import { queryOpeningBook, preloadOpeningBooks } from './openingBook'
 
 // ============================================================
 // Types
@@ -1479,13 +1480,13 @@ function findKing(b: Board, color: Color): { row: number; col: number } {
 // ============================================================
 // Public API: getBestAIMove
 // ============================================================
-export function getBestAIMove(
+export async function getBestAIMove(
   b: Board,
   color: Color,
   difficulty: AIDifficulty,
   style: AIStyle,
   lastMove: { from: Square; to: Square } | null,
-): AIDetailedMove | null {
+): Promise<AIDetailedMove | null> {
   // Reset global search state
   searchColor = color
   searchStyle = style
@@ -1549,6 +1550,19 @@ export function getBestAIMove(
   const moves = generateLegalMoves(board, color, epTarget, false, lastMove, kRow, kCol)
   if (moves.length === 0) return null
   if (moves.length === 1) return moves[0]!
+
+  // Query opening book before running engine search
+  try {
+    // Preload books (no-op if already loaded)
+    preloadOpeningBooks()
+    const bookMove = await queryOpeningBook(board, color, lastMove, moves)
+    if (bookMove) {
+      return bookMove
+    }
+  } catch (e) {
+    // Book query failed silently — fall through to engine search
+    console.warn('[AI] Opening book query failed, falling back to engine:', e)
+  }
 
   // Run iterative deepening
   const result = iterativeDeepening(epTarget, lastMove, maxDepth)
