@@ -60,8 +60,6 @@ const handleCoordinateChange = (e: Event) => {
 </script>
 
 <style scoped>
-@import url('https://fonts.cdnfonts.com/css/unifont');
-
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -133,7 +131,7 @@ const handleCoordinateChange = (e: Event) => {
 
 .custom-select {
   cursor: pointer;
-  font-family: 'Unifont', system-ui;
+  font-family: 'Unifont', system-ui, -apple-system, sans-serif;
   font-size: 0.75rem;
   padding: 2px 8px;
   border: 2px solid #212529;

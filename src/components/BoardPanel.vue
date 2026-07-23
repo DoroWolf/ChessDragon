@@ -188,8 +188,6 @@ watch(pieceScale, (val) => {
 </script>
 
 <style scoped>
-@import url('https://fonts.cdnfonts.com/css/unifont');
-
 .game-panel {
   width: 100%;
   max-width: 80vmin;

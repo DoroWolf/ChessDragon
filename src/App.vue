@@ -142,8 +142,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-@import url('https://fonts.cdnfonts.com/css/unifont');
-
 .game-container {
   width: 100%;
   min-height: 100vh;
@@ -152,7 +150,7 @@ onUnmounted(() => {
   align-items: center;
   box-sizing: border-box;
   padding: 20px;
-  font-family: 'Unifont', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Unifont', system-ui, -apple-system, sans-serif;
   color: #222;
   gap: 1rem;
   flex-wrap: wrap;

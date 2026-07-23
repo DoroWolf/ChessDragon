@@ -390,8 +390,6 @@ const materialDiffText = computed(() => {
 </script>
 
 <style scoped>
-@import url('https://fonts.cdnfonts.com/css/unifont');
-
 .sidebar {
   position: relative;
   display: flex;
@@ -400,7 +398,7 @@ const materialDiffText = computed(() => {
   padding: 1rem;
   width: 100%;
   max-width: 300px;
-  font-family: 'Unifont', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Unifont', system-ui, -apple-system, sans-serif;
   color: #222;
 }
 
