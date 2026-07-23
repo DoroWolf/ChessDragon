@@ -557,9 +557,43 @@ export function useGameState(
     })
   }
 
+  // ---- Premove 状态验证 ----
+  // AI 走棋后调用：检查玩家正在进行的选中/拖拽/预设走法是否仍然有效
+  const validatePremoveState = () => {
+    // 1. 检查拖拽状态：如果正在拖拽的棋子已被吃或位置被占据，取消拖拽
+    if (isDragging.value && dragStartSquare.value) {
+      const dragPiece = board.value[dragStartSquare.value.row]?.[dragStartSquare.value.col]
+      if (!dragPiece || dragPiece.color !== playerColor.value) {
+        // 清除拖拽状态
+        isMouseDown.value = false
+        isDragging.value = false
+        dragStartSquare.value = null
+        selectedSquare.value = null
+        premove.value = null
+        // 移除可能残留的事件监听器
+        window.removeEventListener('mousemove', handleMouseMove)
+        window.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+
+    // 2. 检查已选中但尚未设定目标格的棋子是否仍然存在
+    if (!premove.value && selectedSquare.value) {
+      const sel = selectedSquare.value
+      const selPiece = board.value[sel.row]?.[sel.col]
+      if (!selPiece || selPiece.color !== playerColor.value) {
+        // 棋子被吃或位置被占，取消选中
+        selectedSquare.value = null
+      }
+      // 如果棋子仍然存在，保留选中状态（继续等待玩家选择目标格）
+    }
+  }
+
   // ---- Premove 执行逻辑 ----
   // 在 AI 走棋后，尝试执行预设的 premove
   const tryExecutePremove = () => {
+    // 先验证当前 premove 状态（处理选中/拖拽被吃等情形）
+    validatePremoveState()
+
     if (!premove.value) return
 
     const { from, to } = premove.value
@@ -1365,7 +1399,23 @@ export function useGameState(
         isAIThinking.value = false
 
         if (e.data.type === 'bestMove' && e.data.move) {
+          // 保存玩家的 premove / 选中 / 拖拽状态
+          // （executeAIMoveOnBoard -> executeMove 会清除 selectedSquare，需提前保存）
+          const savedSelectedSquare = selectedSquare.value
+          const savedPremove = premove.value
+          const savedIsDragging = isDragging.value
+          const savedDragStartSquare = dragStartSquare.value
+          const savedIsMouseDown = isMouseDown.value
+
           executeAIMoveOnBoard(e.data.move)
+
+          // 恢复玩家状态，后续 tryExecutePremove 会验证是否仍然合法
+          selectedSquare.value = savedSelectedSquare
+          premove.value = savedPremove
+          isDragging.value = savedIsDragging
+          dragStartSquare.value = savedDragStartSquare
+          isMouseDown.value = savedIsMouseDown
+
           // AI 走棋完成后，尝试执行玩家预设的 premove
           if (!isGameOver.value && gameMode.value === 'ai') {
             void nextTick(() => {
