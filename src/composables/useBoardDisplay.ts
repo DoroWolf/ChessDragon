@@ -1,6 +1,16 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import type { Board, Piece, Color } from '../models/chess'
 import { isWhiteSquare, isCheckmate, isKingInCheck } from '../models/chess'
+import {
+  boardMoveHover,
+  boardPremoveHighlighted,
+  boardPremoveHover,
+  boardPremoveCapture,
+  boardPremovePlaceable,
+  boardMoveCapture,
+  boardMovePlaceable,
+  pieceImg,
+} from '../assets/resourcePaths'
 
 export function useBoardDisplay() {
   const isFlipped = ref(false)
@@ -42,27 +52,27 @@ export function useBoardDisplay() {
         (lastMove.from.row === row && lastMove.from.col === col) ||
         (lastMove.to.row === row && lastMove.to.col === col)
       ) {
-        return './texture/board/board_move_hover.png'
+        return boardMoveHover
       }
     }
 
     // Premove 高亮 - 目标格
     if (premove && premove.to.row === row && premove.to.col === col) {
-      return './texture/board/board_premove_highlighted.png'
+      return boardPremoveHighlighted
     }
 
     // Premove 高亮 - 起始格
     if (premove && premove.from.row === row && premove.from.col === col) {
       return canPremove
-        ? './texture/board/board_premove_hover.png'
-        : './texture/board/board_move_hover.png'
+        ? boardPremoveHover
+        : boardMoveHover
     }
 
     // 当前选中格高亮（premove 模式下使用 premove 版纹理）
     if (selectedSquare?.row === row && selectedSquare?.col === col) {
       return canPremove
-        ? './texture/board/board_premove_hover.png'
-        : './texture/board/board_move_hover.png'
+        ? boardPremoveHover
+        : boardMoveHover
     }
 
     const move = possibleMoves.find(
@@ -72,19 +82,19 @@ export function useBoardDisplay() {
     if (move) {
       if (hoverSquare?.row === row && hoverSquare?.col === col) {
         return canPremove
-          ? './texture/board/board_premove_hover.png'
-          : './texture/board/board_move_hover.png'
+          ? boardPremoveHover
+          : boardMoveHover
       }
 
       const targetPiece = board[row]?.[col] ?? null
       if (targetPiece !== null) {
         return canPremove
-          ? './texture/board/board_premove_capture.png'
-          : './texture/board/board_move_capture.png'
+          ? boardPremoveCapture
+          : boardMoveCapture
       }
       return canPremove
-        ? './texture/board/board_premove_placeable.png'
-        : './texture/board/board_move_placeable.png'
+        ? boardPremovePlaceable
+        : boardMovePlaceable
     }
 
     return null
@@ -100,22 +110,22 @@ export function useBoardDisplay() {
   ): string => {
     if (piece.type === 'king') {
       if (isDraw) {
-        return `./texture/pieces/king_draw_${piece.color}.png`
+        return pieceImg(`king_draw`, piece.color)
       }
       if (hasResigned && piece.color === hasResigned) {
-        return `./texture/pieces/king_checkmate_${piece.color}.png`
+        return pieceImg(`king_checkmate`, piece.color)
       }
       if (timeoutWinner && piece.color !== timeoutWinner) {
-        return `./texture/pieces/king_checkmate_${piece.color}.png`
+        return pieceImg(`king_checkmate`, piece.color)
       }
       if (isCheckmate(board, piece.color)) {
-        return `./texture/pieces/king_checkmate_${piece.color}.png`
+        return pieceImg(`king_checkmate`, piece.color)
       }
       if (isKingInCheck(board, piece.color)) {
-        return `./texture/pieces/king_check_${piece.color}.png`
+        return pieceImg(`king_check`, piece.color)
       }
     }
-    return `./texture/pieces/${piece.type}_${piece.color}.png`
+    return pieceImg(piece.type, piece.color)
   }
 
   // --- 缩放适配 ---

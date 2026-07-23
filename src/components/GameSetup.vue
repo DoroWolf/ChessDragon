@@ -4,7 +4,7 @@
         <section v-if="screen === 'home'" class="home-panel">
             <div class="title-section">
                 <!-- 修改处：将文字标题替换为图片 Logo -->
-                <img src="/texture/title.png" alt="Chess Dragon" class="title-img" />
+                <img :src="titleImg" alt="Chess Dragon" class="title-img" />
             </div>
             <div class="home-buttons">
                 <button class="btn btn-home" @click="startSetup('ai')">人机对战</button>
@@ -121,6 +121,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue' // 1. 引入 watch
+import { titleImg } from '../assets/resourcePaths'
 
 export type AIStyle = 'balanced' | 'aggressive' | 'defensive' | 'unpredictable'
 

@@ -17,17 +17,25 @@ import type { GameSetupConfig, AIStyle } from '../components/GameSetup.vue'
 import { getPromotionChoice, type AIDifficulty } from '../models/ai'
 import type { AIDetailedMove } from '../models/ai'
 import AIWorker from '../workers/ai-worker?worker'
+import {
+  soundMove,
+  soundCapture,
+  soundCheck,
+  soundVictory,
+  soundDefeat,
+  soundDraw,
+} from '../assets/resourcePaths'
 
 // ============================================================
 // 音频资源（模块级，避免重复创建 Audio 对象）
 // ============================================================
 const sounds = {
-  move: new Audio('./sound/Move.ogg'),
-  capture: new Audio('./sound/Capture.ogg'),
-  check: new Audio('./sound/Check.ogg'),
-  victory: new Audio('./sound/Victory.ogg'),
-  defeat: new Audio('./sound/Defeat.ogg'),
-  draw: new Audio('./sound/Draw.ogg'),
+  move: new Audio(soundMove),
+  capture: new Audio(soundCapture),
+  check: new Audio(soundCheck),
+  victory: new Audio(soundVictory),
+  defeat: new Audio(soundDefeat),
+  draw: new Audio(soundDraw),
 }
 
 const INITIAL_CLOCK_SECONDS: number | null = null

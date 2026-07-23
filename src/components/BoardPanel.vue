@@ -16,7 +16,7 @@
             :aria-label="getSquareLabel(actualRow(displayRow - 1), actualCol(displayCol - 1))">
 
             <img class="square-background base" draggable="false"
-              :src="isWhiteSquare(actualRow(displayRow - 1), actualCol(displayCol - 1)) ? './texture/board/board_white.png' : './texture/board/board_black.png'"
+              :src="isWhiteSquare(actualRow(displayRow - 1), actualCol(displayCol - 1)) ? boardWhite : boardBlack"
               alt="" />
 
             <img v-if="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove, canPremove)"
@@ -73,6 +73,7 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import type { Board, Color, Piece } from '../models/chess'
 import Promotion from './Promotion.vue'
 import type { CSSProperties } from 'vue'
+import { boardWhite, boardBlack } from '../assets/resourcePaths'
 
 const props = defineProps<{
   board: Board

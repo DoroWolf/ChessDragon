@@ -7,13 +7,14 @@
       class="promote-btn" 
       @click="$emit('select', p)"
     >
-      <img :src="`./texture/promotion/promotion_${p}_${color}.png`" :alt="p" />
+      <img :src="promotionImg(p, color)" :alt="p" />
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, type CSSProperties } from 'vue'
+import { promotionImg } from '../assets/resourcePaths'
 
 const props = defineProps<{ 
   color: 'white' | 'black'; 
