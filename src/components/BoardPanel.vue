@@ -42,6 +42,7 @@
         </template>
         <div v-if="promotionPending" class="promotion-overlay" @click="$emit('cancel-promotion')"></div>
         <Promotion v-if="promotionPending" :color="promotionPending.color" :style="promotionStyle ?? undefined"
+          :is-flipped="isFlipped"
           @select="(piece: string) => $emit('apply-promotion', piece)" />
       </div>
 

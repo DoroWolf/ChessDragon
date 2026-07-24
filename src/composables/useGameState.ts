@@ -1,4 +1,4 @@
-import { ref, computed, onUnmounted, type CSSProperties, nextTick } from 'vue'
+import { ref, computed, onUnmounted, watch, type CSSProperties, nextTick } from 'vue'
 import type { Board, Color, Piece, Move } from '../models/chess'
 import {
   createInitialBoard,
@@ -732,6 +732,13 @@ export function useGameState(
       height: '50%',
     }
   }
+
+  // 棋盘翻转时，重新计算升变 UI 位置
+  watch(isFlipped, () => {
+    if (promotionPending.value) {
+      computePromotionStyle(promotionPending.value.to.row, promotionPending.value.to.col)
+    }
+  })
 
   const applyPromotion = (newType: string) => {
     if (!promotionPending.value) return

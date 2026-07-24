@@ -18,7 +18,8 @@ import { promotionImg } from '../assets/resourcePaths'
 
 const props = defineProps<{ 
   color: 'white' | 'black'; 
-  style?: CSSProperties 
+  style?: CSSProperties;
+  isFlipped?: boolean;
 }>()
 
 defineEmits<{
@@ -26,9 +27,10 @@ defineEmits<{
 }>()
 
 const pieces = computed(() => {
-  return props.color === 'white' 
+  const basePieces = props.color === 'white' 
     ? ['queen', 'knight', 'rook', 'bishop'] 
     : ['bishop', 'rook', 'knight', 'queen']
+  return props.isFlipped ? [...basePieces].reverse() : basePieces
 })
 
 // 如果父级传入的 style 包含位置，这里做一个简单的容错和整合
