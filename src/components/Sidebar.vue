@@ -29,8 +29,15 @@
       <button type="button" class="btn btn-primary" title="重赛" @click="$emit('restart')">
         <span class="btn-icon" v-html="refreshSvg"></span>
       </button>
-      <button type="button" class="btn" title="复制 PGN" :disabled="!pgnText" @click="copyPGN">
-        <span class="btn-icon" v-html="exportPgnSvg"></span>
+      <button 
+        type="button" 
+        class="btn" 
+        :class="{ 'btn-success': isCopied }" 
+        title="复制 PGN" 
+        :disabled="!pgnText" 
+        @click="copyPGN"
+      >
+        <span class="btn-icon" v-html="isCopied ? checkSvg : exportPgnSvg"></span>
       </button>
     </div>
     <div v-else class="button-group">
@@ -72,6 +79,7 @@ import ChessClock from './ChessClock.vue'
 import homeSvg from '../assets/icon/home.svg?raw'
 import refreshSvg from '../assets/icon/refresh.svg?raw'
 import exportPgnSvg from '../assets/icon/export_pgn.svg?raw'
+import checkSvg from '../assets/icon/check.svg?raw'
 import undoSvg from '../assets/icon/undo.svg?raw'
 import drawSvg from '../assets/icon/draw.svg?raw'
 import resignSvg from '../assets/icon/resign.svg?raw'
@@ -133,7 +141,7 @@ const emit = defineEmits<{
   'update:coordinateLabelMode': [value: 'off' | 'inside' | 'outside']
 }>()
 
-const copyStatusText = ref('复制')
+const isCopied = ref(false)
 
 const showConfirmModal = ref(false)
 const confirmMessage = ref('')
@@ -206,7 +214,7 @@ const copyPGN = async () => {
   if (!pgnText.value) return
   try {
     await navigator.clipboard.writeText(pgnText.value)
-    copyStatusText.value = '已复制！'
+    isCopied.value = true
   } catch {
     const textarea = document.createElement('textarea')
     textarea.value = pgnText.value
@@ -214,11 +222,11 @@ const copyPGN = async () => {
     textarea.select()
     document.execCommand('copy')
     document.body.removeChild(textarea)
-    copyStatusText.value = '已复制！'
+    isCopied.value = true
   } finally {
     setTimeout(() => {
-      copyStatusText.value = '复制'
-    }, 2000)
+      isCopied.value = false
+    }, 1000)
   }
 }
 
