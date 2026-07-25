@@ -85,7 +85,7 @@ const {
 } = useBoardDisplay()
 
 // ---- pieceScale（由 BoardPanel 通过事件更新） ----
-const pieceScale = ref(1.5)
+const pieceScale = ref(2)
 
 // ---- 游戏核心状态（含棋钟、拖拽、音效、走棋） ----
 const game = useGameState(isSoundEnabled, isFlipped)
@@ -157,6 +157,7 @@ onUnmounted(() => {
   align-items: center;
   box-sizing: border-box;
   padding: 20px;
+  padding-top: 40px;
   font-family: 'Unifont', system-ui, -apple-system, sans-serif;
   color: var(--color-text-primary);
   gap: 1rem;

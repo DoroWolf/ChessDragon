@@ -8,8 +8,9 @@
         <span v-if="materialDiffText" class="material-diff-text">{{ materialDiffText }}</span>
         <span v-else class="material-diff-text"></span>
       </div>
-      <button type="button" class="btn flip-sidebar-btn" title="翻转棋盘" @click="$emit('toggle-flip')">
+      <button type="button" class="btn btn-flip" title="翻转棋盘" @click="$emit('toggle-flip')">
         <span class="btn-icon" v-html="refreshSvg"></span>
+        <span>翻转棋盘</span>
       </button>
     </div>
 
@@ -536,6 +537,24 @@ const materialDiffText = computed(() => {
 
 .select-wrapper {
   width: auto;
+}
+
+.btn-flip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  line-height: 1;
+  padding: 0.4rem 0.6rem;
+}
+
+.btn-flip .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
 }
 
 .btn-icon :deep(svg) {

@@ -1354,9 +1354,22 @@ export function useGameState(
     cancelAIMove()
     isAIThinking.value = true
 
+    // 获取 AI 方当前棋钟剩余时间（秒），转换为毫秒
+    const aiTimeRemainingSec = aiColor === 'white' ? whiteTimeSeconds.value : blackTimeSeconds.value
+    const aiTimeRemainingMs = aiTimeRemainingSec !== null ? aiTimeRemainingSec * 1000 : null
+
     // 模拟 AI 思考延迟（让棋钟有时间走动）
-    // 基础延迟 500ms + 根据难度随机追加 0~difficulty*500ms
-    const baseDelay = 1000
+    // 基础延迟 1000ms + 根据难度随机追加，并根据剩余时间动态缩减
+    let baseDelay = 1000
+    if (aiTimeRemainingMs !== null) {
+      if (aiTimeRemainingMs < 10_000) {
+        baseDelay = 100   // 不足 10 秒：几乎立即响应
+      } else if (aiTimeRemainingMs < 30_000) {
+        baseDelay = 200   // 不足 30 秒：快速响应
+      } else if (aiTimeRemainingMs < 60_000) {
+        baseDelay = 500   // 不足 60 秒：较快响应
+      }
+    }
     const randomExtra = Math.random() * (6 - aiDifficulty.value) * 500
     const thinkDelay = baseDelay + randomExtra
 
@@ -1461,6 +1474,7 @@ export function useGameState(
           difficulty: aiDifficulty.value,
           style: aiStyle.value,
           lastMove: plainLastMove,
+          aiTimeRemainingMs: aiTimeRemainingMs ?? undefined,
         })
       } catch (err) {
         console.error('Failed to post message to AI Worker:', err)

@@ -22,6 +22,7 @@ export let searchStartTime: number = 0
 export let searchTimeLimit: number = 0
 export let searchStopped: boolean = false
 export let searchNodes: number = 0
+export let searchAITimeRemainingMs: number | null = null
 
 // Setter 函数——因为 let 导出的变量在其他模块中不可直接赋值
 export function setSearchHash(v: number): void { searchHash = v }
@@ -198,7 +199,7 @@ export function getCastlingRights(b: Board): CastlingRights {
 // ============================================================
 // 初始化搜索状态
 // ============================================================
-export function initSearchState(b: Board, color: Color, style: AIStyle, difficulty: number, lastMove: { from: { row: number; col: number }; to: { row: number; col: number } } | null): void {
+export function initSearchState(b: Board, color: Color, style: AIStyle, difficulty: number, lastMove: { from: { row: number; col: number }; to: { row: number; col: number } } | null, aiTimeRemainingMs?: number): void {
   board = b
   searchColor = color
   searchStyle = style
@@ -213,7 +214,22 @@ export function initSearchState(b: Board, color: Color, style: AIStyle, difficul
     4: 1000,
     5: 2500,
   }
-  searchTimeLimit = timeLimitMap[difficulty] ?? 500
+  const baseTimeLimit = timeLimitMap[difficulty] ?? 500
+
+  searchAITimeRemainingMs = aiTimeRemainingMs ?? null
+  if (searchAITimeRemainingMs !== null) {
+    if (searchAITimeRemainingMs < 10_000) {
+      searchTimeLimit = Math.min(baseTimeLimit, 50)
+    } else if (searchAITimeRemainingMs < 30_000) {
+      searchTimeLimit = Math.max(30, baseTimeLimit * 0.25)
+    } else if (searchAITimeRemainingMs < 60_000) {
+      searchTimeLimit = Math.max(40, baseTimeLimit * 0.5)
+    } else {
+      searchTimeLimit = baseTimeLimit
+    }
+  } else {
+    searchTimeLimit = baseTimeLimit
+  }
 
   // 初始化增量追踪（王位置和子力）
   const wk = findKing(b, 'white')

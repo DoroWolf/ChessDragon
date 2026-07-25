@@ -30,9 +30,10 @@ export async function getBestAIMove(
   difficulty: AIDifficulty,
   style: AIStyle,
   lastMove: { from: Square; to: Square } | null,
+  aiTimeRemainingMs?: number,
 ): Promise<AIDetailedMove | null> {
-  // 初始化搜索状态
-  initSearchState(b, color, style, difficulty, lastMove)
+  // 初始化搜索状态（传递 AI 方棋钟剩余时间，低时间时自动缩减搜索深度）
+  initSearchState(b, color, style, difficulty, lastMove, aiTimeRemainingMs)
 
   // 清空杀手走法
   for (let d = 0; d < MAX_DEPTH; d++) {

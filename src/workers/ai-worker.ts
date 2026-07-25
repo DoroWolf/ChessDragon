@@ -11,6 +11,7 @@ interface WorkerRequest {
   difficulty: number
   style: string
   lastMove: { from: Square; to: Square } | null
+  aiTimeRemainingMs?: number
 }
 
 interface WorkerResponse {
@@ -42,6 +43,7 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
       difficulty as 1 | 2 | 3 | 4 | 5,
       style as 'balanced' | 'aggressive' | 'defensive' | 'unpredictable',
       lastMove,
+      e.data.aiTimeRemainingMs,
     )
 
     const response: WorkerResponse = {

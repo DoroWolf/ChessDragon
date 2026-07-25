@@ -283,6 +283,9 @@ watch(pieceScale, (val) => {
   cursor: grab;
   z-index: 10;
   transition: opacity 0.1s ease;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .piece.dragging-hidden {

@@ -9,7 +9,7 @@
             <div class="home-buttons">
                 <button class="btn btn-home" @click="startSetup('ai')">人机对局</button>
                 <button class="btn btn-home" @click="startSetup('human')">双人对局</button>
-                <button class="btn btn-home btn-home--secondary" @click="handleRemote">远程对局</button>
+                <button class="btn btn-home" :disabled=true @click="handleRemote">远程对局</button>
             </div>
         </section>
 
@@ -341,26 +341,6 @@ const handleStart = () => {
     padding: 14px 0;
     font-size: 1.15rem;
     font-weight: 600;
-    border: 2px solid var(--color-surface-border);
-    background: var(--color-surface);
-    color: var(--color-text-primary);
-    cursor: pointer;
-    transition: background-color 0.15s, color 0.15s;
-}
-
-.btn-home:hover {
-    background: var(--color-surface-border);
-    color: var(--color-text-on-primary);
-}
-
-.btn-home--secondary {
-    border-color: var(--color-border-secondary);
-    color: var(--color-text-muted);
-}
-
-.btn-home--secondary:hover {
-    background: var(--color-border-secondary);
-    color: var(--color-text-on-primary);
 }
 
 .setup-panel {
