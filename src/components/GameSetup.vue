@@ -1,141 +1,139 @@
 <template>
-    <div class="setup-overlay">
-        <!-- 首页：上方 Logo，下方三个按钮 -->
-        <section v-if="screen === 'home'" class="home-panel">
-            <div class="title-section">
-                <img :src="titleImg" alt="Chess Dragon" class="title-img" />
-            </div>
-            <div class="home-buttons">
-                <button class="btn btn-home" @click="startSetup('ai')">人机对局</button>
-                <button class="btn btn-home" @click="startSetup('human')">双人对局</button>
-                <button class="btn btn-home" :disabled="true" @click="handleRemote">远程对局</button>
-            </div>
-        </section>
+    <!-- 首页：上方 Logo，下方三个按钮 -->
+    <section v-if="screen === 'home'" class="home-panel">
+        <div class="title-section">
+            <img :src="titleImg" alt="Chess Dragon" class="title-img" />
+        </div>
+        <div class="home-buttons">
+            <button class="btn btn-home" @click="startSetup('ai')">人机对局</button>
+            <button class="btn btn-home" @click="startSetup('human')">双人对局</button>
+            <button class="btn btn-home" :disabled="true" @click="handleRemote">远程对局</button>
+        </div>
+    </section>
 
-        <!-- 对局设置面板 -->
-        <section v-else class="setup-panel with-title">
-            <div class="setup-section">
-                <h3>棋盘</h3>
-                <div class="option-group">
-                    <label class="option-card-btn" :class="{ active: boardMode === 'standard' }">
-                        <input v-model="boardMode" type="radio" value="standard" />
-                        <img :src="iconClassic" alt="" class="card-icon" />
-                        <span>标准棋盘</span>
-                    </label>
-                    <label class="option-card-btn" :class="{ active: boardMode === 'chess960' }">
-                        <input v-model="boardMode" type="radio" value="chess960" />
-                        <img :src="iconChess960" alt="" class="card-icon" />
-                        <span>Chess960</span>
-                    </label>
-                    <label class="option-card-btn" :class="{ active: boardMode === 'custom' }">
-                        <input v-model="boardMode" type="radio" value="custom" />
-                        <img :src="iconCustom" alt="" class="card-icon" />
-                        <span>自定义棋盘</span>
-                    </label>
-                </div>
-
-                <input v-if="boardMode === 'custom'" v-model="fenInput" type="text" class="fen-input"
-                    placeholder="在此处粘贴 FEN 文本" />
-                <p v-if="boardMode === 'custom' && fenInput.trim() && !isFenValid" class="fen-hint">无效的 FEN</p>
-            </div>
-
-            <div class="setup-section">
-                <h3>棋钟</h3>
-                <label class="slider-row">
-                    <span>限时</span>
-                    <input v-model.number="timeMinutes" type="range" min="0" max="180" step="1" />
-                    <strong>{{ timeMinutes === 0 ? '无限制' : `${timeMinutes} 分钟` }}</strong>
+    <!-- 对局设置面板 -->
+    <section v-else class="setup-panel with-title">
+        <div class="setup-section">
+            <h3>棋盘</h3>
+            <div class="option-group">
+                <label class="option-card-btn" :class="{ active: boardMode === 'standard' }">
+                    <input v-model="boardMode" type="radio" value="standard" />
+                    <img :src="iconClassic" alt="" class="card-icon" />
+                    <span>标准棋盘</span>
                 </label>
-
-                <label v-if="timeMinutes > 0" class="slider-row">
-                    <span>每步加时</span>
-                    <input v-model.number="incrementSeconds" type="range" min="0" max="60" step="1" />
-                    <strong>{{ incrementSeconds }} 秒</strong>
+                <label class="option-card-btn" :class="{ active: boardMode === 'chess960' }">
+                    <input v-model="boardMode" type="radio" value="chess960" />
+                    <img :src="iconChess960" alt="" class="card-icon" />
+                    <span>Chess960</span>
                 </label>
-
-                <!-- 快捷棋钟组合按钮 -->
-                <div class="preset-clock-group">
-                    <button
-                        v-for="preset in presetClocks"
-                        :key="preset.label"
-                        type="button"
-                        class="option-card-btn preset-btn"
-                        :class="{ active: isPresetActive(preset.minutes, preset.increment) }"
-                        @click="applyPreset(preset.minutes, preset.increment)"
-                    >
-                        {{ preset.label }}
-                    </button>
-                </div>
+                <label class="option-card-btn" :class="{ active: boardMode === 'custom' }">
+                    <input v-model="boardMode" type="radio" value="custom" />
+                    <img :src="iconCustom" alt="" class="card-icon" />
+                    <span>自定义棋盘</span>
+                </label>
             </div>
 
-            <!-- 强度设置（仅人机对局） -->
-            <div v-if="gameMode === 'ai'" class="setup-section">
-                <h3>强度</h3>
-                <div class="option-group">
-                    <label v-for="level in 5" :key="level" class="option-card-btn difficulty-card-btn"
-                        :class="{ active: difficulty === level }">
-                        <input v-model="difficulty" type="radio" :value="level" />
-                        <span>{{ level }}</span>
-                    </label>
-                </div>
-            </div>
+            <input v-if="boardMode === 'custom'" v-model="fenInput" type="text" class="fen-input"
+                placeholder="在此处粘贴 FEN 文本" />
+            <p v-if="boardMode === 'custom' && fenInput.trim() && !isFenValid" class="fen-hint">无效的 FEN</p>
+        </div>
 
-            <!-- AI 风格设置（仅人机对局） -->
-            <div v-if="gameMode === 'ai'" class="setup-section">
-                <h3>AI 风格</h3>
-                <div class="option-group">
-                    <label class="option-card-btn" :class="{ active: aiStyle === 'balanced' }">
-                        <input v-model="aiStyle" type="radio" value="balanced" />
-                        <span>均衡</span>
-                    </label>
-                    <label class="option-card-btn" :class="{ active: aiStyle === 'aggressive' }">
-                        <input v-model="aiStyle" type="radio" value="aggressive" />
-                        <span>进攻</span>
-                    </label>
-                    <label class="option-card-btn" :class="{ active: aiStyle === 'defensive' }">
-                        <input v-model="aiStyle" type="radio" value="defensive" />
-                        <span>防守</span>
-                    </label>
-                    <label class="option-card-btn" :class="{ active: aiStyle === 'unpredictable' }">
-                        <input v-model="aiStyle" type="radio" value="unpredictable" />
-                        <span>出其不意</span>
-                    </label>
-                </div>
-            </div>
+        <div class="setup-section">
+            <h3>棋钟</h3>
+            <label class="slider-row">
+                <span>限时</span>
+                <input v-model.number="timeMinutes" type="range" min="0" max="180" step="1" />
+                <strong>{{ timeMinutes === 0 ? '无限制' : `${timeMinutes} 分钟` }}</strong>
+            </label>
 
-            <div v-if="gameMode === 'ai'" class="setup-section">
-                <h3>执棋方</h3>
-                <div class="option-group">
-                    <label class="option-card-btn starter-card-btn" :class="{ active: starter === 'black' }">
-                        <input v-model="starter" type="radio" value="black" />
-                        <img :src="kingBlackIcon" alt="" class="starter-icon" />
-                        <span>黑方</span>
-                    </label>
-                    <label class="option-card-btn starter-card-btn" :class="{ active: starter === 'random' }">
-                        <input v-model="starter" type="radio" value="random" />
-                        <img :src="kingRandomIcon" alt="" class="starter-icon" />
-                        <span>随机</span>
-                    </label>
-                    <label class="option-card-btn starter-card-btn" :class="{ active: starter === 'white' }">
-                        <input v-model="starter" type="radio" value="white" />
-                        <img :src="kingWhiteIcon" alt="" class="starter-icon" />
-                        <span>白方</span>
-                    </label>
-                </div>
-            </div>
+            <label v-if="timeMinutes > 0" class="slider-row">
+                <span>每步加时</span>
+                <input v-model.number="incrementSeconds" type="range" min="0" max="60" step="1" />
+                <strong>{{ incrementSeconds }} 秒</strong>
+            </label>
 
-            <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
-
-            <div class="setup-actions">
-                <button type="button" class="btn bottom-btn" @click="screen = 'home'">
-                    返回
-                </button>
-                <button type="button" class="btn bottom-btn btn-primary start-btn" :disabled="!canStart" @click="handleStart">
-                    开始对局
+            <!-- 快捷棋钟组合按钮 -->
+            <div class="preset-clock-group">
+                <button
+                    v-for="preset in presetClocks"
+                    :key="preset.label"
+                    type="button"
+                    class="option-card-btn preset-btn"
+                    :class="{ active: isPresetActive(preset.minutes, preset.increment) }"
+                    @click="applyPreset(preset.minutes, preset.increment)"
+                >
+                    {{ preset.label }}
                 </button>
             </div>
-        </section>
-    </div>
+        </div>
+
+        <!-- 强度设置（仅人机对局） -->
+        <div v-if="gameMode === 'ai'" class="setup-section">
+            <h3>强度</h3>
+            <div class="option-group">
+                <label v-for="level in 5" :key="level" class="option-card-btn difficulty-card-btn"
+                    :class="{ active: difficulty === level }">
+                    <input v-model="difficulty" type="radio" :value="level" />
+                    <span>{{ level }}</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- AI 风格设置（仅人机对局） -->
+        <div v-if="gameMode === 'ai'" class="setup-section">
+            <h3>AI 风格</h3>
+            <div class="option-group">
+                <label class="option-card-btn" :class="{ active: aiStyle === 'balanced' }">
+                    <input v-model="aiStyle" type="radio" value="balanced" />
+                    <span>均衡</span>
+                </label>
+                <label class="option-card-btn" :class="{ active: aiStyle === 'aggressive' }">
+                    <input v-model="aiStyle" type="radio" value="aggressive" />
+                    <span>进攻</span>
+                </label>
+                <label class="option-card-btn" :class="{ active: aiStyle === 'defensive' }">
+                    <input v-model="aiStyle" type="radio" value="defensive" />
+                    <span>防守</span>
+                </label>
+                <label class="option-card-btn" :class="{ active: aiStyle === 'unpredictable' }">
+                    <input v-model="aiStyle" type="radio" value="unpredictable" />
+                    <span>出其不意</span>
+                </label>
+            </div>
+        </div>
+
+        <div v-if="gameMode === 'ai'" class="setup-section">
+            <h3>执棋方</h3>
+            <div class="option-group">
+                <label class="option-card-btn starter-card-btn" :class="{ active: starter === 'black' }">
+                    <input v-model="starter" type="radio" value="black" />
+                    <img :src="kingBlackIcon" alt="" class="starter-icon" />
+                    <span>黑方</span>
+                </label>
+                <label class="option-card-btn starter-card-btn" :class="{ active: starter === 'random' }">
+                    <input v-model="starter" type="radio" value="random" />
+                    <img :src="kingRandomIcon" alt="" class="starter-icon" />
+                    <span>随机</span>
+                </label>
+                <label class="option-card-btn starter-card-btn" :class="{ active: starter === 'white' }">
+                    <input v-model="starter" type="radio" value="white" />
+                    <img :src="kingWhiteIcon" alt="" class="starter-icon" />
+                    <span>白方</span>
+                </label>
+            </div>
+        </div>
+
+        <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+
+        <div class="setup-actions">
+            <button type="button" class="btn bottom-btn" @click="screen = 'home'">
+                返回
+            </button>
+            <button type="button" class="btn bottom-btn btn-primary start-btn" :disabled="!canStart" @click="handleStart">
+                开始对局
+            </button>
+        </div>
+    </section>
 </template>
 
 <script setup lang="ts">
@@ -339,17 +337,6 @@ const handleStart = () => {
 </script>
 
 <style scoped>
-.setup-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-    background-color: var(--color-page-bg);
-}
-
 .home-panel {
     display: flex;
     flex-direction: column;
@@ -388,8 +375,7 @@ const handleStart = () => {
 }
 
 .setup-panel {
-    width: min(560px, 100%);
-    max-height: calc(100vh - 180px);
+    min-width: min(560px, 100%);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     

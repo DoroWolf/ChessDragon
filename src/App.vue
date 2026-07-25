@@ -4,8 +4,7 @@
 
     <GameSetup v-if="showSetup" @start="handleGameSetupStart" @remote="handleRemoteGame" />
 
-    <!-- 棋盘主面板 -->
-    <BoardPanel :board="board" :current-turn="currentTurn" :selected-square="selectedSquare"
+    <BoardPanel v-if="!showSetup" :board="board" :current-turn="currentTurn" :selected-square="selectedSquare"
       :possible-moves="possibleMoves" :is-dragging="isDragging" :drag-start-square="dragStartSquare"
       :hover-square="hoverSquare" :mouse-pos="mousePos" :is-mouse-down="isMouseDown"
       :promotion-pending="promotionPending" :promotion-style="promotionStyle" :is-draw="isDraw"
@@ -29,7 +28,7 @@
       @apply-promotion="(piece: string) => applyPromotion(piece)" />
 
     <!-- 侧边栏 -->
-    <Sidebar :is-clock-enabled="isClockEnabled" :move-history="moveHistory" :current-turn="currentTurn"
+    <Sidebar v-if="!showSetup" :is-clock-enabled="isClockEnabled" :move-history="moveHistory" :current-turn="currentTurn"
       :game-status="gameStatusMessage" :halfmove-clock="halfmoveClock" :position-count="getPositionCount()"
       :is-game-over="isGameOver" :is-flipped="isFlipped" :board="board" :player-color="playerColor"
       :white-time-seconds="whiteTimeSeconds"
