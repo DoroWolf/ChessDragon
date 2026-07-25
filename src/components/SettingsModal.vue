@@ -76,11 +76,12 @@ const handleCoordinateChange = (e: Event) => {
   max-width: 280px;
   width: 90%;
   text-align: center;
+  box-shadow: none;
 }
 
 .dialog-title {
   font-weight: bold;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .dialog-buttons {
@@ -124,11 +125,4 @@ const handleCoordinateChange = (e: Event) => {
   width: auto;
 }
 
-.custom-select {
-  cursor: pointer;
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border: 2px solid var(--color-surface-border);
-  background-color: var(--color-surface);
-}
 </style>

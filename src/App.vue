@@ -157,7 +157,7 @@ onUnmounted(() => {
   align-items: center;
   box-sizing: border-box;
   padding: 20px;
-  padding-top: 40px;
+  padding-top: 60px;
   font-family: 'Unifont', system-ui, -apple-system, sans-serif;
   color: var(--color-text-primary);
   gap: 1rem;

@@ -19,6 +19,16 @@ export function pieceImg(type: string, color: string): string {
   return new URL(`./texture/pieces/${type}_${color}.png`, import.meta.url).href
 }
 
+// ---------- 图标 SVGs ----------
+export const iconClassic = new URL('./icon/classic.svg', import.meta.url).href
+export const iconChess960 = new URL('./icon/chess960.svg', import.meta.url).href
+export const iconCustom = new URL('./icon/custom.svg', import.meta.url).href
+
+// ---------- 执棋方图标 ----------
+export const kingBlackIcon = new URL('./texture/icon/king_black_icon.png', import.meta.url).href
+export const kingRandomIcon = new URL('./texture/icon/king_random_icon.png', import.meta.url).href
+export const kingWhiteIcon = new URL('./texture/icon/king_white_icon.png', import.meta.url).href
+
 // ---------- 升变 ----------
 export function promotionImg(piece: string, color: string): string {
   return new URL(`./texture/icon/${piece}_${color}_icon.png`, import.meta.url).href

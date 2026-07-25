@@ -3,13 +3,12 @@
         <!-- 首页：上方 Logo，下方三个按钮 -->
         <section v-if="screen === 'home'" class="home-panel">
             <div class="title-section">
-                <!-- 修改处：将文字标题替换为图片 Logo -->
                 <img :src="titleImg" alt="Chess Dragon" class="title-img" />
             </div>
             <div class="home-buttons">
                 <button class="btn btn-home" @click="startSetup('ai')">人机对局</button>
                 <button class="btn btn-home" @click="startSetup('human')">双人对局</button>
-                <button class="btn btn-home" :disabled=true @click="handleRemote">远程对局</button>
+                <button class="btn btn-home" :disabled="true" @click="handleRemote">远程对局</button>
             </div>
         </section>
 
@@ -18,16 +17,19 @@
             <div class="setup-section">
                 <h3>棋盘</h3>
                 <div class="option-group">
-                    <label class="option-card">
+                    <label class="option-card" :class="{ active: boardMode === 'standard' }">
                         <input v-model="boardMode" type="radio" value="standard" />
+                        <img :src="iconClassic" alt="" class="card-icon" />
                         <span>标准棋盘</span>
                     </label>
-                    <label class="option-card">
+                    <label class="option-card" :class="{ active: boardMode === 'chess960' }">
                         <input v-model="boardMode" type="radio" value="chess960" />
+                        <img :src="iconChess960" alt="" class="card-icon" />
                         <span>Chess960</span>
                     </label>
-                    <label class="option-card">
+                    <label class="option-card" :class="{ active: boardMode === 'custom' }">
                         <input v-model="boardMode" type="radio" value="custom" />
+                        <img :src="iconCustom" alt="" class="card-icon" />
                         <span>自定义棋盘</span>
                     </label>
                 </div>
@@ -47,7 +49,7 @@
 
                 <label v-if="timeMinutes > 0" class="slider-row">
                     <span>每步加时</span>
-                    <input v-model.number="incrementSeconds" type="range" min="0" max="30" step="1" />
+                    <input v-model.number="incrementSeconds" type="range" min="0" max="60" step="1" />
                     <strong>{{ incrementSeconds }} 秒</strong>
                 </label>
             </div>
@@ -90,16 +92,19 @@
             <div v-if="gameMode === 'ai'" class="setup-section">
                 <h3>执棋方</h3>
                 <div class="option-group">
-                    <label class="option-card">
+                    <label class="option-card starter-card" :class="{ active: starter === 'black' }">
                         <input v-model="starter" type="radio" value="black" />
+                        <img :src="kingBlackIcon" alt="" class="starter-icon" />
                         <span>黑方</span>
                     </label>
-                    <label class="option-card">
+                    <label class="option-card starter-card" :class="{ active: starter === 'random' }">
                         <input v-model="starter" type="radio" value="random" />
+                        <img :src="kingRandomIcon" alt="" class="starter-icon" />
                         <span>随机</span>
                     </label>
-                    <label class="option-card">
+                    <label class="option-card starter-card" :class="{ active: starter === 'white' }">
                         <input v-model="starter" type="radio" value="white" />
+                        <img :src="kingWhiteIcon" alt="" class="starter-icon" />
                         <span>白方</span>
                     </label>
                 </div>
@@ -120,8 +125,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue' // 1. 引入 watch
-import { titleImg } from '../assets/resourcePaths'
+import { ref, computed, watch } from 'vue'
+import { titleImg, iconClassic, iconChess960, iconCustom, kingBlackIcon, kingRandomIcon, kingWhiteIcon } from '../assets/resourcePaths'
 
 export type AIStyle = 'balanced' | 'aggressive' | 'defensive' | 'unpredictable'
 
@@ -170,7 +175,6 @@ const generateChess960 = () => {
     chess960Id.value = Math.floor(Math.random() * 960) + 1
 }
 
-// 2. 监听 boardMode 切换，只要选了 chess960 就会刷新 id
 watch(boardMode, (newMode) => {
     if (newMode === 'chess960') {
         generateChess960()
@@ -345,11 +349,16 @@ const handleStart = () => {
 
 .setup-panel {
     width: min(560px, 100%);
-    max-height: 90vh;
-    overflow: auto;
+    max-height: calc(100vh - 180px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    
     padding: 20px;
     background: var(--color-surface);
     box-shadow: 2px 2px 0 var(--color-surface-shadow);
+    
+    display: flex;
+    flex-direction: column;
 }
 
 .title {
@@ -370,17 +379,34 @@ const handleStart = () => {
 
 .option-group {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     gap: 10px;
+    padding-bottom: 6px;
+    
+    min-width: 0;             
 }
 
 .option-card {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 10px;
-    border: 1px solid var(--color-border-light);
+    padding: 8px 12px;
+    border: 2px solid var(--color-border-light);
     cursor: pointer;
+    transition: all 0.1s ease;
+    user-select: none;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* 隐藏原生的单选框圆点 */
+.option-card input[type="radio"] {
+    display: none;
 }
 
 .difficulty-card {
@@ -392,18 +418,33 @@ const handleStart = () => {
     font-weight: 600;
 }
 
-.difficulty-card.active {
+.option-card.active {
     border-color: var(--color-surface-border);
     background: var(--color-surface-border);
     color: var(--color-text-on-primary);
 }
 
+.card-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.starter-card {
+    flex-direction: column;
+    padding: 12px 16px;
+    min-width: 80px;
+}
+
+.starter-icon {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
 .fen-input {
+    margin-top: 10px;
     width: 100%;
-    box-sizing: border-box;
-    margin-top: 8px;
-    padding: 8px;
-    border: 1px solid var(--color-border-light);
 }
 
 .fen-hint {
@@ -412,12 +453,53 @@ const handleStart = () => {
     font-size: 0.85rem;
 }
 
+/* 默认（大窗口）布局：采用 Grid 确保多行之间对齐齐平 */
 .slider-row {
     display: grid;
-    grid-template-columns: 120px 1fr auto;
-    gap: 10px;
+    /* 
+      100px: 左侧标签区域
+      1fr: 滑动条占据剩余中间空间
+      100px: 右侧数值区域（右对齐）
+      16px: 控件与两侧的间距（包含滑动条与时间文本间的距离）
+    */
+    grid-template-columns: 100px 1fr 100px; 
+    gap: 16px;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
+}
+
+.slider-row input[type="range"] {
+    width: 100%;
+}
+
+.slider-row strong {
+    text-align: right;
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .slider-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 8px 0;
+    }
+
+    /* 文字标签与数值保留在第一行左右两侧 */
+    .slider-row span {
+        font-weight: 500;
+    }
+
+    .slider-row strong {
+        text-align: right;
+    }
+
+    /* 强行让 range 控件占满 100% 宽度，从而自动挤到下一行 */
+    .slider-row input[type="range"] {
+        order: 3;
+        width: 100%;
+        margin-top: 4px;
+    }
 }
 
 .error-message {
