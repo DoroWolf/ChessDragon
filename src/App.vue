@@ -150,6 +150,7 @@ onUnmounted(() => {
 
 <style scoped>
 .game-container {
+  position: relative;
   width: 100%;
   min-height: 100vh;
   display: flex;
@@ -170,9 +171,8 @@ onUnmounted(() => {
   cursor: grabbing !important;
 }
 
-/* 右上角固定按钮组 */
 .top-right-fabs {
-  position: fixed;
+  position: absolute;
   top: 16px;
   right: 16px;
   z-index: 10000;
