@@ -17,17 +17,17 @@
             <div class="setup-section">
                 <h3>棋盘</h3>
                 <div class="option-group">
-                    <label class="option-card" :class="{ active: boardMode === 'standard' }">
+                    <label class="option-btn" :class="{ active: boardMode === 'standard' }">
                         <input v-model="boardMode" type="radio" value="standard" />
                         <img :src="iconClassic" alt="" class="card-icon" />
                         <span>标准棋盘</span>
                     </label>
-                    <label class="option-card" :class="{ active: boardMode === 'chess960' }">
+                    <label class="option-btn" :class="{ active: boardMode === 'chess960' }">
                         <input v-model="boardMode" type="radio" value="chess960" />
                         <img :src="iconChess960" alt="" class="card-icon" />
                         <span>Chess960</span>
                     </label>
-                    <label class="option-card" :class="{ active: boardMode === 'custom' }">
+                    <label class="option-btn" :class="{ active: boardMode === 'custom' }">
                         <input v-model="boardMode" type="radio" value="custom" />
                         <img :src="iconCustom" alt="" class="card-icon" />
                         <span>自定义棋盘</span>
@@ -52,13 +52,27 @@
                     <input v-model.number="incrementSeconds" type="range" min="0" max="60" step="1" />
                     <strong>{{ incrementSeconds }} 秒</strong>
                 </label>
+
+                <!-- 快捷棋钟组合按钮 -->
+                <div class="preset-clock-group">
+                    <button
+                        v-for="preset in presetClocks"
+                        :key="preset.label"
+                        type="button"
+                        class="option-btn preset-btn"
+                        :class="{ active: isPresetActive(preset.minutes, preset.increment) }"
+                        @click="applyPreset(preset.minutes, preset.increment)"
+                    >
+                        {{ preset.label }}
+                    </button>
+                </div>
             </div>
 
             <!-- 强度设置（仅人机对局） -->
             <div v-if="gameMode === 'ai'" class="setup-section">
                 <h3>强度</h3>
                 <div class="option-group">
-                    <label v-for="level in 5" :key="level" class="option-card difficulty-card"
+                    <label v-for="level in 5" :key="level" class="option-btn difficulty-card"
                         :class="{ active: difficulty === level }">
                         <input v-model="difficulty" type="radio" :value="level" />
                         <span>{{ level }}</span>
@@ -70,19 +84,19 @@
             <div v-if="gameMode === 'ai'" class="setup-section">
                 <h3>AI 风格</h3>
                 <div class="option-group">
-                    <label class="option-card" :class="{ active: aiStyle === 'balanced' }">
+                    <label class="option-btn" :class="{ active: aiStyle === 'balanced' }">
                         <input v-model="aiStyle" type="radio" value="balanced" />
                         <span>均衡</span>
                     </label>
-                    <label class="option-card" :class="{ active: aiStyle === 'aggressive' }">
+                    <label class="option-btn" :class="{ active: aiStyle === 'aggressive' }">
                         <input v-model="aiStyle" type="radio" value="aggressive" />
                         <span>进攻</span>
                     </label>
-                    <label class="option-card" :class="{ active: aiStyle === 'defensive' }">
+                    <label class="option-btn" :class="{ active: aiStyle === 'defensive' }">
                         <input v-model="aiStyle" type="radio" value="defensive" />
                         <span>防守</span>
                     </label>
-                    <label class="option-card" :class="{ active: aiStyle === 'unpredictable' }">
+                    <label class="option-btn" :class="{ active: aiStyle === 'unpredictable' }">
                         <input v-model="aiStyle" type="radio" value="unpredictable" />
                         <span>出其不意</span>
                     </label>
@@ -92,17 +106,17 @@
             <div v-if="gameMode === 'ai'" class="setup-section">
                 <h3>执棋方</h3>
                 <div class="option-group">
-                    <label class="option-card starter-card" :class="{ active: starter === 'black' }">
+                    <label class="option-btn starter-card" :class="{ active: starter === 'black' }">
                         <input v-model="starter" type="radio" value="black" />
                         <img :src="kingBlackIcon" alt="" class="starter-icon" />
                         <span>黑方</span>
                     </label>
-                    <label class="option-card starter-card" :class="{ active: starter === 'random' }">
+                    <label class="option-btn starter-card" :class="{ active: starter === 'random' }">
                         <input v-model="starter" type="radio" value="random" />
                         <img :src="kingRandomIcon" alt="" class="starter-icon" />
                         <span>随机</span>
                     </label>
-                    <label class="option-card starter-card" :class="{ active: starter === 'white' }">
+                    <label class="option-btn starter-card" :class="{ active: starter === 'white' }">
                         <input v-model="starter" type="radio" value="white" />
                         <img :src="kingWhiteIcon" alt="" class="starter-icon" />
                         <span>白方</span>
@@ -158,6 +172,32 @@ const timeMinutes = ref(10)
 const incrementSeconds = ref(0)
 const starter = ref<'black' | 'random' | 'white'>('white')
 const errorMessage = ref('')
+
+// ============================================================
+// 常用棋钟预设组合
+// ============================================================
+const presetClocks = [
+    { label: '1+0', minutes: 1, increment: 0 },
+    { label: '2+1', minutes: 2, increment: 1 },
+    { label: '3+0', minutes: 3, increment: 0 },
+    { label: '3+2', minutes: 3, increment: 2 },
+    { label: '5+0', minutes: 5, increment: 0 },
+    { label: '5+3', minutes: 5, increment: 3 },
+    { label: '10+0', minutes: 10, increment: 0 },
+    { label: '10+5', minutes: 10, increment: 5 },
+    { label: '15+10', minutes: 15, increment: 10 },
+    { label: '30+0', minutes: 30, increment: 0 },
+    { label: '30+20', minutes: 30, increment: 20 },
+]
+
+const applyPreset = (minutes: number, increment: number) => {
+    timeMinutes.value = minutes
+    incrementSeconds.value = increment
+}
+
+const isPresetActive = (minutes: number, increment: number) => {
+    return timeMinutes.value === minutes && incrementSeconds.value === increment
+}
 
 const startSetup = (mode: 'ai' | 'human') => {
     gameMode.value = mode
@@ -391,7 +431,7 @@ const handleStart = () => {
     min-width: 0;             
 }
 
-.option-card {
+.option-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -405,7 +445,7 @@ const handleStart = () => {
 }
 
 /* 隐藏原生的单选框圆点 */
-.option-card input[type="radio"] {
+.option-btn input[type="radio"] {
     display: none;
 }
 
@@ -418,7 +458,7 @@ const handleStart = () => {
     font-weight: 600;
 }
 
-.option-card.active {
+.option-btn.active {
     border-color: var(--color-surface-border);
     background: var(--color-surface-border);
     color: var(--color-text-on-primary);
@@ -456,12 +496,6 @@ const handleStart = () => {
 /* 默认（大窗口）布局：采用 Grid 确保多行之间对齐齐平 */
 .slider-row {
     display: grid;
-    /* 
-      100px: 左侧标签区域
-      1fr: 滑动条占据剩余中间空间
-      100px: 右侧数值区域（右对齐）
-      16px: 控件与两侧的间距（包含滑动条与时间文本间的距离）
-    */
     grid-template-columns: 100px 1fr 100px; 
     gap: 16px;
     align-items: center;
@@ -475,6 +509,21 @@ const handleStart = () => {
 .slider-row strong {
     text-align: right;
     white-space: nowrap;
+}
+
+/* 棋钟快捷选项样式 */
+.preset-clock-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.preset-btn {
+    background-color: transparent;
+    padding: 2px 4px;
+    font-size: 0.8rem;
+    font-family: 'Unifont', system-ui, -apple-system, sans-serif;
 }
 
 @media (max-width: 480px) {
