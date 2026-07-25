@@ -82,7 +82,7 @@ const formattedBlackTime = computed(() => formatTime(props.blackTimeSeconds))
 
 /* 激活状态的高亮指示 */
 .clock-side.is-active {
-    border-color: var(--color-highlight-gold);
+    border-color: var(--color-highlight);
 }
 
 .clock-time {

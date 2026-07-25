@@ -17,17 +17,17 @@
             <div class="setup-section">
                 <h3>棋盘</h3>
                 <div class="option-group">
-                    <label class="option-btn" :class="{ active: boardMode === 'standard' }">
+                    <label class="option-card-btn" :class="{ active: boardMode === 'standard' }">
                         <input v-model="boardMode" type="radio" value="standard" />
                         <img :src="iconClassic" alt="" class="card-icon" />
                         <span>标准棋盘</span>
                     </label>
-                    <label class="option-btn" :class="{ active: boardMode === 'chess960' }">
+                    <label class="option-card-btn" :class="{ active: boardMode === 'chess960' }">
                         <input v-model="boardMode" type="radio" value="chess960" />
                         <img :src="iconChess960" alt="" class="card-icon" />
                         <span>Chess960</span>
                     </label>
-                    <label class="option-btn" :class="{ active: boardMode === 'custom' }">
+                    <label class="option-card-btn" :class="{ active: boardMode === 'custom' }">
                         <input v-model="boardMode" type="radio" value="custom" />
                         <img :src="iconCustom" alt="" class="card-icon" />
                         <span>自定义棋盘</span>
@@ -59,7 +59,7 @@
                         v-for="preset in presetClocks"
                         :key="preset.label"
                         type="button"
-                        class="option-btn preset-btn"
+                        class="option-card-btn preset-btn"
                         :class="{ active: isPresetActive(preset.minutes, preset.increment) }"
                         @click="applyPreset(preset.minutes, preset.increment)"
                     >
@@ -72,7 +72,7 @@
             <div v-if="gameMode === 'ai'" class="setup-section">
                 <h3>强度</h3>
                 <div class="option-group">
-                    <label v-for="level in 5" :key="level" class="option-btn difficulty-card"
+                    <label v-for="level in 5" :key="level" class="option-card-btn difficulty-card-btn"
                         :class="{ active: difficulty === level }">
                         <input v-model="difficulty" type="radio" :value="level" />
                         <span>{{ level }}</span>
@@ -84,19 +84,19 @@
             <div v-if="gameMode === 'ai'" class="setup-section">
                 <h3>AI 风格</h3>
                 <div class="option-group">
-                    <label class="option-btn" :class="{ active: aiStyle === 'balanced' }">
+                    <label class="option-card-btn" :class="{ active: aiStyle === 'balanced' }">
                         <input v-model="aiStyle" type="radio" value="balanced" />
                         <span>均衡</span>
                     </label>
-                    <label class="option-btn" :class="{ active: aiStyle === 'aggressive' }">
+                    <label class="option-card-btn" :class="{ active: aiStyle === 'aggressive' }">
                         <input v-model="aiStyle" type="radio" value="aggressive" />
                         <span>进攻</span>
                     </label>
-                    <label class="option-btn" :class="{ active: aiStyle === 'defensive' }">
+                    <label class="option-card-btn" :class="{ active: aiStyle === 'defensive' }">
                         <input v-model="aiStyle" type="radio" value="defensive" />
                         <span>防守</span>
                     </label>
-                    <label class="option-btn" :class="{ active: aiStyle === 'unpredictable' }">
+                    <label class="option-card-btn" :class="{ active: aiStyle === 'unpredictable' }">
                         <input v-model="aiStyle" type="radio" value="unpredictable" />
                         <span>出其不意</span>
                     </label>
@@ -106,17 +106,17 @@
             <div v-if="gameMode === 'ai'" class="setup-section">
                 <h3>执棋方</h3>
                 <div class="option-group">
-                    <label class="option-btn starter-card" :class="{ active: starter === 'black' }">
+                    <label class="option-card-btn starter-card-btn" :class="{ active: starter === 'black' }">
                         <input v-model="starter" type="radio" value="black" />
                         <img :src="kingBlackIcon" alt="" class="starter-icon" />
                         <span>黑方</span>
                     </label>
-                    <label class="option-btn starter-card" :class="{ active: starter === 'random' }">
+                    <label class="option-card-btn starter-card-btn" :class="{ active: starter === 'random' }">
                         <input v-model="starter" type="radio" value="random" />
                         <img :src="kingRandomIcon" alt="" class="starter-icon" />
                         <span>随机</span>
                     </label>
-                    <label class="option-btn starter-card" :class="{ active: starter === 'white' }">
+                    <label class="option-card-btn starter-card-btn" :class="{ active: starter === 'white' }">
                         <input v-model="starter" type="radio" value="white" />
                         <img :src="kingWhiteIcon" alt="" class="starter-icon" />
                         <span>白方</span>
@@ -431,7 +431,7 @@ const handleStart = () => {
     min-width: 0;             
 }
 
-.option-btn {
+.option-card-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -445,11 +445,11 @@ const handleStart = () => {
 }
 
 /* 隐藏原生的单选框圆点 */
-.option-btn input[type="radio"] {
+.option-card-btn input[type="radio"] {
     display: none;
 }
 
-.difficulty-card {
+.difficulty-card-btn {
     width: 40px;
     height: 40px;
     justify-content: center;
@@ -458,10 +458,8 @@ const handleStart = () => {
     font-weight: 600;
 }
 
-.option-btn.active {
-    border-color: var(--color-surface-border);
-    background: var(--color-surface-border);
-    color: var(--color-text-on-primary);
+.option-card-btn.active {
+    border: 2px solid var(--color-highlight);
 }
 
 .card-icon {
@@ -470,7 +468,7 @@ const handleStart = () => {
     flex-shrink: 0;
 }
 
-.starter-card {
+.starter-card-btn {
     flex-direction: column;
     padding: 12px 16px;
     min-width: 80px;

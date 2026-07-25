@@ -34,9 +34,7 @@
   --color-border-medium: #adafbc;
   --color-border-secondary: #888888;
 
-  /* ===== 强调 / 焦点 ===== */
-  --color-focus-ring: #ffd33d;
-  --color-highlight-gold: #B79227;
+  --color-highlight: #ffd33d;
 
   /* ===== 错误 ===== */
   --color-error: #cc3333;

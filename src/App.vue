@@ -199,12 +199,7 @@ onUnmounted(() => {
 }
 
 .fab-btn:hover .fab-icon :deep(svg) {
-  opacity: 0.85;
-}
-
-.fab-btn:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
+  opacity: 0.8;
 }
 
 /* FAB 图标容器 */
