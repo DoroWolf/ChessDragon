@@ -442,8 +442,6 @@ const handleStart = () => {
     height: 40px;
     justify-content: center;
     padding: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
 }
 
 .option-card-btn.active {
@@ -451,8 +449,8 @@ const handleStart = () => {
 }
 
 .card-icon {
-    width: 20px;
-    height: 20px;
+    width: 1.8em;
+    height: 1.8rem;
     flex-shrink: 0;
 }
 
@@ -463,8 +461,8 @@ const handleStart = () => {
 }
 
 .starter-icon {
-    width: 48px;
-    height: 48px;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
 }
 

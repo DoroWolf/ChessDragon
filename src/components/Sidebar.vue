@@ -560,8 +560,8 @@ const materialDiffText = computed(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1rem;
-  height: 1rem;
+  width: 1.8em;
+  height: 1.8rem;
   flex-shrink: 0;
 }
 
