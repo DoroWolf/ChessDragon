@@ -1,7 +1,7 @@
 <template>
   <aside class="sidebar">
     <ChessClock :is-clock-enabled="isClockEnabled" :white-time-seconds="whiteTimeSeconds"
-      :black-time-seconds="blackTimeSeconds" :active-color="activeColor" :test-id="clockTestId" />
+      :black-time-seconds="blackTimeSeconds" :active-color="activeColor" :has-game-started="hasGameStarted" :test-id="clockTestId" />
 
     <div class="material-row">
       <div class=" material-diff">

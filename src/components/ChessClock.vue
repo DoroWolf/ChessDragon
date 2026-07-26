@@ -1,10 +1,20 @@
 <template>
-    <div v-if="isClockEnabled" class="clock-grid " :data-testid="testId">
-        <div class="clock-side side-white" :class="{ 'is-active': activeColor === 'white' }">
-            <span class="clock-time">{{ formattedWhiteTime }}</span>
+    <div v-if="isClockEnabled" class="clock-grid" :data-testid="testId">
+        <div class="clock-side side-white" :class="{
+            'is-active': activeColor === 'white',
+            'is-low-time': isLowTime(whiteTimeSeconds) && activeColor === 'white',
+        }">
+            <span class="clock-time" :class="{ 'text-low-time': isLowTime(whiteTimeSeconds) }">
+                {{ formatWhiteTime }}
+            </span>
         </div>
-        <div class="clock-side side-black" :class="{ 'is-active': activeColor === 'black' }">
-            <span class="clock-time">{{ formattedBlackTime }}</span>
+        <div class="clock-side side-black" :class="{
+            'is-active': activeColor === 'black',
+            'is-low-time': isLowTime(blackTimeSeconds) && activeColor === 'black',
+        }">
+            <span class="clock-time" :class="{ 'text-low-time': isLowTime(blackTimeSeconds) }">
+                {{ formatBlackTime }}
+            </span>
         </div>
     </div>
 </template>
@@ -18,6 +28,7 @@ interface Props {
     whiteTimeSeconds?: number | null
     blackTimeSeconds?: number | null
     activeColor?: Color | null
+    hasGameStarted?: boolean
     testId?: string
 }
 
@@ -26,9 +37,22 @@ const props = withDefaults(defineProps<Props>(), {
     whiteTimeSeconds: null,
     blackTimeSeconds: null,
     activeColor: null,
+    hasGameStarted: false,
     testId: 'chess-clock',
 })
 
+// 判断是否 ≤10 秒（包括已超时为 0 的情况，保留红色样式）
+const isLowTime = (value: number | null | undefined) => {
+    if (value === null || value === undefined) return false
+    return value <= 10
+}
+
+// 根据时间值的分数部分推导冒号可见性（与倒计时同步，0.5s 亮 / 0.5s 暗）
+const colonVisible = (value: number) => {
+    return (value % 1) < 0.5
+}
+
+// 基础格式化（无冒号闪烁）
 const formatTime = (value: number | null | undefined) => {
     if (value === null || value === undefined || value < 0) {
         return '--:--'
@@ -36,7 +60,7 @@ const formatTime = (value: number | null | undefined) => {
 
     const hours = Math.floor(value / 3600)
     const minutes = Math.floor((value % 3600) / 60)
-    const seconds = value % 60
+    const seconds = Math.floor(value % 60)
 
     if (hours > 0) {
         return [hours, minutes, seconds].map((unit) => String(unit).padStart(2, '0')).join(':')
@@ -45,8 +69,88 @@ const formatTime = (value: number | null | undefined) => {
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
-const formattedWhiteTime = computed(() => formatTime(props.whiteTimeSeconds))
-const formattedBlackTime = computed(() => formatTime(props.blackTimeSeconds))
+// 带冒号闪烁的格式化
+const formatTimeWithBlink = (value: number) => {
+    if (value < 0) return '--:--'
+
+    const hours = Math.floor(value / 3600)
+    const minutes = Math.floor((value % 3600) / 60)
+    const seconds = Math.floor(value % 60)
+    const formatUnit = (num: number) => String(num).padStart(2, '0')
+    const c = colonVisible(value) ? ':' : ' '
+
+    if (hours > 0) {
+        return `${formatUnit(hours)}${c}${formatUnit(minutes)}${c}${formatUnit(seconds)}`
+    }
+
+    return `${formatUnit(minutes)}${c}${formatUnit(seconds)}`
+}
+
+// 带 0.1 秒精度 + 冒号闪烁的格式化
+const formatTimeWithTenthsAndBlink = (value: number) => {
+    if (value < 0) return '--:--'
+
+    const hours = Math.floor(value / 3600)
+    const minutes = Math.floor((value % 3600) / 60)
+    const sec = value % 60
+    const wholeSeconds = Math.floor(sec)
+    const tenths = Math.floor((sec - wholeSeconds) * 10)
+    const formatUnit = (num: number) => String(num).padStart(2, '0')
+    const c = colonVisible(value) ? ':' : ' '
+
+    if (hours > 0) {
+        return `${formatUnit(hours)}${c}${formatUnit(minutes)}${c}${formatUnit(wholeSeconds)}.${tenths}`
+    }
+
+    return `${formatUnit(minutes)}${c}${formatUnit(wholeSeconds)}.${tenths}`
+}
+
+// 仅 ≤10 秒时显示 0.1 秒精度（无闪烁版本，给非激活方用）
+const formatTimeWithTenths = (value: number) => {
+    if (value < 0) return '--:--'
+
+    const hours = Math.floor(value / 3600)
+    const minutes = Math.floor((value % 3600) / 60)
+    const sec = value % 60
+    const wholeSeconds = Math.floor(sec)
+    const tenths = Math.floor((sec - wholeSeconds) * 10)
+    const formatUnit = (num: number) => String(num).padStart(2, '0')
+
+    if (hours > 0) {
+        return `${formatUnit(hours)}:${formatUnit(minutes)}:${formatUnit(wholeSeconds)}.${tenths}`
+    }
+
+    return `${formatUnit(minutes)}:${formatUnit(wholeSeconds)}.${tenths}`
+}
+
+// 计算每个方向的时间显示
+const formatWhiteTime = computed(() => {
+    const val = props.whiteTimeSeconds
+    if (val === null || val === undefined || !props.hasGameStarted) {
+        return formatTime(val)
+    }
+    const isActive = props.activeColor === 'white'
+    if (!isActive) {
+        if (val <= 10) return formatTimeWithTenths(val)
+        return formatTime(val)
+    }
+    if (val <= 10) return formatTimeWithTenthsAndBlink(val)
+    return formatTimeWithBlink(val)
+})
+
+const formatBlackTime = computed(() => {
+    const val = props.blackTimeSeconds
+    if (val === null || val === undefined || !props.hasGameStarted) {
+        return formatTime(val)
+    }
+    const isActive = props.activeColor === 'black'
+    if (!isActive) {
+        if (val <= 10) return formatTimeWithTenths(val)
+        return formatTime(val)
+    }
+    if (val <= 10) return formatTimeWithTenthsAndBlink(val)
+    return formatTimeWithBlink(val)
+})
 </script>
 
 <style scoped>
@@ -85,8 +189,20 @@ const formattedBlackTime = computed(() => formatTime(props.blackTimeSeconds))
     border-color: var(--color-highlight);
 }
 
+/* 低时间状态（< 10秒）的高亮边框 */
+.clock-side.is-low-time {
+    border-color: var(--color-danger, #dc3545);
+}
+
 .clock-time {
     font-size: 1rem;
     letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 低于10秒时文本变红 */
+.clock-time.text-low-time {
+    color: var(--color-danger, #dc3545);
+    font-weight: bold;
 }
 </style>

@@ -41,3 +41,4 @@ export const soundCheck = new URL('./sound/Check.ogg', import.meta.url).href
 export const soundVictory = new URL('./sound/Victory.ogg', import.meta.url).href
 export const soundDefeat = new URL('./sound/Defeat.ogg', import.meta.url).href
 export const soundDraw = new URL('./sound/Draw.ogg', import.meta.url).href
+export const soundLowTime = new URL('./sound/LowTime.ogg', import.meta.url).href

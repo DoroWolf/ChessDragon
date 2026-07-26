@@ -23,6 +23,7 @@ import {
   soundVictory,
   soundDefeat,
   soundDraw,
+  soundLowTime,
 } from '../assets/resourcePaths'
 
 // ============================================================
@@ -35,6 +36,7 @@ const sounds = {
   victory: new Audio(soundVictory),
   defeat: new Audio(soundDefeat),
   draw: new Audio(soundDraw),
+  lowTime: new Audio(soundLowTime),
 }
 
 const INITIAL_CLOCK_SECONDS: number | null = null
@@ -87,6 +89,8 @@ export function useGameState(
   const blackTimeSeconds = ref<number | null>(INITIAL_CLOCK_SECONDS)
   const clockIncrementSeconds = ref(0)
   let clockTimer: number | null = null
+  let lowTimePlayedWhite = false
+  let lowTimePlayedBlack = false
 
   // ---- 游戏终止标记 ----
   const isAgreedDraw = ref(false)
@@ -313,20 +317,28 @@ export function useGameState(
 
       if (activeClockColor.value === 'white') {
         if (whiteTimeSeconds.value !== null) {
-          whiteTimeSeconds.value = Math.max(0, whiteTimeSeconds.value - 1)
+          whiteTimeSeconds.value = Math.max(0, +(whiteTimeSeconds.value - 0.1).toFixed(1))
+          if (whiteTimeSeconds.value <= 10 && whiteTimeSeconds.value > 0 && !lowTimePlayedWhite) {
+            lowTimePlayedWhite = true
+            playSound('lowTime')
+          }
           if (whiteTimeSeconds.value === 0) {
             handleClockTimeout('white')
           }
         }
       } else {
         if (blackTimeSeconds.value !== null) {
-          blackTimeSeconds.value = Math.max(0, blackTimeSeconds.value - 1)
+          blackTimeSeconds.value = Math.max(0, +(blackTimeSeconds.value - 0.1).toFixed(1))
+          if (blackTimeSeconds.value <= 10 && blackTimeSeconds.value > 0 && !lowTimePlayedBlack) {
+            lowTimePlayedBlack = true
+            playSound('lowTime')
+          }
           if (blackTimeSeconds.value === 0) {
             handleClockTimeout('black')
           }
         }
       }
-    }, 1000)
+    }, 100)
   }
 
   const applyClockAfterMove = (moverColor: Color, nextTurn: Color, nextBoard: Board) => {
@@ -1237,6 +1249,8 @@ export function useGameState(
     whiteTimeSeconds.value = config.timeMinutes * 60
     blackTimeSeconds.value = config.timeMinutes * 60
     clockIncrementSeconds.value = config.incrementSeconds
+    lowTimePlayedWhite = false
+    lowTimePlayedBlack = false
 
     hasGameStarted.value = false
     stopClock()
