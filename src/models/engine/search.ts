@@ -14,12 +14,13 @@ import { makeMove, unmakeMove } from './boardChange'
 import { generateLegalMoves, } from './moveGeneration'
 import { killerMoves, historyTable } from './killerHistory'
 import { iterativeDeepening } from './iterativeDeepening'
-import { findKing, initSearchState } from './searchState'
+import { findKing, initSearchState, searchHash } from './searchState'
 import {
   board,
   getKingRow,
   getKingCol,
 } from './searchState'
+import { probeBook, pickBookMove } from './openingBook'
 
 // ============================================================
 // getBestAIMove
@@ -59,12 +60,32 @@ export async function getBestAIMove(
 
   const epTarget = getEnPassantTarget(lastMove)
 
-  // 只有一个合法走法？直接返回
+  // 生成合法走法
   const kRow = getKingRow(color)
   const kCol = getKingCol(color)
   const moves = generateLegalMoves(board, color, epTarget, false, lastMove, kRow, kCol)
   if (moves.length === 0) return null
   if (moves.length === 1) return moves[0]!
+
+  // 尝试开局库：如果当前局面在开局库中，按权重选一个走法
+  const bookMoves = probeBook(searchHash)
+  if (bookMoves && bookMoves.length > 0) {
+    const bookMove = pickBookMove(bookMoves)
+    if (bookMove) {
+      // 验证该开局走法在当前合法走法中（防止因走法顺序不同导致的无效走法）
+      const isValidBookMove = moves.some(
+        (m) =>
+          m.fromRow === bookMove.fromRow &&
+          m.fromCol === bookMove.fromCol &&
+          m.toRow === bookMove.toRow &&
+          m.toCol === bookMove.toCol &&
+          m.special === bookMove.special,
+      )
+      if (isValidBookMove) {
+        return bookMove
+      }
+    }
+  }
 
   // 迭代加深搜索
   const result = iterativeDeepening(epTarget, lastMove, maxDepth)

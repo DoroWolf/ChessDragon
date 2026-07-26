@@ -1,0 +1,1573 @@
+[
+    [
+        2496458317,
+        [
+            {
+                "fromCol": 4,
+                "fromRow": 6,
+                "toCol": 4,
+                "toRow": 4,
+                "weight": 32
+            },
+            {
+                "fromCol": 3,
+                "fromRow": 6,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 15
+            },
+            {
+                "fromCol": 2,
+                "fromRow": 6,
+                "toCol": 2,
+                "toRow": 4,
+                "weight": 4
+            },
+            {
+                "fromCol": 6,
+                "fromRow": 7,
+                "toCol": 5,
+                "toRow": 5,
+                "weight": 4
+            },
+            {
+                "fromCol": 5,
+                "fromRow": 6,
+                "toCol": 5,
+                "toRow": 4,
+                "weight": 3
+            }
+        ]
+    ],
+    [
+        3682266885,
+        [
+            {
+                "fromCol": 4,
+                "fromRow": 1,
+                "toCol": 4,
+                "toRow": 3,
+                "weight": 15
+            },
+            {
+                "fromCol": 2,
+                "fromRow": 1,
+                "toCol": 2,
+                "toRow": 3,
+                "weight": 5
+            },
+            {
+                "fromCol": 4,
+                "fromRow": 1,
+                "toCol": 4,
+                "toRow": 2,
+                "weight": 5
+            },
+            {
+                "fromCol": 2,
+                "fromRow": 1,
+                "toCol": 2,
+                "toRow": 2,
+                "weight": 4
+            },
+            {
+                "fromCol": 3,
+                "fromRow": 1,
+                "toCol": 3,
+                "toRow": 2,
+                "weight": 3
+            },
+            {
+                "fromCol": 6,
+                "fromRow": 1,
+                "toCol": 6,
+                "toRow": 2,
+                "weight": 2
+            },
+            {
+                "fromCol": 3,
+                "fromRow": 1,
+                "toCol": 3,
+                "toRow": 3,
+                "weight": 3
+            },
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        1191884420,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 7,
+                "toCol": 5,
+                "toRow": 5,
+                "weight": 12
+            },
+            {
+                "fromCol": 1,
+                "fromRow": 7,
+                "toCol": 2,
+                "toRow": 5,
+                "weight": 4
+            }
+        ]
+    ],
+    [
+        3468040741,
+        [
+            {
+                "fromCol": 1,
+                "fromRow": 0,
+                "toCol": 2,
+                "toRow": 2,
+                "weight": 12
+            }
+        ]
+    ],
+    [
+        3792741661,
+        [
+            {
+                "fromCol": 5,
+                "fromRow": 7,
+                "toCol": 1,
+                "toRow": 4,
+                "weight": 5
+            },
+            {
+                "fromCol": 5,
+                "fromRow": 7,
+                "toCol": 2,
+                "toRow": 4,
+                "weight": 4
+            },
+            {
+                "fromCol": 3,
+                "fromRow": 6,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 3
+            },
+            {
+                "fromCol": 1,
+                "fromRow": 7,
+                "toCol": 2,
+                "toRow": 5,
+                "weight": 3
+            }
+        ]
+    ],
+    [
+        3928583167,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            },
+            {
+                "fromCol": 0,
+                "fromRow": 1,
+                "toCol": 0,
+                "toRow": 2,
+                "weight": 3
+            }
+        ]
+    ],
+    [
+        451292758,
+        [
+            {
+                "fromCol": 1,
+                "fromRow": 4,
+                "toCol": 0,
+                "toRow": 3,
+                "weight": 2
+            },
+            {
+                "fromCol": 1,
+                "fromRow": 4,
+                "toCol": 2,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        453288845,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        175952108,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            },
+            {
+                "fromCol": 5,
+                "fromRow": 0,
+                "toCol": 3,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        2826743428,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 6,
+                "toCol": 3,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        198276789,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 7,
+                "toCol": 5,
+                "toRow": 5,
+                "weight": 5
+            }
+        ]
+    ],
+    [
+        4155528552,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 1,
+                "toCol": 3,
+                "toRow": 2,
+                "weight": 4
+            },
+            {
+                "fromCol": 1,
+                "fromRow": 0,
+                "toCol": 2,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        173873695,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 6,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 4
+            }
+        ]
+    ],
+    [
+        577493724,
+        [
+            {
+                "fromCol": 2,
+                "fromRow": 3,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 4
+            }
+        ]
+    ],
+    [
+        511015456,
+        [
+            {
+                "fromCol": 5,
+                "fromRow": 5,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 4
+            }
+        ]
+    ],
+    [
+        3826666848,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 4
+            }
+        ]
+    ],
+    [
+        307062340,
+        [
+            {
+                "fromCol": 1,
+                "fromRow": 7,
+                "toCol": 2,
+                "toRow": 5,
+                "weight": 4
+            }
+        ]
+    ],
+    [
+        2470698469,
+        [
+            {
+                "fromCol": 0,
+                "fromRow": 1,
+                "toCol": 0,
+                "toRow": 2,
+                "weight": 2
+            },
+            {
+                "fromCol": 6,
+                "fromRow": 1,
+                "toCol": 6,
+                "toRow": 2,
+                "weight": 2
+            },
+            {
+                "fromCol": 4,
+                "fromRow": 1,
+                "toCol": 4,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3675712080,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 6,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        4078971539,
+        [
+            {
+                "fromCol": 2,
+                "fromRow": 3,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3476982383,
+        [
+            {
+                "fromCol": 5,
+                "fromRow": 5,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        895335727,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3271988747,
+        [
+            {
+                "fromCol": 1,
+                "fromRow": 7,
+                "toCol": 2,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        1107832234,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 1,
+                "toCol": 3,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        2946437509,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 6,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 5
+            }
+        ]
+    ],
+    [
+        2276053318,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 1,
+                "toCol": 3,
+                "toRow": 3,
+                "weight": 5
+            }
+        ]
+    ],
+    [
+        2947617825,
+        [
+            {
+                "fromCol": 1,
+                "fromRow": 7,
+                "toCol": 2,
+                "toRow": 5,
+                "weight": 4
+            },
+            {
+                "fromCol": 4,
+                "fromRow": 4,
+                "toCol": 4,
+                "toRow": 3,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3604029479,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            },
+            {
+                "fromCol": 5,
+                "fromRow": 0,
+                "toCol": 4,
+                "toRow": 1,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        2334743361,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 6,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 4
+            }
+        ]
+    ],
+    [
+        2736757634,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 1,
+                "toCol": 3,
+                "toRow": 3,
+                "weight": 4
+            }
+        ]
+    ],
+    [
+        2332516069,
+        [
+            {
+                "fromCol": 1,
+                "fromRow": 7,
+                "toCol": 2,
+                "toRow": 5,
+                "weight": 3
+            },
+            {
+                "fromCol": 4,
+                "fromRow": 4,
+                "toCol": 3,
+                "toRow": 3,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        4066863843,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 3,
+                "toCol": 4,
+                "toRow": 4,
+                "weight": 2
+            },
+            {
+                "fromCol": 5,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3134878889,
+        [
+            {
+                "fromCol": 2,
+                "fromRow": 5,
+                "toCol": 4,
+                "toRow": 4,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3064599242,
+        [
+            {
+                "fromCol": 2,
+                "fromRow": 2,
+                "toCol": 3,
+                "toRow": 3,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3170512526,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 1,
+                "toCol": 3,
+                "toRow": 3,
+                "weight": 8
+            },
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 6
+            },
+            {
+                "fromCol": 5,
+                "fromRow": 1,
+                "toCol": 5,
+                "toRow": 3,
+                "weight": 3
+            }
+        ]
+    ],
+    [
+        2497899497,
+        [
+            {
+                "fromCol": 2,
+                "fromRow": 6,
+                "toCol": 2,
+                "toRow": 4,
+                "weight": 6
+            },
+            {
+                "fromCol": 2,
+                "fromRow": 7,
+                "toCol": 5,
+                "toRow": 5,
+                "weight": 2
+            },
+            {
+                "fromCol": 6,
+                "fromRow": 7,
+                "toCol": 5,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        1851925779,
+        [
+            {
+                "fromCol": 4,
+                "fromRow": 1,
+                "toCol": 4,
+                "toRow": 2,
+                "weight": 3
+            },
+            {
+                "fromCol": 2,
+                "fromRow": 1,
+                "toCol": 2,
+                "toRow": 2,
+                "weight": 3
+            },
+            {
+                "fromCol": 3,
+                "fromRow": 3,
+                "toCol": 2,
+                "toRow": 4,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        1868190959,
+        [
+            {
+                "fromCol": 1,
+                "fromRow": 7,
+                "toCol": 2,
+                "toRow": 5,
+                "weight": 3
+            }
+        ]
+    ],
+    [
+        3998543694,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            },
+            {
+                "fromCol": 5,
+                "fromRow": 0,
+                "toCol": 4,
+                "toRow": 1,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        1273765419,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 7,
+                "toCol": 5,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3632637088,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        786337668,
+        [
+            {
+                "fromCol": 1,
+                "fromRow": 7,
+                "toCol": 2,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        2949657637,
+        [
+            {
+                "fromCol": 4,
+                "fromRow": 1,
+                "toCol": 4,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        2999945741,
+        [
+            {
+                "fromCol": 2,
+                "fromRow": 6,
+                "toCol": 2,
+                "toRow": 4,
+                "weight": 6
+            }
+        ]
+    ],
+    [
+        2955004752,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 1,
+                "toCol": 6,
+                "toRow": 2,
+                "weight": 3
+            },
+            {
+                "fromCol": 4,
+                "fromRow": 1,
+                "toCol": 4,
+                "toRow": 2,
+                "weight": 4
+            }
+        ]
+    ],
+    [
+        671540742,
+        [
+            {
+                "fromCol": 1,
+                "fromRow": 7,
+                "toCol": 2,
+                "toRow": 5,
+                "weight": 2
+            },
+            {
+                "fromCol": 6,
+                "fromRow": 7,
+                "toCol": 5,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        2835897767,
+        [
+            {
+                "fromCol": 5,
+                "fromRow": 0,
+                "toCol": 6,
+                "toRow": 1,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3059823859,
+        [
+            {
+                "fromCol": 4,
+                "fromRow": 6,
+                "toCol": 4,
+                "toRow": 4,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        4191630779,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 1,
+                "toCol": 3,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3144637581,
+        [
+            {
+                "fromCol": 5,
+                "fromRow": 0,
+                "toCol": 6,
+                "toRow": 1,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        2971253420,
+        [
+            {
+                "fromCol": 1,
+                "fromRow": 7,
+                "toCol": 2,
+                "toRow": 5,
+                "weight": 4
+            }
+        ]
+    ],
+    [
+        806813965,
+        [
+            {
+                "fromCol": 5,
+                "fromRow": 0,
+                "toCol": 4,
+                "toRow": 1,
+                "weight": 4
+            }
+        ]
+    ],
+    [
+        4084029746,
+        [
+            {
+                "fromCol": 4,
+                "fromRow": 6,
+                "toCol": 4,
+                "toRow": 5,
+                "weight": 2
+            },
+            {
+                "fromCol": 3,
+                "fromRow": 7,
+                "toCol": 2,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        2518855440,
+        [
+            {
+                "fromCol": 4,
+                "fromRow": 1,
+                "toCol": 4,
+                "toRow": 3,
+                "weight": 3
+            },
+            {
+                "fromCol": 2,
+                "fromRow": 1,
+                "toCol": 2,
+                "toRow": 3,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        2140109293,
+        [
+            {
+                "fromCol": 1,
+                "fromRow": 7,
+                "toCol": 2,
+                "toRow": 5,
+                "weight": 2
+            },
+            {
+                "fromCol": 6,
+                "fromRow": 6,
+                "toCol": 6,
+                "toRow": 4,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3830764646,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        861190620,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 7,
+                "toCol": 5,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3476396545,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        963555621,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 6,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        291008998,
+        [
+            {
+                "fromCol": 2,
+                "fromRow": 3,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        759615770,
+        [
+            {
+                "fromCol": 5,
+                "fromRow": 5,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        14735661,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        516834309,
+        [
+            {
+                "fromCol": 5,
+                "fromRow": 7,
+                "toCol": 6,
+                "toRow": 6,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        918958941,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3231520889,
+        [
+            {
+                "fromCol": 4,
+                "fromRow": 6,
+                "toCol": 4,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        535138515,
+        [
+            {
+                "fromCol": 4,
+                "fromRow": 1,
+                "toCol": 4,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        1909815417,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 7,
+                "toCol": 5,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        4293254853,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        163509729,
+        [
+            {
+                "fromCol": 2,
+                "fromRow": 7,
+                "toCol": 5,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3391514078,
+        [
+            {
+                "fromCol": 4,
+                "fromRow": 3,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 3
+            }
+        ]
+    ],
+    [
+        3137397694,
+        [
+            {
+                "fromCol": 5,
+                "fromRow": 5,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 3
+            }
+        ]
+    ],
+    [
+        1097061630,
+        [
+            {
+                "fromCol": 5,
+                "fromRow": 0,
+                "toCol": 2,
+                "toRow": 3,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        1011005016,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 6,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 3
+            }
+        ]
+    ],
+    [
+        343176859,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 3
+            }
+        ]
+    ],
+    [
+        440521240,
+        [
+            {
+                "fromCol": 1,
+                "fromRow": 7,
+                "toCol": 2,
+                "toRow": 5,
+                "weight": 2
+            },
+            {
+                "fromCol": 6,
+                "fromRow": 7,
+                "toCol": 5,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        2605672889,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 1,
+                "toCol": 6,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        2301126803,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 1,
+                "toCol": 6,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        2114444435,
+        [
+            {
+                "fromCol": 5,
+                "fromRow": 7,
+                "toCol": 3,
+                "toRow": 3,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        914378031,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 6,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        515280364,
+        [
+            {
+                "fromCol": 5,
+                "fromRow": 0,
+                "toCol": 6,
+                "toRow": 1,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        4189154079,
+        [
+            {
+                "fromCol": 1,
+                "fromRow": 7,
+                "toCol": 2,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        2025836734,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 1,
+                "toCol": 3,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        299480047,
+        [
+            {
+                "fromCol": 4,
+                "fromRow": 4,
+                "toCol": 3,
+                "toRow": 3,
+                "weight": 3
+            }
+        ]
+    ],
+    [
+        745865152,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 0,
+                "toCol": 3,
+                "toRow": 3,
+                "weight": 3
+            }
+        ]
+    ],
+    [
+        2158873076,
+        [
+            {
+                "fromCol": 1,
+                "fromRow": 7,
+                "toCol": 2,
+                "toRow": 5,
+                "weight": 3
+            }
+        ]
+    ],
+    [
+        27488853,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 3,
+                "toCol": 0,
+                "toRow": 3,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        938791435,
+        [
+            {
+                "fromCol": 4,
+                "fromRow": 4,
+                "toCol": 4,
+                "toRow": 3,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3715522153,
+        [
+            {
+                "fromCol": 5,
+                "fromRow": 2,
+                "toCol": 3,
+                "toRow": 3,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        4155660950,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 6,
+                "toCol": 3,
+                "toRow": 4,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3750009429,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 1,
+                "toCol": 3,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3657915013,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 7,
+                "toCol": 5,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        128275654,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 1,
+                "toCol": 3,
+                "toRow": 3,
+                "weight": 4
+            }
+        ]
+    ],
+    [
+        3620937222,
+        [
+            {
+                "fromCol": 2,
+                "fromRow": 6,
+                "toCol": 2,
+                "toRow": 4,
+                "weight": 4
+            }
+        ]
+    ],
+    [
+        760467708,
+        [
+            {
+                "fromCol": 4,
+                "fromRow": 1,
+                "toCol": 4,
+                "toRow": 2,
+                "weight": 2
+            },
+            {
+                "fromCol": 2,
+                "fromRow": 1,
+                "toCol": 2,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        1662918332,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 3
+            }
+        ]
+    ],
+    [
+        2504340888,
+        [
+            {
+                "fromCol": 5,
+                "fromRow": 7,
+                "toCol": 1,
+                "toRow": 4,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3704691471,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            },
+            {
+                "fromCol": 1,
+                "fromRow": 0,
+                "toCol": 2,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        4034372663,
+        [
+            {
+                "fromCol": 5,
+                "fromRow": 6,
+                "toCol": 5,
+                "toRow": 4,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        1392032566,
+        [
+            {
+                "fromCol": 3,
+                "fromRow": 1,
+                "toCol": 3,
+                "toRow": 3,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        949993364,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 7,
+                "toCol": 5,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        1402505912,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        998267478,
+        [
+            {
+                "fromCol": 2,
+                "fromRow": 6,
+                "toCol": 2,
+                "toRow": 4,
+                "weight": 2
+            },
+            {
+                "fromCol": 6,
+                "fromRow": 6,
+                "toCol": 6,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        2206160233,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        439150363,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 7,
+                "toCol": 5,
+                "toRow": 5,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        3201723061,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 0,
+                "toCol": 5,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        1217216913,
+        [
+            {
+                "fromCol": 5,
+                "fromRow": 7,
+                "toCol": 6,
+                "toRow": 6,
+                "weight": 2
+            }
+        ]
+    ],
+    [
+        2878756116,
+        [
+            {
+                "fromCol": 6,
+                "fromRow": 1,
+                "toCol": 6,
+                "toRow": 2,
+                "weight": 2
+            }
+        ]
+    ]
+]
