@@ -176,6 +176,7 @@ const errorMessage = ref('')
 // ============================================================
 const presetClocks = [
     { label: '1+0', minutes: 1, increment: 0 },
+    { label: '1+1', minutes: 1, increment: 1 },
     { label: '2+1', minutes: 2, increment: 1 },
     { label: '3+0', minutes: 3, increment: 0 },
     { label: '3+2', minutes: 3, increment: 2 },
@@ -184,8 +185,9 @@ const presetClocks = [
     { label: '10+0', minutes: 10, increment: 0 },
     { label: '10+5', minutes: 10, increment: 5 },
     { label: '15+10', minutes: 15, increment: 10 },
+    { label: '20+0', minutes: 20, increment: 0 },
     { label: '30+0', minutes: 30, increment: 0 },
-    { label: '30+20', minutes: 30, increment: 20 },
+    { label: '60+0', minutes: 60, increment: 0 },
 ]
 
 const applyPreset = (minutes: number, increment: number) => {
