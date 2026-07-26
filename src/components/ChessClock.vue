@@ -49,7 +49,7 @@ const isLowTime = (value: number | null | undefined) => {
 
 // 根据时间值的分数部分推导冒号可见性（与倒计时同步，0.5s 亮 / 0.5s 暗）
 const colonVisible = (value: number) => {
-    return (value % 1) < 0.5
+    return (value % 1) >= 0.5
 }
 
 // 基础格式化（无冒号闪烁）
