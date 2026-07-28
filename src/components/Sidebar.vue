@@ -1,5 +1,11 @@
 <template>
   <aside class="sidebar">
+    <DragonDialogue
+      :text="dialogueText"
+      :dialogue-key="dialogueKey"
+      :is-ai-enabled="gameMode === 'ai'"
+    />
+
     <ChessClock :is-clock-enabled="isClockEnabled" :white-time-seconds="whiteTimeSeconds"
       :black-time-seconds="blackTimeSeconds" :active-color="activeColor" :has-game-started="hasGameStarted" :test-id="clockTestId" />
 
@@ -15,7 +21,7 @@
     </div>
 
     <div 
-      class="card  game-status"
+      class="card game-status"
       :class="{ 'turn-black': currentTurn === 'black', 'turn-white': currentTurn === 'white' }"
     >
       <div v-if="gameStatus" class="status-message">{{ gameStatus }}</div>
@@ -76,6 +82,7 @@
 import { computed, ref } from 'vue'
 import type { Board, Color, PieceType } from '../models/chess'
 import ChessClock from './ChessClock.vue'
+import DragonDialogue from './DragonDialogue.vue'
 import homeSvg from '../assets/icon/home.svg?raw'
 import refreshSvg from '../assets/icon/refresh.svg?raw'
 import exportPgnSvg from '../assets/icon/export_pgn.svg?raw'
@@ -103,6 +110,8 @@ interface Props {
   clockTestId?: string
   hasGameStarted?: boolean
   gameMode?: 'ai' | 'human' | 'remote'
+  dialogueText?: string
+  dialogueKey?: number
 }
 
 interface MovePair {
@@ -128,6 +137,8 @@ const props = withDefaults(defineProps<Props>(), {
   clockTestId: 'sidebar-chess-clock',
   hasGameStarted: false,
   gameMode: 'human',
+  dialogueText: '',
+  dialogueKey: 0,
 })
 
 const emit = defineEmits<{
@@ -413,7 +424,7 @@ const materialDiffText = computed(() => {
   gap: 1rem;
   padding: 1rem;
   width: 100%;
-  max-width: 300px;
+  max-width: 350px;
   color: var(--color-text-primary);
 }
 

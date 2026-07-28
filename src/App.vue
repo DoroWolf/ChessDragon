@@ -33,7 +33,7 @@
       :is-game-over="isGameOver" :is-flipped="isFlipped" :board="board" :player-color="playerColor"
       :white-time-seconds="whiteTimeSeconds"
       :black-time-seconds="blackTimeSeconds" :active-color="currentTurn" :clock-test-id="'sidebar-chess-clock'"
-      :game-mode="gameMode"
+      :game-mode="gameMode" :dialogue-text="dialogueText" :dialogue-key="dialogueKey"
       v-model:is-sound-enabled="isSoundEnabled" v-model:coordinate-label-mode="coordinateLabelMode"
       @toggle-flip="isFlipped = !isFlipped" :has-game-started="hasGameStarted" @undo="handleUndo"
       @draw="handleDrawOffer" @resign="handleResign" @restart="handleRestart" @back-to-home="handleBackToHome" />
@@ -65,6 +65,7 @@ import BoardPanel from './components/BoardPanel.vue'
 import { useSettings } from './composables/useSettings'
 import { useBoardDisplay } from './composables/useBoardDisplay'
 import { useGameState } from './composables/useGameState'
+import { useDragonDialogue } from './composables/useDragonDialogue'
 import settingSvg from './assets/icon/setting.svg?raw'
 import githubSvg from './assets/icon/github.svg?raw'
 
@@ -119,6 +120,8 @@ const {
   mousePos,
   premove,
   canPremove,
+  isDrawByStalemate,
+  isDrawByInsufficientMaterial,
   handleMouseDown,
   handleTouchStart,
   handleTouchMove,
@@ -134,6 +137,23 @@ const {
   getPositionCount,
   stopClock,
 } = game
+
+// ---- 龙语对话 ----
+const { currentDialogue: dialogueText, dialogueKey } = useDragonDialogue(
+  board,
+  currentTurn,
+  moveHistory,
+  gameMode,
+  playerColor,
+  isGameOver,
+  gameStatusMessage,
+  halfmoveClock,
+  getPositionCount,
+  isDrawByStalemate,
+  isDrawByInsufficientMaterial,
+  hasResigned,
+  timeoutWinner,
+)
 
 // ---- 远程对局 ----
 const handleRemoteGame = () => {

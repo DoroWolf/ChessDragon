@@ -34,71 +34,60 @@ export function useBoardDisplay() {
   }
 
   // --- Overlay 纹理：用于高亮选中格子、合法走法、premove、上一步移动 ---
-  const getOverlayTexture = (
-    board: Board,
-    selectedSquare: { row: number; col: number } | null,
-    possibleMoves: { row: number; col: number }[],
-    isDragging: boolean,
-    hoverSquare: { row: number; col: number } | null,
-    row: number,
-    col: number,
-    premove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null,
-    lastMove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null,
-    canPremove?: boolean,
-  ): string | null =>{
-    // 上一步移动的高亮（起始格和目标格），优先于其他高亮
-    if (lastMove) {
-      if (
-        (lastMove.from.row === row && lastMove.from.col === col) ||
-        (lastMove.to.row === row && lastMove.to.col === col)
-      ) {
-        return boardMoveHover
-      }
+const getOverlayTexture = (
+  board: Board,
+  selectedSquare: { row: number; col: number } | null,
+  possibleMoves: { row: number; col: number }[],
+  isDragging: boolean,
+  hoverSquare: { row: number; col: number } | null,
+  row: number,
+  col: number,
+  premove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null,
+  lastMove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null,
+  canPremove?: boolean,
+): string | null => {
+  const move = possibleMoves.find(
+    (candidate) => candidate.row === row && candidate.col === col,
+  )
+  const targetPiece = board[row]?.[col] ?? null
+  const isCapture = move !== undefined && targetPiece !== null
+
+  if (isCapture) {
+    if (hoverSquare?.row === row && hoverSquare?.col === col) {
+      return canPremove ? boardPremoveHover : boardMoveHover
     }
-
-    // Premove 高亮 - 目标格
-    if (premove && premove.to.row === row && premove.to.col === col) {
-      return boardPremoveHighlighted
-    }
-
-    // Premove 高亮 - 起始格
-    if (premove && premove.from.row === row && premove.from.col === col) {
-      return canPremove
-        ? boardPremoveHover
-        : boardMoveHover
-    }
-
-    // 当前选中格高亮（premove 模式下使用 premove 版纹理）
-    if (selectedSquare?.row === row && selectedSquare?.col === col) {
-      return canPremove
-        ? boardPremoveHover
-        : boardMoveHover
-    }
-
-    const move = possibleMoves.find(
-      (candidate) => candidate.row === row && candidate.col === col,
-    )
-
-    if (move) {
-      if (hoverSquare?.row === row && hoverSquare?.col === col) {
-        return canPremove
-          ? boardPremoveHover
-          : boardMoveHover
-      }
-
-      const targetPiece = board[row]?.[col] ?? null
-      if (targetPiece !== null) {
-        return canPremove
-          ? boardPremoveCapture
-          : boardMoveCapture
-      }
-      return canPremove
-        ? boardPremovePlaceable
-        : boardMovePlaceable
-    }
-
-    return null
+    return canPremove ? boardPremoveCapture : boardMoveCapture
   }
+
+  if (premove && premove.to.row === row && premove.to.col === col) {
+    return boardPremoveHighlighted
+  }
+
+  if (premove && premove.from.row === row && premove.from.col === col) {
+    return canPremove ? boardPremoveHover : boardMoveHover
+  }
+
+  if (selectedSquare?.row === row && selectedSquare?.col === col) {
+    return canPremove ? boardPremoveHover : boardMoveHover
+  }
+
+  if (move) {
+    if (hoverSquare?.row === row && hoverSquare?.col === col) {
+      return canPremove ? boardPremoveHover : boardMoveHover
+    }
+    return canPremove ? boardPremovePlaceable : boardMovePlaceable
+  }
+
+  if (lastMove) {
+    if (
+      (lastMove.from.row === row && lastMove.from.col === col) ||
+      (lastMove.to.row === row && lastMove.to.col === col)
+    ) {
+      return boardMoveHover
+    }
+  }
+  return null
+}
 
   // --- 棋子图片 ---
   const getPieceImage = (
