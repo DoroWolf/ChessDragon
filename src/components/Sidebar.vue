@@ -14,9 +14,9 @@
         <span v-if="materialDiffText" class="material-diff-text">{{ materialDiffText }}</span>
         <span v-else class="material-diff-text"></span>
       </div>
-      <button type="button" class="btn btn-flip" title="翻转棋盘" @click="$emit('toggle-flip')">
+      <button type="button" class="btn btn-flip" :title="t('sidebar.flipBoard')" @click="$emit('toggle-flip')">
         <span class="btn-icon" v-html="refreshSvg"></span>
-        <span>翻转棋盘</span>
+        <span>{{ t('sidebar.flipBoard') }}</span>
       </button>
     </div>
 
@@ -25,21 +25,21 @@
       :class="{ 'turn-black': currentTurn === 'black', 'turn-white': currentTurn === 'white' }"
     >
       <div v-if="gameStatus" class="status-message">{{ gameStatus }}</div>
-      <div v-else class="current-turn">{{ currentTurn === 'white' ? '白方' : '黑方' }}执子</div>
+      <div v-else class="current-turn">{{ t('sidebar.turnToMove', { side: currentTurn === 'white' ? t('sidebar.sideWhite') : t('sidebar.sideBlack') }) }}</div>
     </div>
 
     <div v-if="isGameOver" class="button-group">
-      <button type="button" class="btn" title="返回" @click="$emit('back-to-home')">
+      <button type="button" class="btn" :title="t('sidebar.home')" @click="$emit('back-to-home')">
         <span class="btn-icon" v-html="homeSvg"></span>
       </button>
-      <button type="button" class="btn btn-primary" title="重赛" @click="$emit('restart')">
+      <button type="button" class="btn btn-primary" :title="t('sidebar.restart')" @click="$emit('restart')">
         <span class="btn-icon" v-html="refreshSvg"></span>
       </button>
       <button 
         type="button" 
         class="btn" 
         :class="{ 'btn-success': isCopied }" 
-        title="复制 PGN" 
+        :title="t('sidebar.copyPgn')" 
         :disabled="!pgnText" 
         @click="copyPGN"
       >
@@ -47,20 +47,20 @@
       </button>
     </div>
     <div v-else class="button-group">
-      <button type="button" class="btn btn-warning" title="悔棋" :disabled="isUndoDisabled" @click="$emit('undo')">
+      <button type="button" class="btn btn-warning" :title="t('sidebar.undo')" :disabled="isUndoDisabled" @click="$emit('undo')">
         <span class="btn-icon" v-html="undoSvg"></span>
       </button>
       <button
         type="button"
         class="btn"
         :class="isClaimableDraw ? 'btn-success' : 'btn-primary'"
-        :title="isClaimableDraw ? '宣告和棋' : '提议和棋'"
+        :title="isClaimableDraw ? t('sidebar.claimDraw') : t('sidebar.offerDraw')"
         :disabled="isDrawOfferDisabled"
         @click="handleDrawClick"
       >
         <span class="btn-icon" v-html="drawSvg"></span>
       </button>
-      <button type="button" class="btn btn-danger" title="认输" :disabled="isGameActionDisabled" @click="handleResignClick">
+      <button type="button" class="btn btn-danger" :title="t('sidebar.resign')" :disabled="isGameActionDisabled" @click="handleResignClick">
         <span class="btn-icon" v-html="resignSvg"></span>
       </button>
     </div>
@@ -70,8 +70,8 @@
       <div class="card dialog-box">
         <p class="dialog-message">{{ confirmMessage }}</p>
         <div class="dialog-buttons">
-          <button type="button" class="btn" @click="cancelConfirm">取消</button>
-          <button type="button" class="btn" @click="executeConfirm">确认</button>
+          <button type="button" class="btn" @click="cancelConfirm">{{ t('common.cancel') }}</button>
+          <button type="button" class="btn" @click="executeConfirm">{{ t('common.confirm') }}</button>
         </div>
       </div>
     </div>
@@ -83,6 +83,7 @@ import { computed, ref } from 'vue'
 import type { Board, Color, PieceType } from '../models/chess'
 import ChessClock from './ChessClock.vue'
 import DragonDialogue from './DragonDialogue.vue'
+import { useI18n } from '../composables/useI18n'
 import homeSvg from '../assets/icon/home.svg?raw'
 import refreshSvg from '../assets/icon/refresh.svg?raw'
 import exportPgnSvg from '../assets/icon/export_pgn.svg?raw'
@@ -112,6 +113,8 @@ interface Props {
   gameMode?: 'ai' | 'human' | 'remote'
   dialogueText?: string
   dialogueKey?: number
+  theme?: 'light' | 'dark'
+  gameResult?: string
 }
 
 interface MovePair {
@@ -139,7 +142,11 @@ const props = withDefaults(defineProps<Props>(), {
   gameMode: 'human',
   dialogueText: '',
   dialogueKey: 0,
+  theme: 'light',
+  gameResult: '',
 })
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   undo: []
@@ -192,21 +199,6 @@ const movePairs = computed<MovePair[]>(() => {
   return pairs
 })
 
-const gameResult = computed(() => {
-  if (!props.isGameOver && !props.gameStatus) return ''
-
-  if (props.gameStatus?.includes('白方胜利')) {
-    return '1-0'
-  }
-  if (props.gameStatus?.includes('黑方胜利')) {
-    return '0-1'
-  }
-  if (props.gameStatus?.includes('和棋')) {
-    return '1/2-1/2'
-  }
-  return ''
-})
-
 const pgnText = computed(() => {
   const moves = movePairs.value
     .map((pair) => {
@@ -218,7 +210,7 @@ const pgnText = computed(() => {
 
   if (!moves) return ''
 
-  return gameResult.value ? `${moves} ${gameResult.value}` : moves
+  return props.gameResult ? `${moves} ${props.gameResult}` : moves
 })
 
 const copyPGN = async () => {
@@ -245,7 +237,7 @@ const handleDrawClick = () => {
   if (isClaimableDraw.value) {
     emit('draw')
   } else if (props.gameMode !== 'ai') {
-    confirmMessage.value = '确定要提议和棋吗？'
+    confirmMessage.value = t('sidebar.confirmOfferDraw')
     pendingAction.value = 'draw'
     showConfirmModal.value = true
   }
@@ -253,10 +245,10 @@ const handleDrawClick = () => {
 
 const handleResignClick = () => {
   if (props.gameMode === 'human') {
-    const turnName = props.currentTurn === 'white' ? '白方' : '黑方'
-    confirmMessage.value = `确定要让${turnName}认输吗？`
+    const turnName = props.currentTurn === 'white' ? t('sidebar.sideWhite') : t('sidebar.sideBlack')
+    confirmMessage.value = t('sidebar.confirmResignWithSide', { side: turnName })
   } else {
-    confirmMessage.value = '确定要认输吗？'
+    confirmMessage.value = t('sidebar.confirmResign')
   }
   pendingAction.value = 'resign'
   showConfirmModal.value = true
@@ -285,6 +277,16 @@ const PIECE_UNICODE: Record<PieceType, { white: string; black: string }> = {
   queen: { white: '♕', black: '♛' },
   king: { white: '♔', black: '♚' },
 }
+
+// 暗色主题下，实心（黑）与空心（白）字形互换
+const pieceGlyphs = computed<Record<PieceType, { white: string; black: string }>>(() => {
+  if (props.theme !== 'dark') return PIECE_UNICODE
+  return Object.fromEntries(
+    (Object.entries(PIECE_UNICODE) as [PieceType, { white: string; black: string }][]).map(
+      ([type, glyph]) => [type, { white: glyph.black, black: glyph.white }],
+    ),
+  ) as Record<PieceType, { white: string; black: string }>
+})
 
 const PIECE_VALUE: Record<PieceType, number> = {
   pawn: 1,
@@ -378,12 +380,12 @@ const materialDiffText = computed(() => {
     if (net > 0) {
       // 白方多丢了此类型棋子，黑方优势，显示黑色棋子
       for (let i = 0; i < net; i++) {
-        blackDisplay.push(PIECE_UNICODE[type].black)
+        blackDisplay.push(pieceGlyphs.value[type].black)
       }
     } else if (net < 0) {
       // 黑方多丢了此类型棋子，白方优势，显示白色棋子
       for (let i = 0; i < -net; i++) {
-        whiteDisplay.push(PIECE_UNICODE[type].white)
+        whiteDisplay.push(pieceGlyphs.value[type].white)
       }
     }
   }

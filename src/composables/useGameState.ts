@@ -16,6 +16,7 @@ import type { GameSetupConfig, AIStyle } from '../components/GameSetup.vue'
 import { getPromotionChoice, type AIDifficulty } from '../models/ai'
 import type { AIDetailedMove } from '../models/ai'
 import AIWorker from '../workers/ai-worker?worker'
+import { useI18n } from './useI18n'
 import {
   soundMove,
   soundCapture,
@@ -41,6 +42,9 @@ const sounds = {
 
 const INITIAL_CLOCK_SECONDS: number | null = null
 
+// 对局结束原因（与文案解耦，供本地化与台词选择使用）
+export type GameEndReason = 'resign' | 'timeout' | 'checkmate' | 'draw'
+
 // ============================================================
 // 游戏状态 Composable
 // ============================================================
@@ -48,6 +52,8 @@ export function useGameState(
   isSoundEnabled: import('vue').Ref<boolean>,
   isFlipped: import('vue').Ref<boolean>,
 ) {
+  const { t } = useI18n()
+
   // ---- 初始设置 ----
   const showSetup = ref(true)
   const playerColor = ref<Color>('white')
@@ -403,21 +409,48 @@ export function useGameState(
       isDrawBy75MoveRule.value,
   )
 
+  // 对局结束原因与胜方（语义化，不随语言变化）
+  const gameEndReason = computed<GameEndReason | null>(() => {
+    if (hasResigned.value) return 'resign'
+    if (timeoutWinner.value) return 'timeout'
+    if (isCheckmate(board.value, currentTurn.value)) return 'checkmate'
+    if (isDraw.value) return 'draw'
+    return null
+  })
+
+  const gameWinner = computed<Color | null>(() => {
+    if (hasResigned.value) return hasResigned.value === 'white' ? 'black' : 'white'
+    if (timeoutWinner.value) return timeoutWinner.value
+    if (isCheckmate(board.value, currentTurn.value)) {
+      return currentTurn.value === 'white' ? 'black' : 'white'
+    }
+    return null
+  })
+
+  const gameResult = computed(() => {
+    if (gameWinner.value === 'white') return '1-0'
+    if (gameWinner.value === 'black') return '0-1'
+    if (gameEndReason.value === 'draw') return '1/2-1/2'
+    return ''
+  })
+
   const gameStatusMessage = computed(() => {
+    const sideName = (color: Color) =>
+      t(color === 'white' ? 'status.sideWhite' : 'status.sideBlack')
+
     if (hasResigned.value) {
-      const winner = hasResigned.value === 'white' ? '黑方' : '白方'
-      return `${winner}胜利（对手认输）`
+      const winner: Color = hasResigned.value === 'white' ? 'black' : 'white'
+      return t('status.winByResign', { side: sideName(winner) })
     }
     if (timeoutWinner.value) {
-      const winner = timeoutWinner.value === 'white' ? '白方' : '黑方'
-      return `${winner}胜利（超时）`
+      return t('status.winByTimeout', { side: sideName(timeoutWinner.value) })
     }
     if (isCheckmate(board.value, currentTurn.value)) {
-      const winner = currentTurn.value === 'white' ? '黑方' : '白方'
-      return `${winner}胜利（将死）`
+      const winner: Color = currentTurn.value === 'white' ? 'black' : 'white'
+      return t('status.winByCheckmate', { side: sideName(winner) })
     }
     if (isDraw.value) {
-      return '和棋'
+      return t('status.draw')
     }
     return undefined
   })
@@ -1568,6 +1601,9 @@ export function useGameState(
     isDrawByInsufficientMaterial,
     isDrawByFivefoldRepetition,
     isDrawBy75MoveRule,
+    gameEndReason,
+    gameWinner,
+    gameResult,
     gameStatusMessage,
     isGameOver,
     canInteract,

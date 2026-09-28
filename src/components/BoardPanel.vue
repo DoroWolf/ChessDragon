@@ -16,7 +16,7 @@
             :aria-label="getSquareLabel(actualRow(displayRow - 1), actualCol(displayCol - 1))">
 
             <img class="square-background base" draggable="false"
-              :src="isWhiteSquare(actualRow(displayRow - 1), actualCol(displayCol - 1)) ? boardWhite : boardBlack"
+              :src="isWhiteSquare(actualRow(displayRow - 1), actualCol(displayCol - 1)) ? lightSquareTexture : darkSquareTexture"
               alt="" />
 
             <img v-if="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove, canPremove)"
@@ -70,11 +70,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import type { Board, Color, Piece } from '../models/chess'
 import Promotion from './Promotion.vue'
 import type { CSSProperties } from 'vue'
-import { boardWhite, boardBlack } from '../assets/resourcePaths'
+import { boardWhite, boardGray, boardBlack } from '../assets/resourcePaths'
 
 const props = defineProps<{
   board: Board
@@ -93,6 +93,7 @@ const props = defineProps<{
   timeoutWinner: Color | null
   coordinateLabelMode: 'off' | 'inside' | 'outside'
   isFlipped: boolean
+  theme?: 'light' | 'dark'
   premove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null
   lastMove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null
   canPremove?: boolean
@@ -130,6 +131,10 @@ const emit = defineEmits<{
   (e: 'cancel-promotion'): void
   (e: 'apply-promotion', piece: string): void
 }>()
+
+// 棋盘纹理：亮色主题 white/gray，暗色主题 gray/black
+const lightSquareTexture = computed(() => (props.theme === 'dark' ? boardGray : boardWhite))
+const darkSquareTexture = computed(() => (props.theme === 'dark' ? boardBlack : boardGray))
 
 const handleSquareTouchStart = (row: number, col: number, event: TouchEvent) => {
   emit('square-touchstart', row, col, event)

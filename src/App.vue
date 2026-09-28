@@ -10,6 +10,7 @@
       :promotion-pending="promotionPending" :promotion-style="promotionStyle" :is-draw="isDraw"
       :has-resigned="hasResigned" :timeout-winner="timeoutWinner" :coordinate-label-mode="coordinateLabelMode"
       :is-flipped="isFlipped"
+      :theme="theme"
       :premove="premove"
       :last-move="lastMove"
       :can-premove="canPremove"
@@ -34,6 +35,7 @@
       :white-time-seconds="whiteTimeSeconds"
       :black-time-seconds="blackTimeSeconds" :active-color="currentTurn" :clock-test-id="'sidebar-chess-clock'"
       :game-mode="gameMode" :dialogue-text="dialogueText" :dialogue-key="dialogueKey"
+      :theme="theme" :game-result="gameResult"
       v-model:is-sound-enabled="isSoundEnabled" v-model:coordinate-label-mode="coordinateLabelMode"
       @toggle-flip="isFlipped = !isFlipped" :has-game-started="hasGameStarted" @undo="handleUndo"
       @draw="handleDrawOffer" @resign="handleResign" @restart="handleRestart" @back-to-home="handleBackToHome" />
@@ -43,16 +45,17 @@
       <a href="https://github.com/DoroWolf/ChessDragon" target="_blank" rel="noopener" class="fab-btn" title="GitHub">
         <span class="fab-icon" v-html="githubSvg"></span>
       </a>
-      <button type="button" class="fab-btn" @click="showSettingsModal = true" title="设置">
+      <button type="button" class="fab-btn" @click="showSettingsModal = true" :title="t('app.settings')">
         <span class="fab-icon" v-html="settingSvg"></span>
       </button>
     </div>
 
     <!-- 设置弹窗 Modal -->
     <SettingsModal :visible="showSettingsModal" :is-sound-enabled="isSoundEnabled"
-      :coordinate-label-mode="coordinateLabelMode" @close="showSettingsModal = false"
+      :coordinate-label-mode="coordinateLabelMode" :theme="theme" @close="showSettingsModal = false"
       @update:is-sound-enabled="(val: boolean) => isSoundEnabled = val"
-      @update:coordinate-label-mode="(val: 'off' | 'inside' | 'outside') => coordinateLabelMode = val" />
+      @update:coordinate-label-mode="(val: 'off' | 'inside' | 'outside') => coordinateLabelMode = val"
+      @update:theme="(val: 'light' | 'dark') => theme = val" />
   </section>
 </template>
 
@@ -66,11 +69,15 @@ import { useSettings } from './composables/useSettings'
 import { useBoardDisplay } from './composables/useBoardDisplay'
 import { useGameState } from './composables/useGameState'
 import { useDragonDialogue } from './composables/useDragonDialogue'
+import { useI18n } from './composables/useI18n'
 import settingSvg from './assets/icon/setting.svg?raw'
 import githubSvg from './assets/icon/github.svg?raw'
 
 // ---- 设置持久化 ----
-const { isSoundEnabled, coordinateLabelMode } = useSettings()
+const { isSoundEnabled, coordinateLabelMode, theme } = useSettings()
+
+// ---- 国际化 ----
+const { t } = useI18n()
 
 // ---- 设置弹窗状态 ----
 const showSettingsModal = ref(false)
@@ -110,6 +117,8 @@ const {
   isDraw,
   hasResigned,
   gameStatusMessage,
+  gameEndReason,
+  gameResult,
   isGameOver,
   possibleMoves,
   promotionPending,
@@ -146,7 +155,7 @@ const { currentDialogue: dialogueText, dialogueKey } = useDragonDialogue(
   gameMode,
   playerColor,
   isGameOver,
-  gameStatusMessage,
+  gameEndReason,
   halfmoveClock,
   getPositionCount,
   isDrawByStalemate,

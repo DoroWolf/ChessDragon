@@ -3,7 +3,8 @@
 
 // ---------- 棋盘 ----------
 export const boardWhite = new URL('./texture/board/board_white.png', import.meta.url).href
-export const boardBlack = new URL('./texture/board/board_gray.png', import.meta.url).href
+export const boardGray = new URL('./texture/board/board_gray.png', import.meta.url).href
+export const boardBlack = new URL('./texture/board/board_black.png', import.meta.url).href
 export const boardMoveHover = new URL('./texture/board/board_move_hover.png', import.meta.url).href
 export const boardMoveCapture = new URL('./texture/board/board_move_capture.png', import.meta.url).href
 export const boardMoveHighlighted = new URL('./texture/board/board_move_highlighted.png', import.meta.url).href

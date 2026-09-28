@@ -5,51 +5,51 @@
             <img :src="titleImg" alt="Chess Dragon" class="title-img" />
         </div>
         <div class="home-buttons">
-            <button class="btn btn-home" @click="startSetup('ai')">人机对局</button>
-            <button class="btn btn-home" @click="startSetup('human')">双人对局</button>
-            <button class="btn btn-home" :disabled="true" @click="handleRemote">远程对局</button>
+            <button class="btn btn-home" @click="startSetup('ai')">{{ t('home.vsAI') }}</button>
+            <button class="btn btn-home" @click="startSetup('human')">{{ t('home.vsHuman') }}</button>
+            <button class="btn btn-home" :disabled="true" @click="handleRemote">{{ t('home.remote') }}</button>
         </div>
     </section>
 
     <!-- 对局设置面板 -->
     <section v-else class="setup-panel with-title">
         <div class="setup-section">
-            <h3>棋盘</h3>
+            <h3>{{ t('setup.board') }}</h3>
             <div class="option-group">
                 <label class="option-card-btn" :class="{ active: boardMode === 'standard' }">
                     <input v-model="boardMode" type="radio" value="standard" />
-                    <img :src="iconClassic" alt="" class="card-icon" />
-                    <span>标准棋盘</span>
+                    <span class="card-icon" v-html="iconClassicSvg"></span>
+                    <span>{{ t('setup.boardStandard') }}</span>
                 </label>
                 <label class="option-card-btn" :class="{ active: boardMode === 'chess960' }">
                     <input v-model="boardMode" type="radio" value="chess960" />
-                    <img :src="iconChess960" alt="" class="card-icon" />
-                    <span>Chess960</span>
+                    <span class="card-icon" v-html="iconChess960Svg"></span>
+                    <span>{{ t('setup.boardChess960') }}</span>
                 </label>
                 <label class="option-card-btn" :class="{ active: boardMode === 'custom' }">
                     <input v-model="boardMode" type="radio" value="custom" />
-                    <img :src="iconCustom" alt="" class="card-icon" />
-                    <span>自定义棋盘</span>
+                    <span class="card-icon" v-html="iconCustomSvg"></span>
+                    <span>{{ t('setup.boardCustom') }}</span>
                 </label>
             </div>
 
             <input v-if="boardMode === 'custom'" v-model="fenInput" type="text" class="fen-input"
-                placeholder="在此处粘贴 FEN 文本" />
-            <p v-if="boardMode === 'custom' && fenInput.trim() && !isFenValid" class="fen-hint">无效的 FEN</p>
+                :placeholder="t('setup.fenPlaceholder')" />
+            <p v-if="boardMode === 'custom' && fenInput.trim() && !isFenValid" class="fen-hint">{{ t('setup.invalidFen') }}</p>
         </div>
 
         <div class="setup-section">
-            <h3>棋钟</h3>
+            <h3>{{ t('setup.clock') }}</h3>
             <label class="slider-row">
-                <span>限时</span>
+                <span>{{ t('setup.timeLimit') }}</span>
                 <input v-model.number="timeMinutes" type="range" min="0" max="180" step="1" />
-                <strong>{{ timeMinutes === 0 ? '无限制' : `${timeMinutes} 分钟` }}</strong>
+                <strong>{{ timeMinutes === 0 ? t('setup.unlimited') : t('setup.minutes', { n: timeMinutes }) }}</strong>
             </label>
 
             <label v-if="timeMinutes > 0" class="slider-row">
-                <span>每步加时</span>
+                <span>{{ t('setup.increment') }}</span>
                 <input v-model.number="incrementSeconds" type="range" min="0" max="60" step="1" />
-                <strong>{{ incrementSeconds }} 秒</strong>
+                <strong>{{ t('setup.seconds', { n: incrementSeconds }) }}</strong>
             </label>
 
             <!-- 快捷棋钟组合按钮 -->
@@ -69,7 +69,7 @@
 
         <!-- 强度设置（仅人机对局） -->
         <div v-if="gameMode === 'ai'" class="setup-section">
-            <h3>强度</h3>
+            <h3>{{ t('setup.strength') }}</h3>
             <div class="option-group">
                 <label v-for="level in 5" :key="level" class="option-card-btn difficulty-card-btn"
                     :class="{ active: difficulty === level }">
@@ -81,44 +81,44 @@
 
         <!-- AI 风格设置（仅人机对局） -->
         <div v-if="gameMode === 'ai'" class="setup-section">
-            <h3>AI 风格</h3>
+            <h3>{{ t('setup.aiStyle') }}</h3>
             <div class="option-group">
                 <label class="option-card-btn" :class="{ active: aiStyle === 'balanced' }">
                     <input v-model="aiStyle" type="radio" value="balanced" />
-                    <span>均衡</span>
+                    <span>{{ t('setup.styleBalanced') }}</span>
                 </label>
                 <label class="option-card-btn" :class="{ active: aiStyle === 'aggressive' }">
                     <input v-model="aiStyle" type="radio" value="aggressive" />
-                    <span>进攻</span>
+                    <span>{{ t('setup.styleAggressive') }}</span>
                 </label>
                 <label class="option-card-btn" :class="{ active: aiStyle === 'defensive' }">
                     <input v-model="aiStyle" type="radio" value="defensive" />
-                    <span>防守</span>
+                    <span>{{ t('setup.styleDefensive') }}</span>
                 </label>
                 <label class="option-card-btn" :class="{ active: aiStyle === 'unpredictable' }">
                     <input v-model="aiStyle" type="radio" value="unpredictable" />
-                    <span>出其不意</span>
+                    <span>{{ t('setup.styleUnpredictable') }}</span>
                 </label>
             </div>
         </div>
 
         <div v-if="gameMode === 'ai'" class="setup-section">
-            <h3>执棋方</h3>
+            <h3>{{ t('setup.playAs') }}</h3>
             <div class="option-group">
                 <label class="option-card-btn starter-card-btn" :class="{ active: starter === 'black' }">
                     <input v-model="starter" type="radio" value="black" />
                     <img :src="kingBlackIcon" alt="" class="starter-icon" />
-                    <span>黑方</span>
+                    <span>{{ t('setup.sideBlack') }}</span>
                 </label>
                 <label class="option-card-btn starter-card-btn" :class="{ active: starter === 'random' }">
                     <input v-model="starter" type="radio" value="random" />
                     <img :src="kingRandomIcon" alt="" class="starter-icon" />
-                    <span>随机</span>
+                    <span>{{ t('setup.sideRandom') }}</span>
                 </label>
                 <label class="option-card-btn starter-card-btn" :class="{ active: starter === 'white' }">
                     <input v-model="starter" type="radio" value="white" />
                     <img :src="kingWhiteIcon" alt="" class="starter-icon" />
-                    <span>白方</span>
+                    <span>{{ t('setup.sideWhite') }}</span>
                 </label>
             </div>
         </div>
@@ -127,10 +127,10 @@
 
         <div class="setup-actions">
             <button type="button" class="btn bottom-btn" @click="screen = 'home'">
-                返回
+                {{ t('setup.back') }}
             </button>
             <button type="button" class="btn bottom-btn btn-primary start-btn" :disabled="!canStart" @click="handleStart">
-                开始对局
+                {{ t('setup.start') }}
             </button>
         </div>
     </section>
@@ -138,7 +138,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { titleImg, iconClassic, iconChess960, iconCustom, kingBlackIcon, kingRandomIcon, kingWhiteIcon } from '../assets/resourcePaths'
+import { titleImg, kingBlackIcon, kingRandomIcon, kingWhiteIcon } from '../assets/resourcePaths'
+import iconClassicSvg from '../assets/icon/classic.svg?raw'
+import iconChess960Svg from '../assets/icon/chess960.svg?raw'
+import iconCustomSvg from '../assets/icon/custom.svg?raw'
+import { useI18n } from '../composables/useI18n'
+
+const { t } = useI18n()
 
 export type AIStyle = 'balanced' | 'aggressive' | 'defensive' | 'unpredictable'
 
@@ -449,9 +455,20 @@ const handleStart = () => {
 }
 
 .card-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 1.8em;
     height: 1.8rem;
     flex-shrink: 0;
+    /* SVG 使用 currentColor，跟随主题文字色（暗色下为白色） */
+    color: var(--color-text-primary);
+}
+
+.card-icon :deep(svg) {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .starter-card-btn {

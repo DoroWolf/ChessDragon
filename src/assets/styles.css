@@ -121,7 +121,7 @@ textarea {
   border-radius: 0;
   
   font-family: 'Unifont', monospace;
-  color: var(--color-border);
+  color: var(--color-text-primary);
   background-color: transparent;
   border: 2px solid var(--color-border-light);
 
@@ -129,7 +129,7 @@ textarea {
   margin: 3px;
   box-sizing: border-box;
 
-  caret-color: var(--color-border);
+  caret-color: var(--color-text-primary);
 }
 
 input:disabled,
@@ -252,10 +252,10 @@ select {
 
   width: 2px;
   height: 2px;
-  background-color: #2b2b2b;
-  box-shadow: 
-    8px 0 0 #2b2b2b,
-    2px 2px 0 #2b2b2b,
-    6px 2px 0 #2b2b2b,
-    4px 4px 0 #2b2b2b;
+  background-color: var(--color-text-primary);
+  box-shadow:
+    8px 0 0 var(--color-text-primary),
+    2px 2px 0 var(--color-text-primary),
+    6px 2px 0 var(--color-text-primary),
+    4px 4px 0 var(--color-text-primary);
 }

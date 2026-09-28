@@ -44,3 +44,44 @@
   --color-overlay-medium: rgba(0, 0, 0, 0.45);
   --color-overlay-heavy: rgba(0, 0, 0, 0.5);
 }
+
+/* ===== 暗色主题 ===== */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* ===== 页面背景 ===== */
+  /* 使用深炭灰而非纯黑，避免过于刺眼 */
+  --color-page-bg: #1c1c1e;
+
+  /* ===== 表面 / 卡片 ===== */
+  --color-surface: #2a2a2c;
+  --color-surface-border: #e7e7e7;
+  --color-surface-shadow: #3f3f41;
+
+  /* ===== 文本 ===== */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #e7e7e7;
+  --color-text-muted: #a0a0a0;
+  --color-text-on-primary: #ffffff;
+  --color-text-inverse: #F3F9FC;
+
+  /* ===== 滑块 ===== */
+  --color-input-track-bg: #444446;
+  --color-input-slider-bg: #e7e7e7;
+
+  /* ===== 按钮 ===== */
+  --color-btn-bg: #3a3a3c;
+
+  /* ===== 边框 ===== */
+  --color-border-light: #4d4d4d;
+  --color-border-medium: #7a7a7a;
+  --color-border-secondary: #b0b0b0;
+
+  /* ===== 错误 ===== */
+  --color-error: #ff6b6b;
+
+  /* ===== 遮罩 ===== */
+  --color-overlay-hover: rgba(255, 255, 255, 0.12);
+  --color-overlay-medium: rgba(0, 0, 0, 0.6);
+  --color-overlay-heavy: rgba(0, 0, 0, 0.7);
+}

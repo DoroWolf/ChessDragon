@@ -1,6 +1,7 @@
 import { ref, watch, computed, type Ref } from 'vue'
 import type { Board, Color, PieceType } from '../models/chess'
 import { isKingInCheck, cloneBoard } from '../models/chess'
+import type { GameEndReason } from './useGameState'
 import dialogueData from '../data/dialogue/zh_cn.json'
 
 // ============================================================
@@ -59,7 +60,7 @@ export function useDragonDialogue(
   gameMode: Ref<'ai' | 'human' | 'remote'>,
   playerColor: Ref<Color>,
   isGameOver: Ref<boolean>,
-  gameStatusMessage: Ref<string | undefined>,
+  gameEndReason: Ref<GameEndReason | null>,
   halfmoveClock: Ref<number>,
   getPositionCount: () => number,
   isDrawByStalemate: Ref<boolean>,
@@ -180,35 +181,34 @@ export function useDragonDialogue(
     return getRandomLine('exchange')
   }
 
-  // ---- 根据 gameStatusMessage 确定终局台词类别 ----
+  // ---- 根据对局结束原因确定终局台词类别 ----
   function getEndGameCategory(): string | null {
-    const msg = gameStatusMessage.value
-    if (!msg) return null
+    const reason = gameEndReason.value
+    if (!reason) return null
 
     const aiWins = (): boolean => {
-      if (msg.includes('黑方胜利') && aiColor.value === 'black') return true
-      if (msg.includes('白方胜利') && aiColor.value === 'white') return true
-      return false
+      const winner: Color = currentTurn.value === 'white' ? 'black' : 'white'
+      return winner === aiColor.value
     }
 
-    if (msg.includes('将死')) {
+    if (reason === 'checkmate') {
       return aiWins() ? 'win.checkmate' : 'lose.checkmate'
     }
 
-    if (msg.includes('超时')) {
+    if (reason === 'timeout') {
       if (timeoutWinner.value === aiColor.value) return 'win.timeout'
       if (timeoutWinner.value === playerColor.value) return 'lose.timeout'
       // 双方超时无赢家 = 和棋
       return getDrawCategory()
     }
 
-    if (msg.includes('认输')) {
+    if (reason === 'resign') {
       // 认输方是玩家 → AI 赢了
       if (hasResigned.value === playerColor.value) return 'win.resign'
       return 'lose.checkmate' // 不太可能，但 fallback
     }
 
-    if (msg.includes('和棋')) {
+    if (reason === 'draw') {
       return getDrawCategory()
     }
 
@@ -220,7 +220,7 @@ export function useDragonDialogue(
     if (halfmoveClock.value >= 100) return 'draw.50move'
     if (getPositionCount() >= 3) return 'draw.repetition'
     if (isDrawByInsufficientMaterial.value) return 'draw.stalemate' // 无独立台词，用相近类别
-    if (timeoutWinner.value === null && gameStatusMessage.value?.includes('超时')) return 'draw.timeout'
+    if (timeoutWinner.value === null && gameEndReason.value === 'timeout') return 'draw.timeout'
     return 'draw.stalemate'
   }
 
@@ -263,12 +263,12 @@ export function useDragonDialogue(
 
   // ---- 监听回合切换 & 游戏结束 ----
   watch(
-    [currentTurn, isGameOver, gameStatusMessage],
+    [currentTurn, isGameOver, gameEndReason],
     () => {
       if (!isAIEnabled.value) return
 
       // 游戏结束：立即显示终局台词
-      if (isGameOver.value && gameStatusMessage.value) {
+      if (isGameOver.value && gameEndReason.value) {
         const category = getEndGameCategory()
         if (category) {
           const line = getRandomLine(category)
