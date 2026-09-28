@@ -1,10 +1,10 @@
 <template>
   <aside class="sidebar">
-    <DragonDialogue
+    <!--<DragonDialogue
       :text="dialogueText"
       :dialogue-key="dialogueKey"
       :is-ai-enabled="gameMode === 'ai'"
-    />
+    />-->
 
     <ChessClock :is-clock-enabled="isClockEnabled" :white-time-seconds="whiteTimeSeconds"
       :black-time-seconds="blackTimeSeconds" :active-color="activeColor" :has-game-started="hasGameStarted" :test-id="clockTestId" />
