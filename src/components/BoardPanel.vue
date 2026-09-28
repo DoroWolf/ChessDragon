@@ -358,11 +358,11 @@ watch(pieceScale, (val) => {
 }
 
 .coordinate-label.text-black {
-  color: var(--color-board-dark);
+  color: var(--color-coord-on-light);
 }
 
 .coordinate-label.text-white {
-  color: var(--color-board-light);
+  color: var(--color-coord-on-dark);
 }
 
 .promotion-overlay {
