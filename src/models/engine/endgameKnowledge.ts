@@ -21,8 +21,8 @@ import type { Board, Color, Square } from '../chess'
 // ============================================================
 // 常量
 // ============================================================
-/** 开放 KBNK 残局知识所需的最低 AI 强度等级（即 4-5 级生效） */
-export const KBNK_MIN_LEVEL = 4
+/** 开放 KBNK 残局知识所需的最低 AI 强度等级 */
+export const KBNK_MIN_LEVEL = 3
 
 /** KBNK 局面（王+象+马 vs 王）的总子力：象 330 + 马 320 = 650 */
 export const KBNK_MATERIAL = 650

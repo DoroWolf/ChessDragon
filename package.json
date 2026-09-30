@@ -13,8 +13,7 @@
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
     "format": "prettier --write --experimental-cli src/",
-    "generate:opening-book": "node scripts/generateOpeningBook.ts",
-    "verify:kbnk": "node scripts/verifyKBNK.mjs"
+    "generate:opening-book": "node scripts/generateOpeningBook.ts"
   },
   "dependencies": {
     "vue": "^3.5.38",

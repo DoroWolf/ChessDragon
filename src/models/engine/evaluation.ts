@@ -9,13 +9,25 @@ import type { Board, Color } from '../chess'
 import { PIECE_VALUE_ARRAY, PIECE_TYPE_INDEX, COLOR_INDEX } from './types'
 import { PST_BY_COLOR, PST_KING_ENDGAME } from './pieceSquareTables'
 import { isEndgameFast } from './searchState'
-import { searchStyle, searchDifficulty, trackedMaterial } from './searchState'
+import { searchStyle, searchDifficulty, searchCastlingRights, trackedMaterial } from './searchState'
 import { evaluateKBNK, KBNK_MATERIAL, KBNK_MIN_LEVEL } from './endgameKnowledge'
+import { getSyzygyStore, wdlToScore } from './syzygy/store'
 
 // ============================================================
 // 内部棋盘评估函数
 // ============================================================
-export function evaluateBoardInternal(b: Board, perspective: Color): number {
+export function evaluateBoardInternal(
+  b: Board,
+  perspective: Color,
+  hasEnPassant = false,
+): number {
+  // Syzygy 残局库：命中时直接返回库值（胜过任何启发式评估）
+  const syzygy = getSyzygyStore()
+  if (syzygy.active && !hasEnPassant && searchCastlingRights === 0) {
+    const wdl = syzygy.probeWdl(b, perspective, false)
+    if (wdl !== undefined) return wdlToScore(wdl)
+  }
+
   let score = 0
   const endgame = isEndgameFast(trackedMaterial)
   const pstKingIdx = endgame ? PST_KING_ENDGAME : PIECE_TYPE_INDEX['king']!

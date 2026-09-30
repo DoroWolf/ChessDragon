@@ -62,7 +62,7 @@ export function quiescenceSearch(
 
   let standPat = -INF
   if (!inCheck) {
-    standPat = evaluateBoardInternal(board, currentColor)
+    standPat = evaluateBoardInternal(board, currentColor, enPassantTarget !== null)
     if (standPat >= beta) return beta
     if (standPat > alpha) alpha = standPat
   }

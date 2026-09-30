@@ -1,5 +1,10 @@
 import { getBestAIMove } from '../models/ai'
 import type { Board, Color, Square } from '../models/chess'
+import { setSyzygyLoader } from '../models/engine/syzygy/store'
+import { browserTableLoader } from '../models/engine/syzygy/browserLoader'
+
+// 注册残局库文件加载器（按需 fetch，不会在启动时下载）
+setSyzygyLoader(browserTableLoader)
 
 // ============================================================
 // 消息类型

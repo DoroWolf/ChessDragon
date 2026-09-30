@@ -14,13 +14,14 @@ import { makeMove, unmakeMove } from './boardChange'
 import { generateLegalMoves, } from './moveGeneration'
 import { killerMoves, historyTable } from './killerHistory'
 import { iterativeDeepening } from './iterativeDeepening'
-import { findKing, initSearchState, searchHash } from './searchState'
+import { findKing, initSearchState, searchHash, searchCastlingRights } from './searchState'
 import {
   board,
   getKingRow,
   getKingCol,
 } from './searchState'
 import { probeBookForLevel, pickBookMove } from './openingBook'
+import { getSyzygyStore } from './syzygy/store'
 
 // ============================================================
 // getBestAIMove
@@ -66,6 +67,20 @@ export async function getBestAIMove(
   const moves = generateLegalMoves(board, color, epTarget, false, lastMove, kRow, kCol)
   if (moves.length === 0) return null
   if (moves.length === 1) return moves[0]!
+
+  // 残局库（Syzygy）：3 级及以上按等级门槛启用
+  // 局面在库中时用 WDL 过滤走法、DTZ 挑最快的取胜路线
+  const syzygy = getSyzygyStore()
+  syzygy.setLevel(difficulty)
+  if (syzygy.active && searchCastlingRights === 0) {
+    try {
+      await syzygy.prepare(board, color, epTarget !== null)
+      const tbMove = syzygy.selectMove(board, color, moves, epTarget !== null)
+      if (tbMove) return tbMove
+    } catch (err) {
+      console.warn('syzygy probe failed:', err)
+    }
+  }
 
   // 尝试开局库：1 级 AI 不使用开局库；其余等级仅采用 minLevel <= difficulty 的走法
   const bookMoves = probeBookForLevel(searchHash, difficulty)
