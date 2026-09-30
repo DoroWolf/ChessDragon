@@ -77,8 +77,7 @@ import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import type { Board, Color, Piece } from '../models/chess'
 import Promotion from './Promotion.vue'
 import type { CSSProperties } from 'vue'
-import { boardWhite, boardGray, boardBlack } from '../assets/resourcePaths'
-import { boardMovePlaceable } from '../assets/resourcePaths'
+import { boardMovePlaceable, boardWhite, boardGray, boardBlack } from '../assets/resourcePaths'
   
 const props = defineProps<{
   board: Board
