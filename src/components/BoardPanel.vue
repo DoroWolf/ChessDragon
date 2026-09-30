@@ -20,8 +20,11 @@
               alt="" />
 
             <img v-if="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove, canPremove)"
-              class="square-background overlay" draggable="false"
-              :src="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove, canPremove)!" alt="" />
+              class="square-background overlay" 
+              :class="{ 'placeable': isMovePlaceableOverlay(actualRow(displayRow - 1), actualCol(displayCol - 1)) }"
+              draggable="false"
+              :src="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove, canPremove)!" 
+              alt="" />
 
             <img v-if="board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]" class="piece"
               draggable="false" :class="{
@@ -75,7 +78,8 @@ import type { Board, Color, Piece } from '../models/chess'
 import Promotion from './Promotion.vue'
 import type { CSSProperties } from 'vue'
 import { boardWhite, boardGray, boardBlack } from '../assets/resourcePaths'
-
+import { boardMovePlaceable } from '../assets/resourcePaths'
+  
 const props = defineProps<{
   board: Board
   currentTurn: Color
@@ -161,6 +165,10 @@ const displayedFile = (displayCol: number): string =>
 const displayedRank = (displayRow: number): string =>
   `${8 - actualRow(displayRow - 1)}`
 
+const isMovePlaceableOverlay = (row: number, col: number): boolean => {
+  const overlayTexture = getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, row, col, premove, lastMove, canPremove)
+  return overlayTexture === boardMovePlaceable
+  }
 // 缩放适配
 const pieceScale = ref(1.5)
 const boardGridRef = ref<HTMLElement | null>(null)
@@ -270,6 +278,10 @@ watch(pieceScale, (val) => {
   height: 100%;
   z-index: 1;
   pointer-events: none;
+}
+
+.square-background.overlay.placeable {
+  transform: scaleY(-1);
 }
 
 .piece {
