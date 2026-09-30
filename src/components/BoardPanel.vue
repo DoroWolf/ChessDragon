@@ -20,10 +20,10 @@
               alt="" />
 
             <img v-if="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove, canPremove)"
-              class="square-background overlay" 
-              :class="{ 'placeable': isMovePlaceableOverlay(actualRow(displayRow - 1), actualCol(displayCol - 1)) }"
+              class="square-background overlay"
+              :class="{ 'placeable': isMovePlaceableOverlay(actualRow(displayRow - 1), actualCol(displayCol - 1)), 'placeable-mirror': shouldMirrorMoveableOverlay(actualRow(displayRow - 1), actualCol(displayCol - 1)) }"
               draggable="false"
-              :src="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove, canPremove)!" 
+              :src="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove, canPremove)!"
               alt="" />
 
             <img v-if="board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]" class="piece"
@@ -78,7 +78,7 @@ import type { Board, Color, Piece } from '../models/chess'
 import Promotion from './Promotion.vue'
 import type { CSSProperties } from 'vue'
 import { boardMovePlaceable, boardWhite, boardGray, boardBlack } from '../assets/resourcePaths'
-  
+
 const props = defineProps<{
   board: Board
   currentTurn: Color
@@ -175,10 +175,21 @@ const isMovePlaceableOverlay = (row: number, col: number): boolean => {
     col,
     props.premove,
     props.lastMove,
-    props.canPremove
+    props.canPremove,
   )
   return overlayTexture === boardMovePlaceable
 }
+
+const shouldMirrorMoveableOverlay = (row: number, col: number): boolean => {
+  if (!isMovePlaceableOverlay(row, col)) {
+    return false
+  }
+
+  // 黑方在棋盘上方时，moveable 脚印朝下；黑方在下方时朝上。
+  // 这里不新建资源，只在上半部分/下半部分用 CSS 镜像。
+  return props.isFlipped ? row >= 4 : row < 4
+}
+
 // 缩放适配
 const pieceScale = ref(1.5)
 const boardGridRef = ref<HTMLElement | null>(null)
@@ -290,7 +301,7 @@ watch(pieceScale, (val) => {
   pointer-events: none;
 }
 
-.square-background.overlay.placeable {
+.square-background.overlay.placeable-mirror {
   transform: scaleY(-1);
 }
 
