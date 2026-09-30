@@ -20,7 +20,7 @@ import {
   getKingRow,
   getKingCol,
 } from './searchState'
-import { probeBook, pickBookMove } from './openingBook'
+import { probeBookForLevel, pickBookMove } from './openingBook'
 
 // ============================================================
 // getBestAIMove
@@ -67,8 +67,8 @@ export async function getBestAIMove(
   if (moves.length === 0) return null
   if (moves.length === 1) return moves[0]!
 
-  // 尝试开局库：如果当前局面在开局库中，按权重选一个走法
-  const bookMoves = probeBook(searchHash)
+  // 尝试开局库：1 级 AI 不使用开局库；其余等级仅采用 minLevel <= difficulty 的走法
+  const bookMoves = probeBookForLevel(searchHash, difficulty)
   if (bookMoves && bookMoves.length > 0) {
     const bookMove = pickBookMove(bookMoves)
     if (bookMove) {

@@ -1,17 +1,18 @@
 /**
  * 开局库预计算脚本
  *
- * 从 src/data/openingLines.json 读取所有开局线路，
+ * 从 src/data/openingLines.yaml 读取所有开局线路，
  * 使用 xorshift32(0xdeadbeef) 初始化 Zobrist 表，
  * 逐步模拟每一步棋后计算 Zobrist Hash，
  * 将所有 Hash → BookMove[] 映射导出为 src/data/openingBook.json。
  *
- * 用法: npx tsx scripts/generateOpeningBook.ts
+ * 用法: node scripts/generateOpeningBook.ts
  */
 
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parse as parseYaml } from 'yaml'
 
 // ============================================================
 // Types
@@ -31,9 +32,22 @@ interface BookMove {
   rookFrom?: { row: number; col: number }
   rookTo?: { row: number; col: number }
   weight: number
+  /** 采用该走法所需的最低 AI 强度等级（1 级不使用开局库） */
+  minLevel: number
 }
 
-type OpeningLine = RawMove[]
+/** openingLines.yaml 中的单条线路 */
+interface OpeningLineDef {
+  name?: string
+  minLevel: number
+  moves: RawMove[]
+}
+
+/** openingLines.yaml 的整体结构 */
+interface OpeningLinesFile {
+  version?: number
+  lines: OpeningLineDef[]
+}
 
 // ============================================================
 // Seeded PRNG (xorshift32, same seed as zobrist.ts)
@@ -251,7 +265,8 @@ function applyRawMove(
 // ============================================================
 
 function applyOpeningLine(
-  line: OpeningLine,
+  line: RawMove[],
+  minLevel: number,
   bookMap: Map<number, BookMove[]>,
 ): void {
   let board = createInitialBoard()
@@ -275,6 +290,7 @@ function applyOpeningLine(
       toRow: move.t[0],
       toCol: move.t[1],
       weight: 2,
+      minLevel,
     }
 
     if (pt === 'king' && Math.abs(move.t[1] - move.f[1]) === 2) {
@@ -305,6 +321,8 @@ function applyOpeningLine(
         existing.push(detailedMove)
       } else {
         dup.weight += 1
+        // 同一条走法可能出现在多条线路中，取最低等级，保证弱 AI 也能用
+        if (detailedMove.minLevel < dup.minLevel) dup.minLevel = detailedMove.minLevel
       }
     } else {
       bookMap.set(hash, [detailedMove])
@@ -325,20 +343,54 @@ function applyOpeningLine(
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const projectRoot = path.resolve(__dirname, '..')
 
-const linesPath = path.join(projectRoot, 'src', 'data', 'openingLines.json')
+const linesPath = path.join(projectRoot, 'src', 'data', 'openingLines.yaml')
 const outputPath = path.join(projectRoot, 'src', 'data', 'openingBook.json')
 
-const lines: OpeningLine[] = JSON.parse(fs.readFileSync(linesPath, 'utf-8'))
+const file = parseYaml(fs.readFileSync(linesPath, 'utf-8')) as OpeningLinesFile | null
+if (!file || !Array.isArray(file.lines)) {
+  throw new Error(`❌ Invalid opening lines YAML: ${linesPath}`)
+}
 
 const bookMap = new Map<number, BookMove[]>()
 
-for (const line of lines) {
-  applyOpeningLine(line, bookMap)
+for (const line of file.lines) {
+  applyOpeningLine(line.moves, line.minLevel, bookMap)
+}
+
+// 对同一局面下的走法做确定性排序，使生成结果与 YAML 中线路的先后顺序无关
+for (const moves of bookMap.values()) {
+  moves.sort(
+    (a, b) =>
+      a.fromRow - b.fromRow ||
+      a.fromCol - b.fromCol ||
+      a.toRow - b.toRow ||
+      a.toCol - b.toCol ||
+      (a.special ?? '').localeCompare(b.special ?? ''),
+  )
 }
 
 // Convert Map to array of [hash, moves] for JSON serialization
 const output: [number, BookMove[]][] = Array.from(bookMap.entries())
 
-fs.writeFileSync(outputPath, JSON.stringify(output), 'utf-8')
+// 顶层按 hash 升序排列，使生成结果与 YAML 中线路的先后顺序完全无关
+output.sort((a, b) => a[0] - b[0])
+
+/**
+ * 递归地对对象键排序，保证输出顺序稳定，
+ * 与仓库中既有的 openingBook.json 格式一致，便于复查 diff。
+ */
+function sortKeysDeep(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortKeysDeep)
+  if (value !== null && typeof value === 'object') {
+    const sorted: Record<string, unknown> = {}
+    for (const key of Object.keys(value as Record<string, unknown>).sort()) {
+      sorted[key] = sortKeysDeep((value as Record<string, unknown>)[key])
+    }
+    return sorted
+  }
+  return value
+}
+
+fs.writeFileSync(outputPath, JSON.stringify(sortKeysDeep(output), null, 4), 'utf-8')
 
 console.log(`✅ Opening book generated: ${output.length} unique positions → ${outputPath}`)

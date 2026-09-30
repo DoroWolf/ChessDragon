@@ -1,7 +1,7 @@
 // ============================================================
 // Opening Book（开局库）
 // Polyglot 风格：Zobrist Hash → 加权走法列表的映射
-// 数据由 scripts/generateOpeningBook.ts 从 openingLines.json
+// 数据由 scripts/generateOpeningBook.ts 从 openingLines.yaml
 // 预计算生成，运行时直接加载 JSON 无需重算 Zobrist
 // ============================================================
 import type { AIDetailedMove } from './types'
@@ -21,12 +21,16 @@ interface PrecomputedBookMove {
   rookFrom?: { row: number; col: number }
   rookTo?: { row: number; col: number }
   weight: number
+  /** 采用该走法所需的最低 AI 强度等级（1 级不使用开局库） */
+  minLevel: number
 }
 
 /** 带权重的走法 */
 export interface BookMove {
   move: AIDetailedMove
   weight: number
+  /** 采用该走法所需的最低 AI 强度等级（1 级不使用开局库） */
+  minLevel: number
 }
 
 // ============================================================
@@ -45,6 +49,7 @@ function ensureLoaded(): void {
       hash,
       rawMoves.map((raw): BookMove => ({
         weight: raw.weight,
+        minLevel: raw.minLevel,
         move: {
           fromRow: raw.fromRow,
           fromCol: raw.fromCol,
@@ -70,6 +75,24 @@ function ensureLoaded(): void {
 export function probeBook(hash: number): BookMove[] | null {
   ensureLoaded()
   return bookMap!.get(hash) ?? null
+}
+
+/**
+ * 根据 Zobrist Hash 与 AI 强度等级查询开局库
+ *
+ * 1 级 AI 不使用开局库；其余等级仅返回 minLevel <= difficulty 的走法，
+ * 从而让较弱的 AI 只走较短的线路，较强的 AI 才使用深层理论。
+ *
+ * @returns 过滤后的候选走法列表，若不可用则返回 null
+ */
+export function probeBookForLevel(hash: number, difficulty: number): BookMove[] | null {
+  if (difficulty <= 1) return null
+
+  const candidates = probeBook(hash)
+  if (!candidates) return null
+
+  const eligible = candidates.filter((c) => c.minLevel <= difficulty)
+  return eligible.length > 0 ? eligible : null
 }
 
 /**
