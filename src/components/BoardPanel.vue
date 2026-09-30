@@ -165,9 +165,20 @@ const displayedRank = (displayRow: number): string =>
   `${8 - actualRow(displayRow - 1)}`
 
 const isMovePlaceableOverlay = (row: number, col: number): boolean => {
-  const overlayTexture = getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, row, col, premove, lastMove, canPremove)
+  const overlayTexture = props.getOverlayTexture(
+    props.board,
+    props.selectedSquare,
+    props.possibleMoves,
+    props.isDragging,
+    props.hoverSquare,
+    row,
+    col,
+    props.premove,
+    props.lastMove,
+    props.canPremove
+  )
   return overlayTexture === boardMovePlaceable
-  }
+}
 // 缩放适配
 const pieceScale = ref(1.5)
 const boardGridRef = ref<HTMLElement | null>(null)
