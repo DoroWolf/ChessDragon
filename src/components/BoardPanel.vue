@@ -184,12 +184,22 @@ const shouldMirrorMoveableOverlay = (row: number, col: number): boolean => {
   if (!isMovePlaceableOverlay(row, col)) {
     return false
   }
+  const selected = props.selectedSquare
+  if (!selected) {
+    return false
+  }
+  const piece =
+    props.board[selected.row]?.[selected.col]
 
-  // 黑方在棋盘上方时，moveable 脚印朝下；黑方在下方时朝上。
-  // 这里不新建资源，只在上半部分/下半部分用 CSS 镜像。
-  return props.isFlipped ? row >= 4 : row < 4
+  if (!piece) {
+    return false
+  }
+  // 当前位于棋盘上方的一方
+  const topColor: Color =
+    props.isFlipped ? 'white' : 'black'
+
+  return piece.color === topColor
 }
-
 // 缩放适配
 const pieceScale = ref(1.5)
 const boardGridRef = ref<HTMLElement | null>(null)
