@@ -9,7 +9,8 @@ import type { Board, Color } from '../chess'
 import { PIECE_VALUE_ARRAY, PIECE_TYPE_INDEX, COLOR_INDEX } from './types'
 import { PST_BY_COLOR, PST_KING_ENDGAME } from './pieceSquareTables'
 import { isEndgameFast } from './searchState'
-import { searchStyle, trackedMaterial } from './searchState'
+import { searchStyle, searchDifficulty, trackedMaterial } from './searchState'
+import { evaluateKBNK, KBNK_MATERIAL, KBNK_MIN_LEVEL } from './endgameKnowledge'
 
 // ============================================================
 // 内部棋盘评估函数
@@ -35,6 +36,13 @@ export function evaluateBoardInternal(b: Board, perspective: Color): number {
 
       score += sign * (baseValue + posValue)
     }
+  }
+
+  // KBNK 残局知识（4-5 级 AI 开放）：
+  // 王+象+马 vs 王 的子力恒定，靠 PST 无法完成驱赶与杀王，
+  // 这里叠加残局知识分，引导 AI 把孤王逼到与象同色的角落成杀
+  if (searchDifficulty >= KBNK_MIN_LEVEL && trackedMaterial === KBNK_MATERIAL) {
+    score += evaluateKBNK(b, perspective)
   }
 
   // 风格调整

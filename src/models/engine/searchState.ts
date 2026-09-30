@@ -16,6 +16,8 @@ import { getEnPassantTarget } from '../chess'
 export let board: Board = []
 export let searchColor: Color = 'white'
 export let searchStyle: AIStyle = 'balanced'
+// 当前 AI 强度等级（1-5），供残局知识等按等级开放的功能读取
+export let searchDifficulty: number = 3
 export let searchHash: number = 0
 export let searchCastlingRights: number = 0
 export let searchStartTime: number = 0
@@ -203,6 +205,7 @@ export function initSearchState(b: Board, color: Color, style: AIStyle, difficul
   board = b
   searchColor = color
   searchStyle = style
+  searchDifficulty = difficulty
   searchStartTime = performance.now()
   searchStopped = false
   searchNodes = 0
