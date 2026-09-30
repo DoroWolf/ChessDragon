@@ -35,7 +35,13 @@
 
             <input v-if="boardMode === 'custom'" v-model="fenInput" type="text" class="fen-input"
                 :placeholder="t('setup.fenPlaceholder')" />
-            <p v-if="boardMode === 'custom' && fenInput.trim() && !isFenValid" class="fen-hint">{{ t('setup.invalidFen') }}</p>
+
+            <template v-if="boardMode === 'custom' && fenInput.trim()">
+                <!-- 用棋盘与棋子 icon 拼出当前 FEN 的预览 -->
+                <FenPreview v-if="fenPreviewBoard" :board="fenPreviewBoard" :theme="theme"
+                    :valid="isFenValid" />
+                <p v-if="fenErrorKey" class="fen-hint">{{ t(fenErrorKey) }}</p>
+            </template>
         </div>
 
         <div class="setup-section">
@@ -143,6 +149,13 @@ import iconClassicSvg from '../assets/icon/classic.svg?raw'
 import iconChess960Svg from '../assets/icon/chess960.svg?raw'
 import iconCustomSvg from '../assets/icon/custom.svg?raw'
 import { useI18n } from '../composables/useI18n'
+import { validateFen, type FenErrorCode } from '../models/fen'
+import type { MessageKey } from '../data/i18n'
+import FenPreview from './FenPreview.vue'
+
+defineProps<{
+    theme?: 'light' | 'dark'
+}>()
 
 const { t } = useI18n()
 
@@ -228,46 +241,38 @@ watch(boardMode, (newMode) => {
 })
 
 // ============================================================
-// FEN 验证
+// FEN 验证与预览
 // ============================================================
-const validateFen = (fen: string): boolean => {
-    const trimmed = fen.trim()
-    if (!trimmed) return false
+const fenValidation = computed(() => validateFen(fenInput.value))
 
-    const parts = trimmed.split(/\s+/)
-    if (parts.length < 2) return false
-
-    const boardPart = parts[0]
-    if (!boardPart) return false
-
-    const rows = boardPart.split('/')
-    if (rows.length !== 8) return false
-
-    for (const row of rows) {
-        let colCount = 0
-        for (const char of row) {
-            if (/\d/.test(char)) {
-                colCount += Number.parseInt(char, 10)
-            } else if (/[prnbqkPRNBQK]/.test(char)) {
-                colCount += 1
-            } else {
-                return false
-            }
-        }
-        if (colCount !== 8) return false
-    }
-
-    const turnPart = parts[1]
-    if (turnPart !== 'w' && turnPart !== 'b') return false
-
-    return true
+// 各类校验失败原因对应的提示文案
+const FEN_ERROR_KEYS: Record<FenErrorCode, MessageKey> = {
+    format: 'setup.invalidFen',
+    king: 'setup.fenKingCount',
+    pawnRank: 'setup.fenPawnRank',
+    pieceCount: 'setup.fenPieceCount',
+    illegalCheck: 'setup.fenIllegalCheck',
+    checkmate: 'setup.fenCheckmate',
+    stalemate: 'setup.fenStalemate',
+    insufficientMaterial: 'setup.fenInsufficientMaterial',
 }
 
+// 空输入时只禁止开始，不提示错误
 const isFenValid = computed(() => {
     if (boardMode.value !== 'custom') return true
-    const trimmed = fenInput.value.trim()
-    if (!trimmed) return true
-    return validateFen(trimmed)
+    if (!fenInput.value.trim()) return true
+    return fenValidation.value.valid
+})
+
+// 棋子摆放可解析时即给出预览（即使局面不合法也照常显示，便于用户定位问题）
+const fenPreviewBoard = computed(() =>
+    boardMode.value === 'custom' ? fenValidation.value.board : null,
+)
+
+const fenErrorKey = computed<MessageKey | null>(() => {
+    if (boardMode.value !== 'custom' || !fenInput.value.trim()) return null
+    const error = fenValidation.value.error
+    return error ? FEN_ERROR_KEYS[error] : null
 })
 
 const buildChess960Fen = (): string => {

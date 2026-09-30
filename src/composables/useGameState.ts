@@ -13,6 +13,7 @@ import {
   generateMoveNotation,
 } from '../models/chess'
 import type { GameSetupConfig, AIStyle } from '../components/GameSetup.vue'
+import { parseFen } from '../models/fen'
 import { getPromotionChoice, type AIDifficulty } from '../models/ai'
 import type { AIDetailedMove } from '../models/ai'
 import AIWorker from '../workers/ai-worker?worker'
@@ -139,52 +140,7 @@ export function useGameState(
     return Math.random() > 0.5 ? 'white' : 'black'
   }
 
-  const parseFenToBoard = (fen: string): { board: Board; turn: Color } | null => {
-    const parts = fen.trim().split(/\s+/)
-    const boardPart = parts[0]
-    if (!boardPart) return null
-
-    // 解析走棋方（FEN 第二部分）
-    const turnPart = parts[1]
-    const fenTurn: Color = turnPart === 'b' ? 'black' : 'white'
-
-    const rows = boardPart.split('/')
-    if (rows.length !== 8) return null
-
-    const nextBoard: Board = Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => null))
-
-    for (let rowIndex = 0; rowIndex < 8; rowIndex += 1) {
-      let colIndex = 0
-      const row = rows[rowIndex]
-      if (!row) return null
-
-      for (const char of row) {
-        if (/\d/.test(char)) {
-          colIndex += Number.parseInt(char, 10)
-          continue
-        }
-
-        const pieceColor: Color = char === char.toLowerCase() ? 'black' : 'white'
-        const pieceTypeMap: Record<string, Piece['type']> = {
-          p: 'pawn',
-          n: 'knight',
-          b: 'bishop',
-          r: 'rook',
-          q: 'queen',
-          k: 'king',
-        }
-        const pieceType = pieceTypeMap[char.toLowerCase()]
-        if (!pieceType) return null
-
-        nextBoard[rowIndex]![colIndex] = { type: pieceType, color: pieceColor, hasMoved: false }
-        colIndex += 1
-      }
-
-      if (colIndex !== 8) return null
-    }
-
-    return { board: nextBoard, turn: fenTurn }
-  }
+  const parseFenToBoard = (fen: string): { board: Board; turn: Color } | null => parseFen(fen)
 
   // ============================================================
   // 音效

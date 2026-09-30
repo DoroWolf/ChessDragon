@@ -31,8 +31,12 @@ export const kingRandomIcon = new URL('./texture/icon/king_random_icon.png', imp
 export const kingWhiteIcon = new URL('./texture/icon/king_white_icon.png', import.meta.url).href
 
 // ---------- 升变 ----------
+export function pieceIconImg(type: string, color: string): string {
+  return new URL(`./texture/icon/${type}_${color}_icon.png`, import.meta.url).href
+}
+
 export function promotionImg(piece: string, color: string): string {
-  return new URL(`./texture/icon/${piece}_${color}_icon.png`, import.meta.url).href
+  return pieceIconImg(piece, color)
 }
 
 // ---------- 音效 ----------

@@ -2,7 +2,7 @@
   <section class="game-container" :class="{ 'global-dragging': isMouseDown && dragStartSquare }"
     :style="{ '--piece-scale': pieceScale }">
 
-    <GameSetup v-if="showSetup" @start="handleGameSetupStart" @remote="handleRemoteGame" />
+    <GameSetup v-if="showSetup" :theme="theme" @start="handleGameSetupStart" @remote="handleRemoteGame" />
 
     <BoardPanel v-if="!showSetup" :board="board" :current-turn="currentTurn" :selected-square="selectedSquare"
       :possible-moves="possibleMoves" :is-dragging="isDragging" :drag-start-square="dragStartSquare"
