@@ -537,7 +537,10 @@ const handleStart = () => {
 }
 
 .setup-panel {
-    min-width: min(560px, 100%);
+    /* box-sizing 必须显式声明：否则 min-width 还要再叠加左右各 20px 的内边距，撑破容器 */
+    box-sizing: border-box;
+    min-width: min(480px, 100%);
+    max-width: 100%;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     
@@ -638,8 +641,10 @@ const handleStart = () => {
 }
 
 .fen-input {
-    margin-top: 10px;
+    /* 清掉左右外边距，避免 width: 100% 时外宽超出面板 */
+    margin: 10px 0 0;
     width: 100%;
+    box-sizing: border-box;
 }
 
 .fen-hint {
@@ -753,11 +758,16 @@ const handleStart = () => {
 }
 
 .room-code-input {
+    /* 全局 input 规则带 margin: 3px，若配 width: 100% 会让外宽多出 6px 而撑破面板 */
     width: 100%;
+    max-width: 260px;
+    margin: 4px auto 8px;
     box-sizing: border-box;
     font-family: 'Unifont', monospace;
-    font-size: 1.4rem;
-    letter-spacing: 0.3em;
+    font-size: 1.5rem;
+    /* letter-spacing 会在末尾多出一个字距，配合 text-indent 让文字视觉居中 */
+    letter-spacing: 0.25em;
+    text-indent: 0.25em;
     text-align: center;
     text-transform: uppercase;
     padding: 10px 8px;

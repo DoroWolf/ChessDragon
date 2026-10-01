@@ -107,9 +107,11 @@ const statusText = computed(() => {
 
 .room-code {
   font-family: 'Unifont', monospace;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   letter-spacing: 0.25em;
-  padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+  /* letter-spacing 会在末位多出一个字距，用 text-indent 把文字补回视觉居中 */
+  text-indent: 0.25em;
+  padding: 0.25rem 0.5rem;
   border: 2px solid var(--color-surface-border);
   background-color: var(--color-page-bg);
   color: var(--color-text-primary);
