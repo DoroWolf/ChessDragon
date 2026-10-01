@@ -1,12 +1,5 @@
 <template>
   <aside class="sidebar">
-    <!--<DragonDialogue
-      :text="dialogueText"
-      :dialogue-key="dialogueKey"
-      :is-ai-enabled="gameMode === 'ai'"
-    />-->
-
-    <!-- 远程对局：房间详情（位于棋钟上方） -->
     <RemoteRoomCard v-if="isRemote && roomCode" :room-code="roomCode" :state="remoteState"
       :link-kind="remoteLinkKind" variant="compact" />
 
@@ -51,12 +44,7 @@
       </button>
     </div>
     <div v-else class="button-group">
-      <!-- 尚未走出足够的走子（见 isUndoUnlocked）：悔棋不可用，改为红色返回按钮 -->
-      <button v-if="!isUndoUnlocked" type="button" class="btn btn-danger" :title="t('sidebar.home')"
-        @click="handleHomeClick">
-        <span class="btn-icon" v-html="homeSvg"></span>
-      </button>
-      <button v-else type="button" class="btn btn-warning" :title="t('sidebar.undo')" :disabled="isUndoDisabled" @click="$emit('undo')">
+      <button type="button" class="btn btn-warning" :title="t('sidebar.undo')" :disabled="isUndoDisabled" @click="$emit('undo')">
         <span class="btn-icon" v-html="undoSvg"></span>
       </button>
       <button
@@ -69,7 +57,11 @@
       >
         <span class="btn-icon" v-html="drawSvg"></span>
       </button>
-      <button type="button" class="btn btn-danger" :title="t('sidebar.resign')" :disabled="isGameActionDisabled" @click="handleResignClick">
+      <button v-if="!isUndoUnlocked" type="button" class="btn btn-danger" :title="t('sidebar.home')"
+        @click="handleHomeClick">
+        <span class="btn-icon" v-html="homeSvg"></span>
+      </button>
+      <button v-else type="button" class="btn btn-danger" :title="t('sidebar.resign')" :disabled="isGameActionDisabled" @click="handleResignClick">
         <span class="btn-icon" v-html="resignSvg"></span>
       </button>
     </div>

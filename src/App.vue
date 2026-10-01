@@ -39,7 +39,7 @@
       :is-game-over="isGameOver" :is-flipped="isFlipped" :board="board" :player-color="playerColor"
       :white-time-seconds="whiteTimeSeconds"
       :black-time-seconds="blackTimeSeconds" :active-color="currentTurn" :clock-test-id="'sidebar-chess-clock'"
-      :game-mode="gameMode" :dialogue-text="dialogueText" :dialogue-key="dialogueKey"
+      :game-mode="gameMode"
       :theme="theme" :game-result="gameResult" :is-remote="isRemote"
       :room-code="remoteRoomCode" :remote-state="remoteState" :remote-link-kind="remoteLinkKind"
       v-model:is-sound-enabled="isSoundEnabled" v-model:coordinate-label-mode="coordinateLabelMode"
@@ -83,7 +83,6 @@ import type { GameSetupConfig } from './components/GameSetup.vue'
 import { useSettings } from './composables/useSettings'
 import { useBoardDisplay } from './composables/useBoardDisplay'
 import { useGameState } from './composables/useGameState'
-import { useDragonDialogue } from './composables/useDragonDialogue'
 import { useRemoteGame } from './composables/useRemoteGame'
 import { useI18n } from './composables/useI18n'
 import settingSvg from './assets/icon/setting.svg?raw'
@@ -176,23 +175,6 @@ const {
   respondToRematchRequest,
   cancelOutgoingRequest,
 } = game
-
-// ---- 龙语对话 ----
-const { currentDialogue: dialogueText, dialogueKey } = useDragonDialogue(
-  board,
-  currentTurn,
-  moveHistory,
-  gameMode,
-  playerColor,
-  isGameOver,
-  gameEndReason,
-  halfmoveClock,
-  getPositionCount,
-  isDrawByStalemate,
-  isDrawByInsufficientMaterial,
-  hasResigned,
-  timeoutWinner,
-)
 
 // ---- 远程对局 ----
 const remote = useRemoteGame()
