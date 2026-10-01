@@ -1,6 +1,6 @@
 <template>
-  <div class="game-panel">
-    <div class="board-frame" :class="{ 'coordinates-outside': coordinateLabelMode === 'outside' }">
+  <div class="game-panel" :style="boardSizeStyle">
+    <div ref="boardFrameRef" class="board-frame" :class="{ 'coordinates-outside': coordinateLabelMode === 'outside' }" :style="boardSizeStyle">
       <div class="board-grid" ref="boardGridRef"
         @touchmove.prevent="handleBoardGridTouchMove($event)"
         @touchend="handleBoardGridTouchEnd($event)">
@@ -64,6 +64,18 @@
           </span>
         </div>
       </div>
+
+      <button
+        type="button"
+        class="board-resize-handle"
+        @pointerdown="handleResizePointerDown"
+        @pointermove="handleResizePointerMove"
+        @pointerup="handleResizePointerEnd"
+        @pointercancel="handleResizePointerEnd"
+        @keydown="handleResizeKeydown"
+      >
+        <span class="board-resize-icon" v-html="dragSvg"></span>
+      </button>
     </div>
 
     <img v-if="isDragging && dragStartSquare" class="floating-piece " draggable="false"
@@ -78,6 +90,7 @@ import type { Board, Color, Piece } from '../models/chess'
 import Promotion from './Promotion.vue'
 import type { CSSProperties } from 'vue'
 import { boardMovePlaceable, boardWhite, boardGray, boardBlack } from '../assets/resourcePaths'
+import dragSvg from '../assets/icon/drag.svg?raw'
 
 const props = defineProps<{
   board: Board
@@ -206,7 +219,51 @@ const shouldMirrorMoveableOverlay = (row: number, col: number): boolean => {
 // 缩放适配
 const pieceScale = ref(1.5)
 const boardGridRef = ref<HTMLElement | null>(null)
+const boardFrameRef = ref<HTMLElement | null>(null)
+const boardSize = ref<number | null>(null)
+const boardSizeStyle = computed(() => boardSize.value === null ? undefined : { width: `${boardSize.value}px` })
 let boardResizeObserver: ResizeObserver | null = null
+let resizePointerId: number | null = null
+let resizeStartX = 0
+let resizeStartY = 0
+let resizeStartSize = 0
+
+const clampBoardSize = (size: number): number => {
+  const maximum = Math.max(160, Math.min(window.innerWidth - 32, window.innerHeight - 120))
+  return Math.min(maximum, Math.max(200, size))
+}
+
+const handleResizePointerDown = (event: PointerEvent) => {
+  if (event.button !== 0) return
+  event.preventDefault()
+  event.stopPropagation()
+  resizePointerId = event.pointerId
+  resizeStartX = event.clientX
+  resizeStartY = event.clientY
+  resizeStartSize = boardFrameRef.value?.clientWidth ?? window.innerWidth * 0.8
+  boardSize.value = resizeStartSize
+  const handle = event.currentTarget as HTMLElement
+  handle.setPointerCapture(event.pointerId)
+}
+
+const handleResizePointerMove = (event: PointerEvent) => {
+  if (event.pointerId !== resizePointerId) return
+  const delta = ((event.clientX - resizeStartX) + (event.clientY - resizeStartY)) / 2
+  boardSize.value = clampBoardSize(resizeStartSize + delta)
+}
+
+const handleResizePointerEnd = (event: PointerEvent) => {
+  if (event.pointerId === resizePointerId) resizePointerId = null
+}
+
+const handleResizeKeydown = (event: KeyboardEvent) => {
+  const increase = event.key === 'ArrowRight' || event.key === 'ArrowDown'
+  const decrease = event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+  if (!increase && !decrease) return
+  event.preventDefault()
+  const currentSize = boardFrameRef.value?.clientWidth ?? window.innerWidth * 0.8
+  boardSize.value = clampBoardSize(currentSize + (increase ? 16 : -16))
+}
 
 const updatePieceScale = () => {
   if (boardGridRef.value) {
@@ -238,8 +295,8 @@ watch(pieceScale, (val) => {
 
 <style scoped>
 .game-panel {
-  width: 100%;
-  max-width: 80vmin;
+  width: max-content;
+  max-width: none;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -249,13 +306,54 @@ watch(pieceScale, (val) => {
 
 .board-frame {
   position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  max-width: calc(100vh - 120px);
+  container-type: inline-size;
   width: 80vmin;
+  aspect-ratio: 1 / 1;
+  max-width: min(calc(100vw - 32px), calc(100vh - 120px));
   margin: 0 auto;
   box-sizing: border-box;
   overflow: visible;
+}
+
+.board-resize-handle {
+  position: absolute;
+  right: -20px;
+  bottom: -20px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: nwse-resize;
+  touch-action: none;
+  z-index: 20;
+}
+
+.board-resize-icon {
+  position: absolute;
+  inset: 10px;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-primary);
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.board-resize-icon :deep(svg) {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@media (max-width: 767px) {
+  .board-resize-handle {
+    display: none;
+  }
+}
+
+.board-resize-handle:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 1px;
 }
 
 .board-frame.coordinates-outside {
@@ -364,22 +462,22 @@ watch(pieceScale, (val) => {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -1.25rem;
-  height: 1rem;
+  bottom: -2.8cqi;
+  height: 2cqi;
 }
 
 .coordinate-side-col {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: -1.25rem;
-  width: 1rem;
+  left: -2.8cqi;
+  width: 2cqi;
 }
 
 .coordinate-label.outer-file {
   position: absolute;
   transform: translateX(-50%);
-  font-size: 0.85rem;
+  font-size: 1.7cqi;
   color: var(--color-text-secondary);
   text-align: center;
 }
@@ -387,7 +485,7 @@ watch(pieceScale, (val) => {
 .coordinate-label.outer-rank {
   position: absolute;
   transform: translateY(-50%);
-  font-size: 0.85rem;
+  font-size: 1.7cqi;
   color: var(--color-text-secondary);
   text-align: center;
   width: 100%;
