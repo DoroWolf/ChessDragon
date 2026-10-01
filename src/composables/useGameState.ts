@@ -1431,6 +1431,16 @@ export function useGameState(
 
           executeAIMoveOnBoard(e.data.move)
 
+          const resultingPositionKey = getPositionKey(board.value, currentTurn.value, lastMove.value)
+          if (
+            !isGameOver.value &&
+            positionHistory.value.filter((key) => key === resultingPositionKey).length >= 3
+          ) {
+            stopClock()
+            isAgreedDraw.value = true
+            playSound('draw')
+          }
+
           // 恢复玩家状态，后续 tryExecutePremove 会验证是否仍然合法
           selectedSquare.value = savedSelectedSquare
           premove.value = savedPremove
@@ -1478,6 +1488,7 @@ export function useGameState(
           style: aiStyle.value,
           lastMove: plainLastMove,
           aiTimeRemainingMs: aiTimeRemainingMs ?? undefined,
+          positionHistory: [...positionHistory.value],
         })
       } catch (err) {
         console.error('Failed to post message to AI Worker:', err)

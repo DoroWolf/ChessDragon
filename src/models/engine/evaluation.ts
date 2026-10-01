@@ -21,11 +21,16 @@ export function evaluateBoardInternal(
   perspective: Color,
   hasEnPassant = false,
 ): number {
-  // Syzygy 残局库：命中时直接返回库值（胜过任何启发式评估）
+  // Syzygy 残局库：WDL 只作为"胜负等级"的基准分（胜 / 幸胜 / 和 / 幸负 / 负），
+  // 仍在其上叠加启发式评估，保留位置与进程梯度。
+  // 若命中时直接返回库值，同一 WDL 类别内所有走法就完全同分，
+  // AI 会退化成"随便挑一个保住胜负等级的走法"——例如 KBNK 里马象不动、
+  // 孤王乱跑、把棋走到角落。
+  let tbBase: number | null = null
   const syzygy = getSyzygyStore()
   if (syzygy.active && !hasEnPassant && searchCastlingRights === 0) {
     const wdl = syzygy.probeWdl(b, perspective, false)
-    if (wdl !== undefined) return wdlToScore(wdl)
+    if (wdl !== undefined) tbBase = wdlToScore(wdl)
   }
 
   let score = 0
@@ -50,9 +55,11 @@ export function evaluateBoardInternal(
     }
   }
 
-  // KBNK 残局知识（4-5 级 AI 开放）：
+  // KBNK 残局知识（3 级及以上 AI 开放）：
   // 王+象+马 vs 王 的子力恒定，靠 PST 无法完成驱赶与杀王，
-  // 这里叠加残局知识分，引导 AI 把孤王逼到与象同色的角落成杀
+  // 这里叠加残局知识分，引导 AI 把孤王逼到与象同色的角落成杀。
+  // 注意：这里保留的启发式梯度也是残局库不可用时（例如 DTZ 表加载失败）
+  // 的兜底手段，因此即使命中 WDL 也必须叠加它。
   if (searchDifficulty >= KBNK_MIN_LEVEL && trackedMaterial === KBNK_MATERIAL) {
     score += evaluateKBNK(b, perspective)
   }
@@ -94,5 +101,10 @@ export function evaluateBoardInternal(
     }
   }
 
-  return score
+  // 残局库命中：基准分 + 启发式分。
+  // 启发式分（子力 + PST + KBNK 等残局知识）的绝对值远小于
+  // TB_WIN_SCORE / TB_CURSED_WIN_SCORE 之间的 5000 间隔，
+  // 因此不会破坏 胜 > 幸胜 > 和 > 幸负 > 负 的严格排序，
+  // 同时让同一类别内的位置/进程梯度继续生效。
+  return tbBase === null ? score : tbBase + score
 }

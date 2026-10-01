@@ -8,7 +8,7 @@ import type { AIStyle, AIDetailedMove } from './types'
 import { PIECE_VALUES } from './types'
 import { computeHash } from './zobrist'
 import type { CastlingRights } from './zobrist'
-import { getEnPassantTarget } from '../chess'
+import { getEnPassantTarget, getPositionKey } from '../chess'
 
 // ============================================================
 // 模块级搜索状态
@@ -25,6 +25,21 @@ export let searchTimeLimit: number = 0
 export let searchStopped: boolean = false
 export let searchNodes: number = 0
 export let searchAITimeRemainingMs: number | null = null
+const repetitionCounts = new Map<string, number>()
+
+export function getRepetitionCount(key: string): number {
+  return repetitionCounts.get(key) ?? 0
+}
+
+export function addRepetition(key: string): void {
+  repetitionCounts.set(key, getRepetitionCount(key) + 1)
+}
+
+export function removeRepetition(key: string): void {
+  const count = getRepetitionCount(key)
+  if (count <= 1) repetitionCounts.delete(key)
+  else repetitionCounts.set(key, count - 1)
+}
 
 // Setter 函数——因为 let 导出的变量在其他模块中不可直接赋值
 export function setSearchHash(v: number): void { searchHash = v }
@@ -201,7 +216,7 @@ export function getCastlingRights(b: Board): CastlingRights {
 // ============================================================
 // 初始化搜索状态
 // ============================================================
-export function initSearchState(b: Board, color: Color, style: AIStyle, difficulty: number, lastMove: { from: { row: number; col: number }; to: { row: number; col: number } } | null, aiTimeRemainingMs?: number): void {
+export function initSearchState(b: Board, color: Color, style: AIStyle, difficulty: number, lastMove: { from: { row: number; col: number }; to: { row: number; col: number } } | null, aiTimeRemainingMs?: number, positionHistory: readonly string[] = []): void {
   board = b
   searchColor = color
   searchStyle = style
@@ -209,6 +224,13 @@ export function initSearchState(b: Board, color: Color, style: AIStyle, difficul
   searchStartTime = performance.now()
   searchStopped = false
   searchNodes = 0
+  repetitionCounts.clear()
+  for (const key of positionHistory) {
+    repetitionCounts.set(key, getRepetitionCount(key) + 1)
+  }
+  if (positionHistory.length === 0) {
+    repetitionCounts.set(getPositionKey(b, color, lastMove), 1)
+  }
 
   const timeLimitMap: Record<number, number> = {
     1: 100,

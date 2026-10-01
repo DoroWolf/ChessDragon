@@ -564,11 +564,20 @@ export const getPositionKey = (
   }
 
   const rows = board
-    .map((row) =>
+    .map((row, rowIndex) =>
       row
-        .map((piece) => {
+        .map((piece, col) => {
           if (!piece) return '__'
-          return `${typeCodeMap[piece.type]}${piece.color[0]}${piece.hasMoved ? '1' : '0'}`
+          const isHomeKing =
+            piece.type === 'king' &&
+            ((piece.color === 'white' && rowIndex === 7 && col === 4) ||
+              (piece.color === 'black' && rowIndex === 0 && col === 4))
+          const isHomeRook =
+            piece.type === 'rook' &&
+            ((piece.color === 'white' && rowIndex === 7 && (col === 0 || col === 7)) ||
+              (piece.color === 'black' && rowIndex === 0 && (col === 0 || col === 7)))
+          const castlingState = (isHomeKing || isHomeRook) && piece.hasMoved ? '1' : '0'
+          return `${typeCodeMap[piece.type]}${piece.color[0]}${castlingState}`
         })
         .join(','),
     )

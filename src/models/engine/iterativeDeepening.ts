@@ -6,7 +6,7 @@
 //   2. 走法排序优化：浅层搜索结果为深层搜索提供更好的走法排序
 //   3. 配合置换表，深层搜索可复用浅层搜索结果
 // ============================================================
-import type { Color, Square } from '../chess'
+import { getPositionKey, type Color, type Square } from '../chess'
 import { INF, MATE_SCORE } from './types'
 import type { AIDetailedMove } from './types'
 import { oppositeColor } from './zobrist'
@@ -34,6 +34,8 @@ import {
   computeMaterialDelta,
   setSearchHash,
   setSearchCastlingRights,
+  addRepetition,
+  removeRepetition,
 } from './searchState'
 
 // ============================================================
@@ -43,6 +45,7 @@ export function iterativeDeepening(
   initialEpTarget: { row: number; col: number } | null,
   lastMove: { from: Square; to: Square } | null,
   maxDepth: number,
+  moveHint: AIDetailedMove | null = null,
 ): { bestMove: AIDetailedMove; score: number } | null {
   const kRow = getKingRow(searchColor)
   const kCol = getKingCol(searchColor)
@@ -59,6 +62,21 @@ export function iterativeDeepening(
   }
   const rootIndices = Array.from({ length: numMoves }, (_, i) => i)
   rootIndices.sort((a, b) => rootScores[b]! - rootScores[a]!)
+  if (moveHint) {
+    const hintIndex = moves.findIndex(
+      (move) =>
+        move.fromRow === moveHint.fromRow &&
+        move.fromCol === moveHint.fromCol &&
+        move.toRow === moveHint.toRow &&
+        move.toCol === moveHint.toCol &&
+        move.special === moveHint.special &&
+        move.promotion === moveHint.promotion,
+    )
+    if (hintIndex >= 0) {
+      rootIndices.splice(rootIndices.indexOf(hintIndex), 1)
+      rootIndices.unshift(hintIndex)
+    }
+  }
 
   const opponentColorVal = oppositeColor(searchColor)
 
@@ -103,8 +121,19 @@ export function iterativeDeepening(
         from: { row: move.fromRow, col: move.fromCol },
         to: { row: move.toRow, col: move.toCol },
       }
+      const childPositionKey = getPositionKey(board, opponentColorVal, newLastMove)
+      addRepetition(childPositionKey)
 
-      const score = -alphaBeta(depth - 1, -INF, -alpha, newEnPassantTarget, newLastMove, opponentColorVal)
+      const score = -alphaBeta(
+        depth - 1,
+        -INF,
+        -alpha,
+        newEnPassantTarget,
+        newLastMove,
+        opponentColorVal,
+        childPositionKey,
+      )
+      removeRepetition(childPositionKey)
 
       unmakeMove(board, changes)
       setSearchHash(oldHash)

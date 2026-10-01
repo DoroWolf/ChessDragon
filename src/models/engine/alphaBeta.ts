@@ -3,7 +3,7 @@
 // Minimax 搜索的剪枝优化——维护 alpha（下界）和 beta（上界），
 // 当搜索窗口坍缩时跳过不可能被选择的走法分支
 // ============================================================
-import type { Color, Square } from '../chess'
+import { getPositionKey, type Color, type Square } from '../chess'
 import { INF, MATE_SCORE, MAX_DEPTH, TT_ALPHA, TT_EXACT, TT_BETA } from './types'
 import type { AIDetailedMove } from './types'
 import { oppositeColor } from './zobrist'
@@ -32,6 +32,9 @@ import {
   setSearchHash,
   setSearchCastlingRights,
   incSearchNodes,
+  getRepetitionCount,
+  addRepetition,
+  removeRepetition,
 } from './searchState'
 
 // ============================================================
@@ -44,10 +47,14 @@ export function alphaBeta(
   enPassantTarget: { row: number; col: number } | null,
   lastMove: { from: Square; to: Square } | null,
   currentColor: Color,
+  positionKey?: string,
 ): number {
   if (checkTimeLimit()) return 0
 
   incSearchNodes()
+
+  const currentPositionKey = positionKey ?? getPositionKey(board, currentColor, lastMove)
+  if (getRepetitionCount(currentPositionKey) >= 3) return 0
 
   // 保存追踪状态
   const savedWKR = trackedWhiteKingRow
@@ -122,6 +129,8 @@ export function alphaBeta(
       from: { row: move.fromRow, col: move.fromCol },
       to: { row: move.toRow, col: move.toCol },
     }
+    const childPositionKey = getPositionKey(board, oppositeColor(currentColor), newLastMove)
+    addRepetition(childPositionKey)
 
     const score = -alphaBeta(
       depth - 1,
@@ -130,7 +139,9 @@ export function alphaBeta(
       newEnPassantTarget,
       newLastMove,
       oppositeColor(currentColor),
+      childPositionKey,
     )
+    removeRepetition(childPositionKey)
 
     unmakeMove(board, changes)
     setSearchHash(oldHash)

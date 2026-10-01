@@ -33,9 +33,10 @@ export async function getBestAIMove(
   style: AIStyle,
   lastMove: { from: Square; to: Square } | null,
   aiTimeRemainingMs?: number,
+  positionHistory: readonly string[] = [],
 ): Promise<AIDetailedMove | null> {
   // 初始化搜索状态（传递 AI 方棋钟剩余时间，低时间时自动缩减搜索深度）
-  initSearchState(b, color, style, difficulty, lastMove, aiTimeRemainingMs)
+  initSearchState(b, color, style, difficulty, lastMove, aiTimeRemainingMs, positionHistory)
 
   // 清空杀手走法
   for (let d = 0; d < MAX_DEPTH; d++) {
@@ -68,15 +69,14 @@ export async function getBestAIMove(
   if (moves.length === 0) return null
   if (moves.length === 1) return moves[0]!
 
-  // 残局库（Syzygy）：3 级及以上按等级门槛启用
-  // 局面在库中时用 WDL 过滤走法、DTZ 挑最快的取胜路线
+  // 残局库（Syzygy）：DTZ 只提供根节点搜索的走法排序提示，不直接接管选着。
   const syzygy = getSyzygyStore()
   syzygy.setLevel(difficulty)
+  let tablebaseMoveHint: AIDetailedMove | null = null
   if (syzygy.active && searchCastlingRights === 0) {
     try {
       await syzygy.prepare(board, color, epTarget !== null)
-      const tbMove = syzygy.selectMove(board, color, moves, epTarget !== null)
-      if (tbMove) return tbMove
+      tablebaseMoveHint = syzygy.findMoveHint(board, color, moves, epTarget !== null)
     } catch (err) {
       console.warn('syzygy probe failed:', err)
     }
@@ -103,7 +103,7 @@ export async function getBestAIMove(
   }
 
   // 迭代加深搜索
-  const result = iterativeDeepening(epTarget, lastMove, maxDepth)
+  const result = iterativeDeepening(epTarget, lastMove, maxDepth, tablebaseMoveHint)
 
   if (!result) return moves[0]!
 

@@ -2,9 +2,12 @@
 // Syzygy Tablebase - 运行时管理器（等级门槛 + 按需懒加载）
 //
 // 等级门槛（按需求设定）：
-//   3 级：3-4 子 WDL + KQK / KRK 的 DTZ
-//   4 级：3-5 子 WDL + KQK / KRK / KBBK / 王兵残局 的 DTZ
+//   3 级：3-4 子 WDL（KBNK 除外）+ KQK / KRK / KPvK 的 DTZ
+//   4 级：3-5 子 WDL（KBNK 除外）+ KQK / KRK / KPvK / KBBK / 王兵残局的 DTZ
 //   5 级：全部开放
+//
+// 说明：KBNK 在 3-4 级只使用内置残局知识和搜索；5 级才开放 Syzygy。
+// DTZ 仅用于根节点走法排序提示，不直接决定最终走法。
 //
 // 表文件体积很大（单个最大 ~20MB），因此：
 //   * 只有当前局面确实可用时才加载对应材料表
@@ -23,9 +26,17 @@ export type TableLoader = (fileName: string) => Promise<Uint8Array | null>
 /** 使用残局库所需的最低 AI 等级 */
 export const SYZYGY_MIN_LEVEL = 3
 
-/** 残局库分数：低于将杀分（MATE_SCORE=99999），高于任何普通评估 */
+/**
+ * 残局库分值：作为"胜负等级"的基准分，低于将杀分（MATE_SCORE = 99999），
+ * 高于任何普通评估。
+ *
+ * 注意：这不是"最终分值"，评估函数会在此基础上继续叠加启发式分
+ * （见 evaluation.ts）。残局库局面最多 5 子，启发式分（子力 + PST + 残局知识）
+ * 的绝对值远小于 2500，因此各类别之间必须留出足够的间隔：
+ * 5000 的间隔足以保证 胜 > 幸胜 > 和 > 幸负 > 负 的严格排序。
+ */
 export const TB_WIN_SCORE = 60000
-export const TB_CURSED_WIN_SCORE = 59000
+export const TB_CURSED_WIN_SCORE = 55000
 
 /** 把 WDL 值转换为评估分（走子方视角） */
 export function wdlToScore(wdl: number): number {
@@ -50,9 +61,11 @@ const DTZ_LEVEL4_EXTRA = ['KBBvK', 'KPvKP', 'KPPvK']
 
 /** 该等级是否允许使用指定的 WDL 表 */
 export function wdlAllowed(level: number, tablename: string): boolean {
+  const key = normalizeTablename(tablename)
+  if (key === 'KBNvK' && level < 5) return false
   const max = maxWdlPieces(level)
   if (max === 0) return false
-  return normalizeTablename(tablename).length - 1 <= max
+  return key.length - 1 <= max
 }
 
 /** 该等级是否允许使用指定的 DTZ 表 */
@@ -188,9 +201,12 @@ export class SyzygyStore {
 
     for (let attempt = 0; attempt < 4; attempt++) {
       this.tb.beginProbe()
-      this.probeWdl(board, turn, false)
-      // 顺带尝试一次 DTZ，让缺失的 DTZ 表也被记录下来
-      this.probeDtz(board, turn, false, 0)
+      const rootWdl = this.probeWdl(board, turn, false)
+      // DTZ 只为"必胜"局面的根节点搜索提供走法排序提示，
+      // 和棋 / 幸胜 / 败势局面无需加载体积庞大的 DTZ 表。
+      if (rootWdl !== undefined && rootWdl >= 2) {
+        this.probeDtz(board, turn, false, 0)
+      }
 
       const wanted: Array<{ key: string; dtz: boolean }> = []
       for (const key of this.tb.missingWdl) wanted.push({ key, dtz: false })
@@ -244,10 +260,10 @@ export class SyzygyStore {
   }
 
   /**
-   * 根节点选着：局面在库中时，按 "WDL 优先、DTZ 次之" 挑选走法。
-   * 和棋局面交回常规搜索（避免错过更好的实战选择）。
+   * 为根节点搜索挑选一个 DTZ 走法提示；真正的走法仍由引擎搜索决定。
+   * 只在 WDL 必胜且可用 DTZ 时提示优先搜索更快取胜/归零的候选着法。
    */
-  selectMove(
+  findMoveHint(
     board: Board,
     turn: Color,
     moves: AIDetailedMove[],
@@ -257,12 +273,18 @@ export class SyzygyStore {
 
     this.tb.beginProbe()
     const rootWdl = this.tb.probeWdl(board, turn, false)
-    if (rootWdl === undefined || rootWdl === 0) return null
+    // 仅"必胜"才作为将杀参考；其余交回引擎
+    if (rootWdl === undefined || rootWdl < 2) return null
+
+    // DTZ 只是"避免 50 步杀 / 取最快将杀"的提示：该等级没有 DTZ 表就不接管
+    if (!dtzAllowed(this.level, calcKey(board))) return null
 
     let bestMove: AIDetailedMove | null = null
     let bestWdl = -3
     let bestDtz = Number.POSITIVE_INFINITY
     let bestZeroing = false
+    /** 是否真的取到了 DTZ 信息（否则说明 DTZ 表缺失，应放弃接管） */
+    let sawDtz = false
 
     for (const move of moves) {
       const movingPiece = board[move.fromRow]![move.fromCol]
@@ -285,24 +307,28 @@ export class SyzygyStore {
 
       if (childWdl === undefined) continue
       const wdl = -childWdl
+      // 必胜局面里只考虑仍保住胜势的走法
+      if (wdl < 2) continue
+      if (dtz !== undefined) sawDtz = true
 
-      // 排序规则：WDL 优先；同为胜势时优先"归零着法"（DTZ 常有 ±1 舍入，
+      // 排序规则：同为胜势时优先"归零着法"（DTZ 常有 ±1 舍入，
       // 单靠 DTZ 无法区分时会导致原地打转）；最后比 DTZ（越小越快）
       const better =
         wdl > bestWdl ||
         (wdl === bestWdl &&
-          ((wdl > 0 && zeroing && !bestZeroing) ||
-            zeroing === bestZeroing &&
-            dtz !== undefined &&
-            dtz < bestDtz))
+          ((zeroing && !bestZeroing) ||
+            (zeroing === bestZeroing && dtz !== undefined && dtz < bestDtz)))
 
       if (better) {
         bestWdl = wdl
         bestDtz = dtz ?? Number.POSITIVE_INFINITY
-        bestZeroing = wdl > 0 && zeroing
+        bestZeroing = zeroing
         bestMove = move
       }
     }
+
+    // 完全没有 DTZ 数据时，说明 DTZ 表没准备好：交回引擎（残局知识/评估更可靠）
+    if (!sawDtz) return null
 
     return bestMove
   }

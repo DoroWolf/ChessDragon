@@ -11,7 +11,7 @@
 //   engine/moveGeneration.ts     - 走法生成
 //   engine/moveOrdering.ts       - 走法排序 (Move Ordering)
 //   engine/evaluation.ts         - 棋盘评估
-//   engine/endgameKnowledge.ts   - 残局知识（KBNK：王+象+马 vs 王，4-5 级开放）
+//   engine/endgameKnowledge.ts   - 残局知识（KBNK：王+象+马 vs 王，3 级及以上开放）
 //   engine/syzygy/               - Syzygy 残局库（WDL/DTZ 探测，3-5 级按门槛开放）
 //   engine/quiescenceSearch.ts   - 静态搜索 (Quiescence Search)
 //   engine/alphaBeta.ts          - Alpha-Beta 剪枝搜索
