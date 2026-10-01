@@ -57,8 +57,9 @@ const getOverlayTexture = (
    const isCapture =
      move !== undefined && targetPiece !== null && selectedPiece?.color !== targetPiece.color
 
+   // 拖拽期间保持起始格子的高亮（与选中状态一致）
    if (isDragging && selectedSquare?.row === row && selectedSquare.col === col) {
-     return null
+     return canPremove ? boardPremoveHover : boardMoveHover
    }
 
   const isCastlingRookSquare = possibleMoves.some(
