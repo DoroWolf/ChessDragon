@@ -153,12 +153,15 @@ export const createWebrtcGuestTransport = (
 ): Promise<RemoteTransport> =>
   new Promise<RemoteTransport>((resolve, reject) => {
     let settled = false
+    let retryTimer: number | null = null
+    let connecting: DataConnection | null = null
     const peer = new Peer()
 
     const fail = (error: RemoteTransportError) => {
       if (settled) return
       settled = true
       window.clearTimeout(timer)
+      if (retryTimer !== null) window.clearTimeout(retryTimer)
       options.signal?.removeEventListener('abort', handleAbort)
       peer.destroy()
       reject(error)
@@ -171,16 +174,25 @@ export const createWebrtcGuestTransport = (
 
     peer.on('error', (error) => {
       if (error.type === PeerErrorType.PeerUnavailable) {
-        fail(new RemoteTransportError('not-found'))
+        if (connecting) {
+          connecting.close()
+          connecting = null
+        }
+        if (retryTimer === null) {
+          retryTimer = window.setTimeout(() => {
+            retryTimer = null
+            connectToHost()
+          }, 500)
+        }
         return
       }
       fail(new RemoteTransportError('connection-failed', error.type))
     })
 
-    peer.on('open', () => {
-      if (settled) return
-
+    const connectToHost = () => {
+      if (settled || !peer.open) return
       const conn = peer.connect(roomPeerId(options.code), { serialization: 'json', reliable: true })
+      connecting = conn
 
       const onOpen = () => {
         if (settled) {
@@ -193,7 +205,10 @@ export const createWebrtcGuestTransport = (
         }
         settled = true
         window.clearTimeout(timer)
+        if (retryTimer !== null) window.clearTimeout(retryTimer)
         options.signal?.removeEventListener('abort', handleAbort)
+        conn.off('open', onOpen)
+        connecting = null
         resolve(new WebRtcTransport(peer, conn))
       }
 
@@ -202,5 +217,7 @@ export const createWebrtcGuestTransport = (
       } else {
         conn.on('open', onOpen)
       }
-    })
+    }
+
+    peer.on('open', connectToHost)
   })

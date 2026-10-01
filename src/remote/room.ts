@@ -43,10 +43,19 @@ export const createRoomHost = (code: string, signal?: AbortSignal): Promise<Room
     const webrtcAbort = new AbortController()
     const localSupported = isBroadcastChannelSupported()
     let settled = false
+    let retryTimer: number | null = null
+
+    const clearRetryTimer = () => {
+      if (retryTimer !== null) {
+        window.clearTimeout(retryTimer)
+        retryTimer = null
+      }
+    }
 
     const handleAbort = () => {
       if (settled) return
       settled = true
+      clearRetryTimer()
       localAbort.abort()
       webrtcAbort.abort()
       reject(new RemoteTransportError('connection-failed', 'aborted'))
@@ -64,6 +73,7 @@ export const createRoomHost = (code: string, signal?: AbortSignal): Promise<Room
     const finish = (session: RoomSession, loser: AbortController) => {
       if (settled) return
       settled = true
+      clearRetryTimer()
       signal?.removeEventListener('abort', handleAbort)
       loser.abort()
       resolve(session)
@@ -77,27 +87,37 @@ export const createRoomHost = (code: string, signal?: AbortSignal): Promise<Room
         })
     }
 
-    void createWebrtcHostTransport({ code, signal: webrtcAbort.signal })
-      .then((transport) => finish({ role: 'host', kind: 'webrtc', transport }, localAbort))
-      .catch((error: unknown) => {
-        if (settled) return
+    const registerWebrtcHost = () => {
+      if (settled || webrtcAbort.signal.aborted) return
+      void createWebrtcHostTransport({ code, signal: webrtcAbort.signal })
+        .then((transport) => finish({ role: 'host', kind: 'webrtc', transport }, localAbort))
+        .catch((error: unknown) => {
+          if (settled) return
 
-        if (error instanceof RemoteTransportError && error.code === 'code-taken') {
-          settled = true
-          signal?.removeEventListener('abort', handleAbort)
-          localAbort.abort()
-          reject(new RoomCodeTakenError(code))
-          return
-        }
+          if (error instanceof RemoteTransportError && error.code === 'code-taken') {
+            settled = true
+            clearRetryTimer()
+            signal?.removeEventListener('abort', handleAbort)
+            localAbort.abort()
+            reject(new RoomCodeTakenError(code))
+            return
+          }
 
-        // 信令不可用等错误：若本地链路也不可用，则整体失败
-        if (!localSupported) {
-          settled = true
-          signal?.removeEventListener('abort', handleAbort)
-          reject(error instanceof Error ? error : new RemoteTransportError('connection-failed'))
-        }
-        // 否则静默忽略，继续等待同浏览器的加入方
-      })
+          // 信令不可用等错误：若本地链路也不可用，则整体失败
+          if (!localSupported) {
+            settled = true
+            signal?.removeEventListener('abort', handleAbort)
+            reject(error instanceof Error ? error : new RemoteTransportError('connection-failed'))
+            return
+          }
+          retryTimer = window.setTimeout(() => {
+            retryTimer = null
+            registerWebrtcHost()
+          }, 2_000)
+        })
+    }
+
+    registerWebrtcHost()
   })
 
 /** 加入房间：先试同浏览器，再回退 WebRTC */

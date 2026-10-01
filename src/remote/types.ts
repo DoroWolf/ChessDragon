@@ -122,6 +122,8 @@ export type RemoteMessage =
   /** 心跳 */
   | { type: 'ping' }
   | { type: 'pong' }
+  /** 浏览器页面可见状态，避免后台分页的计时器节流触发假离线 */
+  | { type: 'visibility'; hidden: boolean }
   /** 主动道别 / 房间已满 */
   | { type: 'bye'; reason?: 'room-full' | 'leaving' }
 

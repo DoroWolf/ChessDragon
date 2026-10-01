@@ -47,6 +47,7 @@ let bridge: RemoteGameBridge | null = null
 let session: RoomSession | null = null
 let heartbeatTimer: number | null = null
 let lastPongAt = 0
+let opponentHidden: boolean | null = null
 /** 建连进行中的取消句柄（建房等待 / 加入房间） */
 let pendingAbort: AbortController | null = null
 
@@ -71,6 +72,8 @@ const handlePeerGone = (): void => {
   state.value = 'opponent-left'
 
   stopHeartbeat()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  opponentHidden = null
   const active = session
   session = null
   linkKind.value = null
@@ -98,6 +101,14 @@ const handleIncoming = (message: RemoteMessage): void => {
     lastPongAt = Date.now()
     return
   }
+  if (message.type === 'visibility') {
+    opponentHidden = message.hidden
+    if (!message.hidden) {
+      lastPongAt = Date.now()
+      send({ type: 'ping' })
+    }
+    return
+  }
   if (message.type === 'bye') {
     handlePeerGone()
     return
@@ -111,10 +122,19 @@ const startHeartbeat = (): void => {
   heartbeatTimer = window.setInterval(() => {
     if (!session) return
     send({ type: 'ping' })
-    if (Date.now() - lastPongAt > HEARTBEAT_TIMEOUT_MS) {
+    if (!opponentHidden && Date.now() - lastPongAt > HEARTBEAT_TIMEOUT_MS) {
       handlePeerGone()
     }
   }, HEARTBEAT_INTERVAL_MS)
+}
+
+const handleVisibilityChange = (): void => {
+  if (!session) return
+  send({ type: 'visibility', hidden: document.hidden })
+  if (!document.hidden) {
+    lastPongAt = Date.now()
+    send({ type: 'ping' })
+  }
 }
 
 const toErrorCode = (error: unknown): RemoteErrorCode =>
@@ -130,6 +150,9 @@ const attachSession = (active: RoomSession): void => {
   active.transport.onMessage(handleIncoming)
   active.transport.onClose(() => handlePeerGone())
   bridge?.setRemoteConnected(true)
+  opponentHidden = null
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  send({ type: 'visibility', hidden: document.hidden })
   startHeartbeat()
   state.value = 'connected'
 }
@@ -137,6 +160,8 @@ const attachSession = (active: RoomSession): void => {
 const teardownSession = (): void => {
   cancelPendingConnect()
   stopHeartbeat()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  opponentHidden = null
   bridge?.setRemoteSender(null)
   if (session) {
     try {
