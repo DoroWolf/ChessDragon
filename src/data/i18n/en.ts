@@ -25,6 +25,8 @@ const en: Record<MessageKey, string> = {
   'setup.fenKingCount': 'Illegal position: there must be exactly one white and one black king',
   'setup.fenPawnRank': 'Illegal position: a pawn cannot stand on its own back rank',
   'setup.fenPieceCount': 'Illegal position: a side has more pieces than allowed',
+  'setup.fenCastling': 'Invalid FEN: castling rights do not match the king and rooks on the board',
+  'setup.fenEnPassant': 'Invalid FEN: the en passant target does not match the board position',
   'setup.fenIllegalCheck': 'Illegal position: the side not to move is in check, its king would be captured',
   'setup.fenCheckmate': 'Illegal position: the side to move is already checkmated',
   'setup.fenStalemate': 'Illegal position: the side to move has no legal move (stalemate)',

@@ -23,6 +23,8 @@ const zhCN = {
   'setup.fenKingCount': '不合法的局面：必须各有一枚白王与黑王',
   'setup.fenPawnRank': '不合法的局面：兵不能停留在自己的底线上',
   'setup.fenPieceCount': '不合法的局面：同一方的棋子数量超出上限',
+  'setup.fenCastling': '不合法的 FEN：易位权与棋盘上的王或车不一致',
+  'setup.fenEnPassant': '不合法的 FEN：吃过路兵目标格与棋盘状态不一致',
   'setup.fenIllegalCheck': '不合法的局面：非走棋方被将军，该方的王会被直接吃掉',
   'setup.fenCheckmate': '不合法的局面：走棋方已被将死',
   'setup.fenStalemate': '不合法的局面：走棋方已无子可走（逼和）',

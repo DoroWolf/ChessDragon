@@ -69,6 +69,8 @@ export function useGameState(
   const lastMove = ref<{ from: { row: number; col: number }; to: { row: number; col: number } } | null>(null)
   const positionHistory = ref<string[]>([getPositionKey(board.value, currentTurn.value, lastMove.value)])
   const halfmoveClock = ref<number>(0)
+  const startingTurn = ref<Color>('white')
+  const startingFullmoveNumber = ref(1)
 
   // ---- 对局历史（用于悔棋） ----
   const moveHistory = ref<string[]>([])
@@ -140,7 +142,7 @@ export function useGameState(
     return Math.random() > 0.5 ? 'white' : 'black'
   }
 
-  const parseFenToBoard = (fen: string): { board: Board; turn: Color } | null => parseFen(fen)
+  const parseFenToBoard = (fen: string) => parseFen(fen)
 
   // ============================================================
   // 音效
@@ -1193,7 +1195,7 @@ export function useGameState(
   // ============================================================
   const applyGameSetup = (config: GameSetupConfig) => {
     let initialBoard: Board
-    let fenTurn: Color | null = null
+    let fenPosition: ReturnType<typeof parseFen> = null
 
     if (config.boardMode === 'standard') {
       initialBoard = createInitialBoard()
@@ -1201,7 +1203,7 @@ export function useGameState(
       const parsed = parseFenToBoard(config.fen)
       if (!parsed) return
       initialBoard = parsed.board
-      fenTurn = parsed.turn
+      fenPosition = parsed
     }
 
     cancelAIMove()
@@ -1221,8 +1223,10 @@ export function useGameState(
     board.value = initialBoard
 
     // 自定义棋盘时使用 FEN 中的走棋方，否则使用随机/手动指定的走棋方
+    const fenTurn = fenPosition?.turn ?? null
     const starterColor = fenTurn ?? getStarterColor(config.starter)
     currentTurn.value = starterColor
+    startingFullmoveNumber.value = fenPosition?.fullmoveNumber ?? 1
 
     // 非 AI 模式下，playerColor 直接等于先手方；AI 模式在下方的代码块中单独处理
     if (config.gameMode !== 'ai') {
@@ -1231,8 +1235,8 @@ export function useGameState(
     }
     selectedSquare.value = null
     hoverSquare.value = null
-    lastMove.value = null
-    halfmoveClock.value = 0
+    lastMove.value = fenPosition?.lastMove ?? null
+    halfmoveClock.value = fenPosition?.halfmoveClock ?? 0
     premove.value = null
 
     whiteTimeSeconds.value = config.timeMinutes * 60
@@ -1274,6 +1278,8 @@ export function useGameState(
         currentTurn.value = 'white'
       }
     }
+
+    startingTurn.value = currentTurn.value
 
     // ---- AI 先走的触发 ----
     void nextTick(() => {
@@ -1539,6 +1545,8 @@ export function useGameState(
     // 核心状态
     board,
     currentTurn,
+    startingTurn,
+    startingFullmoveNumber,
     selectedSquare,
     hoverSquare,
     lastMove,

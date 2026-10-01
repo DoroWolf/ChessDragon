@@ -96,6 +96,8 @@ interface Props {
   isClockEnabled?: boolean
   moveHistory: string[]
   currentTurn: Color
+  startingTurn?: Color
+  startingFullmoveNumber?: number
   gameStatus?: string
   halfmoveClock?: number
   positionCount?: number
@@ -140,6 +142,8 @@ const props = withDefaults(defineProps<Props>(), {
   clockTestId: 'sidebar-chess-clock',
   hasGameStarted: false,
   gameMode: 'human',
+  startingTurn: 'white',
+  startingFullmoveNumber: 1,
   dialogueText: '',
   dialogueKey: 0,
   theme: 'light',
@@ -189,9 +193,19 @@ const isClaimableDraw = computed(() => {
 
 const movePairs = computed<MovePair[]>(() => {
   const pairs: MovePair[] = []
-  for (let i = 0; i < props.moveHistory.length; i += 2) {
+  let firstPairedMove = 0
+  if (props.startingTurn === 'black' && props.moveHistory.length > 0) {
     pairs.push({
-      number: Math.floor(i / 2) + 1,
+      number: props.startingFullmoveNumber,
+      white: '',
+      black: props.moveHistory[0],
+    })
+    firstPairedMove = 1
+  }
+
+  for (let i = firstPairedMove; i < props.moveHistory.length; i += 2) {
+    pairs.push({
+      number: props.startingFullmoveNumber + Math.floor((i + (props.startingTurn === 'black' ? 1 : 0)) / 2),
       white: props.moveHistory[i] || '...',
       black: props.moveHistory[i + 1],
     })
@@ -202,6 +216,7 @@ const movePairs = computed<MovePair[]>(() => {
 const pgnText = computed(() => {
   const moves = movePairs.value
     .map((pair) => {
+      if (pair.black && !pair.white) return `${pair.number}... ${pair.black}`
       return pair.black
         ? `${pair.number}. ${pair.white} ${pair.black}`
         : `${pair.number}. ${pair.white}`

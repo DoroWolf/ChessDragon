@@ -12,6 +12,7 @@ import {
   type Board,
   type Color,
   type Piece,
+  type Square,
 } from './chess'
 
 const PIECE_TYPES: Record<string, Piece['type']> = {
@@ -29,6 +30,8 @@ export type FenErrorCode =
   | 'king'
   | 'pawnRank'
   | 'pieceCount'
+  | 'castling'
+  | 'enPassant'
   | 'illegalCheck'
   | 'checkmate'
   | 'stalemate'
@@ -43,6 +46,14 @@ export interface FenValidationResult {
   board: Board | null
   /** 走棋方解析成功时给出，否则为 null */
   turn: Color | null
+}
+
+export interface ParsedFen {
+  board: Board
+  turn: Color
+  lastMove: { from: Square; to: Square } | null
+  halfmoveClock: number
+  fullmoveNumber: number
 }
 
 const createEmptyBoard = (): Board =>
@@ -99,19 +110,65 @@ export const parseFenBoardLayout = (boardPart: string): Board | null => {
   return board
 }
 
-/** 解析棋子摆放与走棋方（其余字段忽略，与对局逻辑保持一致） */
-export const parseFen = (fen: string): { board: Board; turn: Color } | null => {
+/** 解析棋盤與對局狀態欄位；缺少的選填欄位採 FEN 預設值。 */
+export const parseFen = (fen: string): ParsedFen | null => {
   const parts = fen.trim().split(/\s+/)
+  if (parts.length < 2 || parts.length > 6) return null
   const boardPart = parts[0]
   if (!boardPart) return null
 
   const turnPart = parts[1]
   if (turnPart !== 'w' && turnPart !== 'b') return null
+  const castlingPart = parts[2] ?? '-'
+  const enPassantPart = parts[3] ?? '-'
+  const halfmovePart = parts[4] ?? '0'
+  const fullmovePart = parts[5] ?? '1'
+  if (!/^(?:-|K?Q?k?q?)$/.test(castlingPart)) return null
+  if (!/^(?:-|[a-h][36])$/.test(enPassantPart)) return null
+  if (!/^\d+$/.test(halfmovePart) || !/^[1-9]\d*$/.test(fullmovePart)) return null
+  if (!Number.isSafeInteger(Number(halfmovePart)) || !Number.isSafeInteger(Number(fullmovePart))) return null
 
   const board = parseFenBoardLayout(boardPart)
   if (!board) return null
 
-  return { board, turn: turnPart === 'b' ? 'black' : 'white' }
+  const turn: Color = turnPart === 'b' ? 'black' : 'white'
+  const castlingRights = castlingPart === '-' ? '' : castlingPart
+  for (const [color, row, kingSide, queenSide] of [
+    ['white', 7, 'K', 'Q'],
+    ['black', 0, 'k', 'q'],
+  ] as const) {
+    const king = board[row]![4]
+    if (king?.type === 'king' && king.color === color) {
+      king.hasMoved = !castlingRights.includes(kingSide) && !castlingRights.includes(queenSide)
+    }
+    const kingSideRook = board[row]![7]
+    if (kingSideRook?.type === 'rook' && kingSideRook.color === color) {
+      kingSideRook.hasMoved = !castlingRights.includes(kingSide)
+    }
+    const queenSideRook = board[row]![0]
+    if (queenSideRook?.type === 'rook' && queenSideRook.color === color) {
+      queenSideRook.hasMoved = !castlingRights.includes(queenSide)
+    }
+  }
+
+  let lastMove: ParsedFen['lastMove'] = null
+  if (enPassantPart !== '-') {
+    const target: Square = {
+      row: 8 - Number(enPassantPart[1]),
+      col: enPassantPart.charCodeAt(0) - 'a'.charCodeAt(0),
+    }
+    const toRow = target.row + (turn === 'white' ? 1 : -1)
+    const fromRow = target.row + (turn === 'white' ? -1 : 1)
+    lastMove = { from: { row: fromRow, col: target.col }, to: { row: toRow, col: target.col } }
+  }
+
+  return {
+    board,
+    turn,
+    lastMove,
+    halfmoveClock: Number(halfmovePart),
+    fullmoveNumber: Number(fullmovePart),
+  }
 }
 
 /**
@@ -138,10 +195,47 @@ export const validateFen = (fen: string): FenValidationResult => {
   if (enPassantPart !== undefined && !/^(-|[a-h][36])$/.test(enPassantPart)) return fail('format')
   if (halfmovePart !== undefined && !/^\d+$/.test(halfmovePart)) return fail('format')
   if (fullmovePart !== undefined && !/^[1-9]\d*$/.test(fullmovePart)) return fail('format')
+  if (halfmovePart !== undefined && !Number.isSafeInteger(Number(halfmovePart))) return fail('format')
+  if (fullmovePart !== undefined && !Number.isSafeInteger(Number(fullmovePart))) return fail('format')
 
   const board = parseFenBoardLayout(boardPart)
   const turn: Color = turnPart === 'b' ? 'black' : 'white'
   if (!board) return fail('format', null, turn)
+
+  if (castlingPart && castlingPart !== '-') {
+    const castlingChecks = [
+      { right: 'K', row: 7, col: 7, type: 'rook', color: 'white' },
+      { right: 'Q', row: 7, col: 0, type: 'rook', color: 'white' },
+      { right: 'k', row: 0, col: 7, type: 'rook', color: 'black' },
+      { right: 'q', row: 0, col: 0, type: 'rook', color: 'black' },
+    ] as const
+    for (const { right, row, col, color } of castlingChecks) {
+      if (!castlingPart.includes(right)) continue
+      const king = board[color === 'white' ? 7 : 0]![4]
+      const rook = board[row]![col]
+      if (king?.type !== 'king' || king.color !== color || rook?.type !== 'rook' || rook.color !== color) {
+        return fail('castling', board, turn)
+      }
+    }
+  }
+
+  if (enPassantPart && enPassantPart !== '-') {
+    const targetRow = 8 - Number(enPassantPart[1])
+    const targetCol = enPassantPart.charCodeAt(0) - 'a'.charCodeAt(0)
+    const expectedRow = turn === 'white' ? 2 : 5
+    const pawnRow = turn === 'white' ? 3 : 4
+    const startRow = turn === 'white' ? 1 : 6
+    const pawnColor: Color = turn === 'white' ? 'black' : 'white'
+    const target = board[targetRow]?.[targetCol]
+    const pawn = board[pawnRow]?.[targetCol]
+    const origin = board[startRow]?.[targetCol]
+    if (
+      targetRow !== expectedRow || target !== null || pawn?.type !== 'pawn' ||
+      pawn.color !== pawnColor || origin !== null || Number(halfmovePart ?? '0') !== 0
+    ) {
+      return fail('enPassant', board, turn)
+    }
+  }
 
   // ---- 子力统计 ----
   const counts: Record<Color, { total: number; pawns: number; kings: number }> = {

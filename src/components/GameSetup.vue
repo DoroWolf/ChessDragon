@@ -251,6 +251,8 @@ const FEN_ERROR_KEYS: Record<FenErrorCode, MessageKey> = {
     king: 'setup.fenKingCount',
     pawnRank: 'setup.fenPawnRank',
     pieceCount: 'setup.fenPieceCount',
+    castling: 'setup.fenCastling',
+    enPassant: 'setup.fenEnPassant',
     illegalCheck: 'setup.fenIllegalCheck',
     checkmate: 'setup.fenCheckmate',
     stalemate: 'setup.fenStalemate',
