@@ -142,10 +142,10 @@ const messageText = computed(() => {
   padding: 0.25rem 0.5rem;
 }
 
-/* ---- 非阻塞提示条：固定在顶部中央，位于 .game-container 的 padding-top 留白内 ---- */
+/* ---- 非阻塞提示条：固定在底部中央，避开棋盘上方内容以减少遮挡观感 ---- */
 .notice-stack {
   position: fixed;
-  top: 8px;
+  bottom: 8px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1500;
