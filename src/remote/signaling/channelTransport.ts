@@ -1,6 +1,6 @@
 // ============================================================
 // 远程对局：原始通道 → RemoteTransport 通用适配
-//   - PeerJS DataConnection / Trystero action 等只需实现 RawChannel
+//   - PeerJS DataConnection / MQTT 客户端等只需实现 RawChannel
 //   - 复用 transport.ts 的 MessageBuffer，保证回调注册前的消息不丢失
 // ============================================================
 import { MessageBuffer, isRemoteMessage, toPlainMessage, type RemoteTransport } from '../transport'

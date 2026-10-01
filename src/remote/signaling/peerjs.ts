@@ -64,6 +64,13 @@ const isFatalPeerError = (type: string): boolean =>
   type === PeerErrorType.SslUnavailable ||
   type === PeerErrorType.Network
 
+/**
+ * 与 PeerJS 信令服务建立连接的时间上限。
+ * 超过它仍没 open，说明信令服务不可达（常见于受限网络），
+ * 此时快速失败，把时间让给后续的 mqtt-relay 兜底。
+ */
+const SIGNALING_READY_TIMEOUT_MS = 6_000
+
 const closeQuietly = (conn: DataConnection): void => {
   try {
     conn.close()
@@ -78,9 +85,17 @@ const createHost = (context: SignalingContext): Promise<RemoteTransport> =>
     let settled = false
     const peer = createPeer(roomPeerId(context.code))
 
+    // 信令服务连不上时给出明确警告；房主不能直接失败，否则会丢掉唯一的等待机会
+    const readyTimer = window.setTimeout(() => {
+      if (!settled && !peer.open) {
+        console.warn('[remote] host @ peerjs 信令服务连接较慢或不可达，继续等待其它信令')
+      }
+    }, SIGNALING_READY_TIMEOUT_MS)
+
     const fail = (error: RemoteTransportError) => {
       if (settled) return
       settled = true
+      window.clearTimeout(readyTimer)
       context.signal?.removeEventListener('abort', handleAbort)
       peer.destroy()
       reject(error)
@@ -111,6 +126,7 @@ const createHost = (context: SignalingContext): Promise<RemoteTransport> =>
           return
         }
         settled = true
+        window.clearTimeout(readyTimer)
         context.signal?.removeEventListener('abort', handleAbort)
         conn.off('open', onOpen)
         resolve(createChannelTransport(toRawChannel(peer, conn)))
@@ -136,6 +152,7 @@ const createGuest = (context: SignalingContext, timeoutMs: number): Promise<Remo
       if (settled) return
       settled = true
       window.clearTimeout(timer)
+      window.clearTimeout(signalingTimer)
       if (retryTimer !== null) window.clearTimeout(retryTimer)
       context.signal?.removeEventListener('abort', handleAbort)
       peer.destroy()
@@ -146,6 +163,11 @@ const createGuest = (context: SignalingContext, timeoutMs: number): Promise<Remo
     context.signal?.addEventListener('abort', handleAbort, { once: true })
 
     const timer = window.setTimeout(() => fail(new RemoteTransportError('not-found')), timeoutMs)
+
+    // 信令服务本身连不上时快速失败，把剩余时间让给后续的兜底信令
+    const signalingTimer = window.setTimeout(() => {
+      if (!peer.open) fail(new RemoteTransportError('connection-failed', 'signaling-unreachable'))
+    }, SIGNALING_READY_TIMEOUT_MS)
 
     peer.on('error', (error) => {
       if (error.type === PeerErrorType.PeerUnavailable) {
@@ -190,7 +212,10 @@ const createGuest = (context: SignalingContext, timeoutMs: number): Promise<Remo
       }
     }
 
-    peer.on('open', connectToHost)
+    peer.on('open', () => {
+      window.clearTimeout(signalingTimer)
+      connectToHost()
+    })
   })
 
 export const peerjsProvider: SignalingProvider = {

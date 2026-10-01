@@ -1,6 +1,6 @@
 // ============================================================
 // 远程对局：传输层接口
-//   - 业务层只依赖 RemoteTransport，不关心底层是 BroadcastChannel 还是 WebRTC
+//   - 业务层只依赖 RemoteTransport，不关心底层是同浏览器广播还是跨设备链路
 //   - 建连失败统一抛出 RemoteTransportError，便于按 code 映射文案
 //   - transport 会缓存「回调注册之前」收到的消息，避免握手期间的欢迎消息丢失
 // ============================================================
@@ -68,11 +68,11 @@ export class MessageBuffer {
   }
 }
 
-/** 同浏览器标签页握手等待时间：超时即回退到 WebRTC */
+/** 同浏览器标签页握手等待时间：超时即回退到跨设备链路 */
 export const LOCAL_HANDSHAKE_TIMEOUT_MS = 900
 
 /** 单个信令后端的建连超时（加入方逐个回退时使用） */
-export const SIGNALING_CONNECT_TIMEOUT_MS = 8_000
+export const SIGNALING_CONNECT_TIMEOUT_MS = 10_000
 
 /** 心跳间隔与超时判定 */
 export const HEARTBEAT_INTERVAL_MS = 2_000
@@ -88,35 +88,3 @@ export const isRemoteMessage = (value: unknown): value is RemoteMessage => {
 /** 把消息转为纯 JSON，避免 Vue 响应式 Proxy 无法被结构化克隆 / postMessage */
 export const toPlainMessage = (message: RemoteMessage): RemoteMessage =>
   JSON.parse(JSON.stringify(message)) as RemoteMessage
-
-/** 带超时的 Promise */
-export const withTimeout = <T>(promise: Promise<T>, ms: number, code: RemoteErrorCode): Promise<T> =>
-  new Promise<T>((resolve, reject) => {
-    const timer = window.setTimeout(() => reject(new RemoteTransportError(code)), ms)
-    promise.then(
-      (value) => {
-        window.clearTimeout(timer)
-        resolve(value)
-      },
-      (error: unknown) => {
-        window.clearTimeout(timer)
-        reject(error)
-      },
-    )
-  })
-
-/** 把 AbortSignal 转成 Promise，便于与其他建连 Promise 竞速 */
-export const abortPromise = (signal?: AbortSignal): Promise<never> =>
-  new Promise<never>((_, reject) => {
-    if (!signal) return
-    if (signal.aborted) {
-      reject(new RemoteTransportError('connection-failed', 'aborted'))
-      return
-    }
-    signal.addEventListener(
-      'abort',
-      () => reject(new RemoteTransportError('connection-failed', 'aborted')),
-      { once: true },
-    )
-  })
-

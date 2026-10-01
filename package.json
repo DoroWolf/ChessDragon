@@ -16,9 +16,8 @@
     "generate:opening-book": "node scripts/generateOpeningBook.ts"
   },
   "dependencies": {
-    "@trystero-p2p/mqtt": "^0.25.4",
+    "mqtt": "^5.16.0",
     "peerjs": "^1.5.5",
-    "trystero": "^0.25.4",
     "vue": "^3.5.38",
     "vue-i18n": "^11.4.12"
   },

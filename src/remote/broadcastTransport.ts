@@ -92,7 +92,7 @@ export const createBroadcastHostTransport = (options: TransportOptions): Promise
 /**
  * 加入方侧：广播 hello 并等待房主下发的 welcome。
  * 只认 welcome，避免把同一频道上其它加入方的消息或对局中的广播误判为房主在线。
- * 超时未收到说明同浏览器内不存在该房间，交由上层回退到 WebRTC。
+ * 超时未收到说明同浏览器内不存在该房间，交由上层回退到跨设备链路。
  */
 export const createBroadcastGuestTransport = (
   options: TransportOptions,
@@ -141,4 +141,3 @@ export const createBroadcastGuestTransport = (
     const hello: RemoteMessage = { type: 'hello', protocol: PROTOCOL_VERSION, role: 'guest' }
     channel.postMessage(toPlainMessage(hello))
   })
-

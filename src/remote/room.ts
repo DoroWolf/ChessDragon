@@ -10,6 +10,7 @@ import {
   isBroadcastChannelSupported,
 } from './broadcastTransport'
 import { getSignalingProviders } from './signaling'
+import { reportFailureSummary, reportSignalingAttempt } from './signaling/diagnostics'
 import {
   LOCAL_HANDSHAKE_TIMEOUT_MS,
   RemoteTransportError,
@@ -36,6 +37,10 @@ export interface RoomSession {
   transport: RemoteTransport
 }
 
+/** 被其它信令抢先后取消的候选，不算真正的失败 */
+const isAbortedError = (error: unknown): boolean =>
+  error instanceof RemoteTransportError && error.message === 'aborted'
+
 /** 房主建房时参与竞速的一条候选链路 */
 interface HostCandidate {
   controller: AbortController
@@ -54,19 +59,35 @@ export const createRoomHost = (code: string, signal?: AbortSignal): Promise<Room
   new Promise<RoomSession>((resolve, reject) => {
     const candidates: HostCandidate[] = []
 
-    const addCandidate = (start: (controller: AbortController) => Promise<RemoteTransport>) => {
+    const addCandidate = (
+      provider: string,
+      start: (controller: AbortController) => Promise<RemoteTransport>,
+    ) => {
       const controller = new AbortController()
-      candidates.push({ controller, promise: start(controller) })
+      const startedAt = Date.now()
+      const promise = start(controller).then(
+        (transport) => {
+          reportSignalingAttempt(provider, 'host', startedAt)
+          return transport
+        },
+        (error: unknown) => {
+          if (!isAbortedError(error)) reportSignalingAttempt(provider, 'host', startedAt, error)
+          throw error
+        },
+      )
+      candidates.push({ controller, promise })
     }
 
     if (isBroadcastChannelSupported()) {
-      addCandidate((controller) =>
+      addCandidate('local', (controller) =>
         createBroadcastHostTransport({ code, signal: controller.signal }),
       )
     }
 
     for (const provider of getSignalingProviders()) {
-      addCandidate((controller) => provider.createHost({ code, signal: controller.signal }))
+      addCandidate(provider.name, (controller) =>
+        provider.createHost({ code, signal: controller.signal }),
+      )
     }
 
     if (candidates.length === 0) {
@@ -101,6 +122,7 @@ export const createRoomHost = (code: string, signal?: AbortSignal): Promise<Room
         if (candidate !== winner) candidate.controller.abort()
       }
       resolve({ role: 'host', kind: transport.kind, transport })
+      console.info(`[remote] 房间已连接，房间码 ${code}（对手请用此码加入）`)
     }
 
     const recordFailure = (error: unknown) => {
@@ -120,6 +142,7 @@ export const createRoomHost = (code: string, signal?: AbortSignal): Promise<Room
       if (errors.length < candidates.length) return
       settled = true
       signal?.removeEventListener('abort', handleAbort)
+      reportFailureSummary(errors)
       reject(toHostError(errors, code))
     }
 
@@ -145,13 +168,16 @@ const toGuestError = (errors: unknown[]): Error => {
 /** 加入房间：先试同浏览器，再按优先级逐个回退信令后端 */
 export const joinRoom = async (code: string, signal?: AbortSignal): Promise<RoomSession> => {
   if (isBroadcastChannelSupported()) {
+    const startedAt = Date.now()
     try {
       const transport = await createBroadcastGuestTransport(
         { code, signal },
         LOCAL_HANDSHAKE_TIMEOUT_MS,
       )
+      reportSignalingAttempt('local', 'guest', startedAt)
       return { role: 'guest', kind: 'local', transport }
     } catch (error) {
+      reportSignalingAttempt('local', 'guest', startedAt, error)
       // 只有「同浏览器里找不到房主」才值得回退到跨设备信令
       if (!(error instanceof RemoteTransportError) || error.code !== 'not-found') {
         throw error
@@ -163,14 +189,21 @@ export const joinRoom = async (code: string, signal?: AbortSignal): Promise<Room
   for (const provider of getSignalingProviders()) {
     if (signal?.aborted) throw new RemoteTransportError('connection-failed', 'aborted')
 
+    const startedAt = Date.now()
     try {
-      const transport = await provider.createGuest({ code, signal }, SIGNALING_CONNECT_TIMEOUT_MS)
+      const transport = await provider.createGuest(
+        { code, signal },
+        provider.guestTimeoutMs ?? SIGNALING_CONNECT_TIMEOUT_MS,
+      )
+      reportSignalingAttempt(provider.name, 'guest', startedAt)
       return { role: 'guest', kind: transport.kind, transport }
     } catch (error) {
+      reportSignalingAttempt(provider.name, 'guest', startedAt, error)
       if (signal?.aborted) throw new RemoteTransportError('connection-failed', 'aborted')
       errors.push(error)
     }
   }
 
+  reportFailureSummary(errors)
   throw toGuestError(errors)
 }

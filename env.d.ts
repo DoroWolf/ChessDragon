@@ -22,6 +22,8 @@ interface ImportMetaEnv {
   readonly VITE_TURN_URL?: string
   readonly VITE_TURN_USERNAME?: string
   readonly VITE_TURN_CREDENTIAL?: string
-  /** 设为 'true' 可关闭 Trystero 兜底信令 */
-  readonly VITE_DISABLE_TRYSTERO?: string
+  /** 设为 'true' 可关闭 MQTT 纯中继兜底 */
+  readonly VITE_DISABLE_MQTT_RELAY?: string
+  /** 覆盖 MQTT 中继 broker 地址（逗号分隔，含路径，如 wss://host:8084/mqtt） */
+  readonly VITE_MQTT_RELAY_URLS?: string
 }
