@@ -53,7 +53,13 @@ const getOverlayTexture = (
     (candidate) => candidate.row === row && candidate.col === col,
   )
   const targetPiece = board[row]?.[col] ?? null
-  const isCapture = move !== undefined && targetPiece !== null
+   const selectedPiece = selectedSquare ? board[selectedSquare.row]?.[selectedSquare.col] ?? null : null
+   const isCapture =
+     move !== undefined && targetPiece !== null && selectedPiece?.color !== targetPiece.color
+
+   if (isDragging && selectedSquare?.row === row && selectedSquare.col === col) {
+     return null
+   }
 
   const isCastlingRookSquare = possibleMoves.some(
     (candidate) =>
