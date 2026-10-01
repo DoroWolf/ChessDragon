@@ -2,7 +2,10 @@
   <section class="game-container" :class="{ 'global-dragging': isMouseDown && dragStartSquare }"
     :style="{ '--piece-scale': pieceScale }">
 
-    <GameSetup v-if="showSetup" :theme="theme" @start="handleGameSetupStart" @remote="handleRemoteGame" />
+    <GameSetup v-if="showSetup" :theme="theme" :remote-state="remoteState" :remote-room-code="remoteRoomCode"
+      :remote-link-kind="remoteLinkKind" :remote-error-code="remoteErrorCode" @start="handleGameSetupStart"
+      @remote-create="handleRemoteCreate" @remote-join="handleRemoteJoin" @remote-cancel="handleRemoteCancel"
+      @remote-reset-error="resetRemoteError" />
 
     <BoardPanel v-if="!showSetup" :board="board" :current-turn="currentTurn" :selected-square="selectedSquare"
       :possible-moves="possibleMoves" :is-dragging="isDragging" :drag-start-square="dragStartSquare"
@@ -37,10 +40,11 @@
       :white-time-seconds="whiteTimeSeconds"
       :black-time-seconds="blackTimeSeconds" :active-color="currentTurn" :clock-test-id="'sidebar-chess-clock'"
       :game-mode="gameMode" :dialogue-text="dialogueText" :dialogue-key="dialogueKey"
-      :theme="theme" :game-result="gameResult"
+      :theme="theme" :game-result="gameResult" :is-remote="isRemote"
+      :room-code="remoteRoomCode" :remote-state="remoteState" :remote-link-kind="remoteLinkKind"
       v-model:is-sound-enabled="isSoundEnabled" v-model:coordinate-label-mode="coordinateLabelMode"
       @toggle-flip="isFlipped = !isFlipped" :has-game-started="hasGameStarted" @undo="handleUndo"
-      @draw="handleDrawOffer" @resign="handleResign" @restart="handleRestart" @back-to-home="handleBackToHome" />
+      @draw="handleDrawOffer" @resign="handleResign" @restart="handleRestart" @back-to-home="handleLeaveToHome" />
 
     <!-- 右上角固定按钮组 -->
     <div class="top-right-fabs">
@@ -58,19 +62,28 @@
       @update:is-sound-enabled="(val: boolean) => isSoundEnabled = val"
       @update:coordinate-label-mode="(val: 'off' | 'inside' | 'outside') => coordinateLabelMode = val"
       @update:theme="(val: 'light' | 'dark') => theme = val" />
+
+    <!-- 远程对局：请求 / 断线提示 -->
+    <RemoteOverlay v-if="!showSetup" :pending-undo-request="pendingUndoRequest"
+      :pending-draw-offer="pendingDrawOffer" :pending-rematch-request="pendingRematchRequest"
+      :outgoing-request="outgoingRequest" :opponent-left="isOpponentLeft"
+      @respond="handleRemoteRespond" @cancel-request="cancelOutgoingRequest" @back-to-home="handleLeaveToHome" />
   </section>
 </template>
 
 <script setup lang="ts">
-import { onUnmounted, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import Sidebar from './components/Sidebar.vue'
 import SettingsModal from './components/SettingsModal.vue'
 import GameSetup from './components/GameSetup.vue'
 import BoardPanel from './components/BoardPanel.vue'
+import RemoteOverlay from './components/RemoteOverlay.vue'
+import type { GameSetupConfig } from './components/GameSetup.vue'
 import { useSettings } from './composables/useSettings'
 import { useBoardDisplay } from './composables/useBoardDisplay'
 import { useGameState } from './composables/useGameState'
 import { useDragonDialogue } from './composables/useDragonDialogue'
+import { useRemoteGame } from './composables/useRemoteGame'
 import { useI18n } from './composables/useI18n'
 import settingSvg from './assets/icon/setting.svg?raw'
 import githubSvg from './assets/icon/github.svg?raw'
@@ -150,6 +163,16 @@ const {
   applyPromotion,
   getPositionCount,
   stopClock,
+  // ---- 远程对局 ----
+  isRemote,
+  pendingUndoRequest,
+  pendingDrawOffer,
+  pendingRematchRequest,
+  outgoingRequest,
+  respondToUndoRequest,
+  respondToDrawOffer,
+  respondToRematchRequest,
+  cancelOutgoingRequest,
 } = game
 
 // ---- 龙语对话 ----
@@ -170,14 +193,55 @@ const { currentDialogue: dialogueText, dialogueKey } = useDragonDialogue(
 )
 
 // ---- 远程对局 ----
-const handleRemoteGame = () => {
-  // TODO: 后续实现远程对局功能
-  showSetup.value = true
+const remote = useRemoteGame()
+remote.registerGame(game)
+
+const { state: remoteState, roomCode: remoteRoomCode, linkKind: remoteLinkKind, errorCode: remoteErrorCode } = remote
+
+const isOpponentLeft = computed(() => remoteState.value === 'opponent-left')
+
+const handleRemoteCreate = (config: GameSetupConfig, hostColor: 'white' | 'black' | 'random') => {
+  void remote.createRoom(config, hostColor)
+}
+
+const handleRemoteJoin = (code: string) => {
+  void remote.joinRoomByCode(code)
+}
+
+const handleRemoteCancel = () => {
+  remote.cancelWaiting()
+  remote.resetError()
+}
+
+const resetRemoteError = () => {
+  remote.resetError()
+}
+
+/** 回应对手的悔棋 / 和棋 / 重赛请求 */
+const handleRemoteRespond = (accepted: boolean) => {
+  if (pendingUndoRequest.value) {
+    respondToUndoRequest(accepted)
+  } else if (pendingDrawOffer.value) {
+    respondToDrawOffer(accepted)
+  } else if (pendingRematchRequest.value) {
+    respondToRematchRequest(accepted)
+  }
+}
+
+/** 返回首页：远程对局需要先关闭房间链路 */
+const handleLeaveToHome = () => {
+  if (isRemote.value) {
+    remote.leaveRoom()
+  }
+  handleBackToHome()
 }
 
 // ---- 生命周期 ----
 onUnmounted(() => {
   stopClock()
+  if (isRemote.value) {
+    remote.leaveRoom()
+  }
 })
 </script>
 

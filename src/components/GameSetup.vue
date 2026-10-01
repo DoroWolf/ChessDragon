@@ -7,7 +7,54 @@
         <div class="home-buttons">
             <button class="btn btn-home" @click="startSetup('ai')">{{ t('home.vsAI') }}</button>
             <button class="btn btn-home" @click="startSetup('human')">{{ t('home.vsHuman') }}</button>
-            <button class="btn btn-home" :disabled="true" @click="handleRemote">{{ t('home.remote') }}</button>
+            <button class="btn btn-home" @click="screen = 'remote'">{{ t('home.remote') }}</button>
+        </div>
+    </section>
+
+    <!-- 远程对局：创建 / 加入 入口 -->
+    <section v-else-if="screen === 'remote'" class="setup-panel with-title">
+        <h2 class="screen-title">{{ t('remote.title') }}</h2>
+        <div class="remote-actions">
+            <button type="button" class="btn remote-action-btn btn-primary" @click="openRemoteCreate">
+                <span class="btn-icon" v-html="linkSvg"></span>
+                <span>{{ t('remote.createRoom') }}</span>
+            </button>
+            <button type="button" class="btn remote-action-btn" @click="screen = 'remote-join'">
+                <span class="btn-icon" v-html="copySvg"></span>
+                <span>{{ t('remote.joinRoom') }}</span>
+            </button>
+        </div>
+        <div class="setup-actions">
+            <button type="button" class="btn bottom-btn" @click="screen = 'home'">{{ t('setup.back') }}</button>
+        </div>
+    </section>
+
+    <!-- 远程对局：加入房间 -->
+    <section v-else-if="screen === 'remote-join'" class="setup-panel with-title">
+        <h2 class="screen-title">{{ t('remote.joinRoom') }}</h2>
+        <p class="remote-hint">{{ t('remote.joinHint') }}</p>
+        <input v-model="roomCodeInput" type="text" class="room-code-input can-select" maxlength="6"
+            autocomplete="off" spellcheck="false" placeholder="SAMPLE"
+            @input="handleRoomCodeInput" @keyup.enter="handleJoinRoom" />
+        <p v-if="remoteErrorText" class="error-message">{{ remoteErrorText }}</p>
+        <div class="setup-actions">
+            <button type="button" class="btn bottom-btn" :disabled="isJoining" @click="screen = 'remote'">
+                {{ t('setup.back') }}
+            </button>
+            <button type="button" class="btn bottom-btn btn-primary" :disabled="!isRoomCodeReady || isJoining"
+                @click="handleJoinRoom">
+                {{ isJoining ? t('remote.connecting') : t('remote.join') }}
+            </button>
+        </div>
+    </section>
+
+    <!-- 远程对局：等待对手加入 -->
+    <section v-else-if="screen === 'remote-waiting'" class="setup-panel with-title">
+        <h2 class="screen-title">{{ t('remote.waitingOpponent') }}</h2>
+        <RemoteRoomCard :room-code="remoteRoomCode" :state="remoteState" :link-kind="remoteLinkKind" />
+        <p v-if="remoteErrorText" class="error-message">{{ remoteErrorText }}</p>
+        <div class="setup-actions">
+            <button type="button" class="btn bottom-btn" @click="handleCancelRoom">{{ t('remote.cancel') }}</button>
         </div>
     </section>
 
@@ -108,7 +155,7 @@
             </div>
         </div>
 
-        <div v-if="gameMode === 'ai'" class="setup-section">
+        <div v-if="showPlayAs" class="setup-section">
             <h3>{{ t('setup.playAs') }}</h3>
             <div class="option-group">
                 <label class="option-card-btn starter-card-btn" :class="{ active: starter === 'black' }">
@@ -132,10 +179,14 @@
         <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
         <div class="setup-actions">
-            <button type="button" class="btn bottom-btn" @click="screen = 'home'">
+            <button type="button" class="btn bottom-btn" @click="handleSetupBack">
                 {{ t('setup.back') }}
             </button>
-            <button type="button" class="btn bottom-btn btn-primary start-btn" :disabled="!canStart" @click="handleStart">
+            <button v-if="isRemoteSetup" type="button" class="btn bottom-btn btn-primary start-btn"
+                :disabled="!canStartRemote" @click="handleCreateRoom">
+                {{ t('remote.generateCode') }}
+            </button>
+            <button v-else type="button" class="btn bottom-btn btn-primary start-btn" :disabled="!canStart" @click="handleStart">
                 {{ t('setup.start') }}
             </button>
         </div>
@@ -148,14 +199,32 @@ import { titleImg, kingBlackIcon, kingRandomIcon, kingWhiteIcon } from '../asset
 import iconClassicSvg from '../assets/icon/classic.svg?raw'
 import iconChess960Svg from '../assets/icon/chess960.svg?raw'
 import iconCustomSvg from '../assets/icon/custom.svg?raw'
+import linkSvg from '../assets/icon/link.svg?raw'
+import copySvg from '../assets/icon/copy.svg?raw'
 import { useI18n } from '../composables/useI18n'
 import { validateFen, type FenErrorCode } from '../models/fen'
 import type { MessageKey } from '../data/i18n'
+import type { RemoteConnectionState, RemoteErrorCode, RemoteLinkKind } from '../remote/types'
+import { isValidRoomCode, normalizeRoomCode } from '../remote/roomCode'
 import FenPreview from './FenPreview.vue'
+import RemoteRoomCard from './RemoteRoomCard.vue'
 
-defineProps<{
-    theme?: 'light' | 'dark'
-}>()
+const props = withDefaults(
+    defineProps<{
+        theme?: 'light' | 'dark'
+        remoteState?: RemoteConnectionState
+        remoteRoomCode?: string
+        remoteLinkKind?: RemoteLinkKind | null
+        remoteErrorCode?: RemoteErrorCode | null
+    }>(),
+    {
+        theme: 'light',
+        remoteState: 'idle',
+        remoteRoomCode: '',
+        remoteLinkKind: null,
+        remoteErrorCode: null,
+    },
+)
 
 const { t } = useI18n()
 
@@ -174,10 +243,15 @@ export interface GameSetupConfig {
 
 const emit = defineEmits<{
     start: [config: GameSetupConfig]
-    remote: []
+    'remote-create': [config: GameSetupConfig, hostColor: 'white' | 'black' | 'random']
+    'remote-join': [code: string]
+    'remote-cancel': []
+    'remote-reset-error': []
 }>()
 
-const screen = ref<'home' | 'setup'>('home')
+type Screen = 'home' | 'setup' | 'remote' | 'remote-create' | 'remote-join' | 'remote-waiting'
+
+const screen = ref<Screen>('home')
 const gameMode = ref<'ai' | 'human' | 'remote'>('ai')
 const difficulty = ref(3)
 const aiStyle = ref<AIStyle>('balanced')
@@ -189,6 +263,27 @@ const timeMinutes = ref(10)
 const incrementSeconds = ref(0)
 const starter = ref<'black' | 'random' | 'white'>('white')
 const errorMessage = ref('')
+
+// ---- 远程对局 ----
+const roomCodeInput = ref('')
+
+const isRemoteSetup = computed(() => screen.value === 'remote-create')
+const showPlayAs = computed(() => gameMode.value === 'ai' || isRemoteSetup.value)
+const canStartRemote = computed(() => canStart.value)
+const isRoomCodeReady = computed(() => isValidRoomCode(normalizeRoomCode(roomCodeInput.value)))
+const isJoining = computed(() => props.remoteState === 'connecting')
+
+const REMOTE_ERROR_KEYS: Record<RemoteErrorCode, MessageKey> = {
+    'not-found': 'remote.notFound',
+    'code-taken': 'remote.codeTaken',
+    'connection-failed': 'remote.connectionFailed',
+    'protocol-mismatch': 'remote.protocolMismatch',
+}
+
+const remoteErrorText = computed<MessageKey | null>(() =>
+    props.remoteErrorCode ? REMOTE_ERROR_KEYS[props.remoteErrorCode] : null,
+)
+
 
 // ============================================================
 // 常用棋钟预设组合
@@ -223,9 +318,59 @@ const startSetup = (mode: 'ai' | 'human') => {
     screen.value = 'setup'
 }
 
-const handleRemote = () => {
-    emit('remote')
+const openRemoteCreate = () => {
+    gameMode.value = 'remote'
+    screen.value = 'remote-create'
 }
+
+const handleSetupBack = () => {
+    screen.value = isRemoteSetup.value ? 'remote' : 'home'
+}
+
+const handleRoomCodeInput = (event: Event) => {
+    const target = event.target as HTMLInputElement
+    const normalized = normalizeRoomCode(target.value)
+    roomCodeInput.value = normalized
+    target.value = normalized
+}
+
+const handleJoinRoom = () => {
+    if (isJoining.value) return
+    const code = normalizeRoomCode(roomCodeInput.value)
+    if (!isValidRoomCode(code)) return
+    emit('remote-join', code)
+}
+
+const handleCreateRoom = () => {
+    if (!canStart.value) return
+    emit('remote-create', buildConfig('remote'), starter.value)
+}
+
+const handleCancelRoom = () => {
+    emit('remote-cancel')
+}
+
+// 房主建房后进入等待界面；取消 / 关闭后回到远程对局入口
+watch(
+    () => props.remoteState,
+    (state) => {
+        if (state === 'creating' || state === 'waiting') {
+            screen.value = 'remote-waiting'
+            return
+        }
+        if ((state === 'idle' || state === 'closed') && screen.value === 'remote-waiting') {
+            screen.value = 'remote'
+        }
+    },
+)
+
+// 进出加入房间界面时清空上一次的失败提示
+watch(screen, (next, previous) => {
+    if (next === 'remote-join' || previous === 'remote-join') {
+        roomCodeInput.value = ''
+        emit('remote-reset-error')
+    }
+})
 
 // ============================================================
 // Chess960 生成
@@ -331,9 +476,7 @@ const canStart = computed(() => {
     return true
 })
 
-const handleStart = () => {
-    errorMessage.value = ''
-
+const buildConfig = (mode: 'ai' | 'human' | 'remote'): GameSetupConfig => {
     let finalFen = ''
     if (boardMode.value === 'custom') {
         finalFen = fenInput.value.trim()
@@ -341,16 +484,21 @@ const handleStart = () => {
         finalFen = buildChess960Fen()
     }
 
-    emit('start', {
+    return {
         boardMode: boardMode.value,
         fen: finalFen,
         timeMinutes: timeMinutes.value,
         incrementSeconds: timeMinutes.value === 0 ? 0 : incrementSeconds.value,
         starter: starter.value,
-        gameMode: gameMode.value,
+        gameMode: mode,
         difficulty: difficulty.value,
         aiStyle: aiStyle.value,
-    })
+    }
+}
+
+const handleStart = () => {
+    errorMessage.value = ''
+    emit('start', buildConfig(gameMode.value))
 }
 </script>
 
@@ -574,6 +722,67 @@ const handleStart = () => {
 }
 
 .start-btn {
+    flex: 1;
+}
+
+/* ===== 远程对局 ===== */
+.screen-title {
+    margin: 0 0 16px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.remote-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.remote-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+}
+
+.btn-icon :deep(svg) {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.remote-hint {
+    margin: 0 0 10px;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+.room-code-input {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: 'Unifont', monospace;
+    font-size: 1.4rem;
+    letter-spacing: 0.3em;
+    text-align: center;
+    text-transform: uppercase;
+    padding: 10px 8px;
+}
+
+.setup-actions .bottom-btn {
     flex: 1;
 }
 </style>

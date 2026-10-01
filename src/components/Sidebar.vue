@@ -9,6 +9,10 @@
     <ChessClock :is-clock-enabled="isClockEnabled" :white-time-seconds="whiteTimeSeconds"
       :black-time-seconds="blackTimeSeconds" :active-color="activeColor" :has-game-started="hasGameStarted" :test-id="clockTestId" />
 
+    <!-- 远程对局：房间状态条 -->
+    <RemoteRoomCard v-if="isRemote && roomCode" :room-code="roomCode" :state="remoteState"
+      :link-kind="remoteLinkKind" variant="compact" />
+
     <div class="material-row">
       <div class=" material-diff">
         <span v-if="materialDiffText" class="material-diff-text">{{ materialDiffText }}</span>
@@ -81,7 +85,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { Board, Color, PieceType } from '../models/chess'
+import type { RemoteConnectionState, RemoteLinkKind } from '../remote/types'
 import ChessClock from './ChessClock.vue'
+import RemoteRoomCard from './RemoteRoomCard.vue'
 import DragonDialogue from './DragonDialogue.vue'
 import { useI18n } from '../composables/useI18n'
 import homeSvg from '../assets/icon/home.svg?raw'
@@ -117,6 +123,10 @@ interface Props {
   dialogueKey?: number
   theme?: 'light' | 'dark'
   gameResult?: string
+  isRemote?: boolean
+  roomCode?: string
+  remoteState?: RemoteConnectionState
+  remoteLinkKind?: RemoteLinkKind | null
 }
 
 interface MovePair {
@@ -148,6 +158,10 @@ const props = withDefaults(defineProps<Props>(), {
   dialogueKey: 0,
   theme: 'light',
   gameResult: '',
+  isRemote: false,
+  roomCode: '',
+  remoteState: 'idle',
+  remoteLinkKind: null,
 })
 
 const { t } = useI18n()
