@@ -43,6 +43,7 @@
       :theme="theme" :game-result="gameResult" :is-remote="isRemote"
       :room-code="remoteRoomCode" :remote-state="remoteState" :remote-link-kind="remoteLinkKind"
       v-model:is-sound-enabled="isSoundEnabled" v-model:coordinate-label-mode="coordinateLabelMode"
+      :moved-colors="hasMovedByColor"
       @toggle-flip="isFlipped = !isFlipped" :has-game-started="hasGameStarted" @undo="handleUndo"
       @draw="handleDrawOffer" @resign="handleResign" @restart="handleRestart" @back-to-home="handleLeaveToHome" />
 
@@ -128,6 +129,7 @@ const {
   lastMove,
   halfmoveClock,
   hasGameStarted,
+  hasMovedByColor,
   timeoutWinner,
   whiteTimeSeconds,
   blackTimeSeconds,

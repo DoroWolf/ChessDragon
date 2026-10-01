@@ -95,6 +95,7 @@ const en: Record<MessageKey, string> = {
   'sidebar.confirmOfferDraw': 'Offer a draw?',
   'sidebar.confirmResign': 'Are you sure you want to resign?',
   'sidebar.confirmResignWithSide': 'Resign for {side}?',
+  'sidebar.confirmBackToHome': 'Return to homepage?',
 
   // ---- Game status ----
   'status.winByResign': '{side} wins (by resignation)',

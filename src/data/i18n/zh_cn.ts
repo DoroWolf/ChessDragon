@@ -93,6 +93,7 @@ const zhCN = {
   'sidebar.confirmOfferDraw': '确定要提议和棋吗？',
   'sidebar.confirmResign': '确定要认输吗？',
   'sidebar.confirmResignWithSide': '确定要让{side}认输吗？',
+  'sidebar.confirmBackToHome': '确定要返回首页吗？',
 
   // ---- 对局状态 ----
   'status.winByResign': '{side}胜利（对手认输）',

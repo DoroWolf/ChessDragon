@@ -51,7 +51,12 @@
       </button>
     </div>
     <div v-else class="button-group">
-      <button type="button" class="btn btn-warning" :title="t('sidebar.undo')" :disabled="isUndoDisabled" @click="$emit('undo')">
+      <!-- 尚未走出足够的走子（见 isUndoUnlocked）：悔棋不可用，改为红色返回按钮 -->
+      <button v-if="!isUndoUnlocked" type="button" class="btn btn-danger" :title="t('sidebar.home')"
+        @click="handleHomeClick">
+        <span class="btn-icon" v-html="homeSvg"></span>
+      </button>
+      <button v-else type="button" class="btn btn-warning" :title="t('sidebar.undo')" :disabled="isUndoDisabled" @click="$emit('undo')">
         <span class="btn-icon" v-html="undoSvg"></span>
       </button>
       <button
@@ -69,7 +74,7 @@
       </button>
     </div>
 
-    <!-- 二次确认弹窗 Modal（提和 / 认输）：需要覆盖棋盘，先确认再执行 -->
+    <!-- 二次确认弹窗 Modal（提和 / 认输 / 返回首页）：需要覆盖棋盘，先确认再执行 -->
     <div v-if="showConfirmModal" class="modal-backdrop">
       <div class="card dialog-box">
         <p class="dialog-message">{{ confirmMessage }}</p>
@@ -118,6 +123,8 @@ interface Props {
   activeColor?: Color | null
   clockTestId?: string
   hasGameStarted?: boolean
+  /** 本局各方是否已走出过至少一步（按颜色记录，悔棋到底也不会复位） */
+  movedColors?: Record<Color, boolean>
   gameMode?: 'ai' | 'human' | 'remote'
   dialogueText?: string
   dialogueKey?: number
@@ -151,6 +158,7 @@ const props = withDefaults(defineProps<Props>(), {
   activeColor: null,
   clockTestId: 'sidebar-chess-clock',
   hasGameStarted: false,
+  movedColors: () => ({ white: false, black: false }),
   gameMode: 'human',
   startingTurn: 'white',
   startingFullmoveNumber: 1,
@@ -181,7 +189,23 @@ const isCopied = ref(false)
 
 const showConfirmModal = ref(false)
 const confirmMessage = ref('')
-const pendingAction = ref<'draw' | 'resign' | null>(null)
+const pendingAction = ref<'draw' | 'resign' | 'home' | null>(null)
+
+/**
+ * 是否已经走出足够多的走子，可以把「返回」按钮换成「悔棋」：
+ * - 双人对局：走满一个完整回合（黑白各一步）
+ * - 远程对局：自己走出第一步之后（白方先行，故白方先切换、黑方维持返回）
+ * - 人机对局：走出任意半回合
+ * 判定基于只增不减的记录，悔棋到底也不会退回「返回」。
+ */
+const isUndoUnlocked = computed(() => {
+  const moved = props.movedColors
+  if (props.gameMode === 'human') return moved.white && moved.black
+  if (props.gameMode === 'remote') {
+    return props.playerColor === 'black' ? moved.black : moved.white
+  }
+  return moved.white || moved.black
+})
 
 const isUndoDisabled = computed(() => {
   if (props.moveHistory.length === 0 || props.isGameOver || !!props.gameStatus) return true
@@ -283,11 +307,19 @@ const handleResignClick = () => {
   showConfirmModal.value = true
 }
 
+const handleHomeClick = () => {
+  confirmMessage.value = t('sidebar.confirmBackToHome')
+  pendingAction.value = 'home'
+  showConfirmModal.value = true
+}
+
 const executeConfirm = () => {
   if (pendingAction.value === 'draw') {
     emit('draw')
   } else if (pendingAction.value === 'resign') {
     emit('resign')
+  } else if (pendingAction.value === 'home') {
+    emit('back-to-home')
   }
   cancelConfirm()
 }

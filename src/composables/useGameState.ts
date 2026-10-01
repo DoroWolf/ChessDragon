@@ -93,6 +93,12 @@ export function useGameState(
 
   // ---- 对局历史（用于悔棋） ----
   const moveHistory = ref<string[]>([])
+  /**
+   * 本局各方是否已经走出过至少一步（按颜色记录，只增不减）。
+   * 与会被悔棋清空的 moveHistory 不同：悔棋一路撤到初始局面后仍保持 true，
+   * 供 UI 区分「尚未开局」与「已开局但撤回了全部走子」。
+   */
+  const hasMovedByColor = ref<Record<Color, boolean>>({ white: false, black: false })
   const boardHistory = ref<
     Array<{
       board: Board
@@ -611,7 +617,9 @@ export function useGameState(
   const isSelectedSquare = (row: number, col: number): boolean =>
     selectedSquare.value?.row === row && selectedSquare.value?.col === col
 
-  const pushBoardHistory = () => {
+  const pushBoardHistory = (mover: Color) => {
+    // 记录一次走子即视为「该方已走出过半回合」，此后即便悔棋到底也不再视为未开局
+    hasMovedByColor.value[mover] = true
     boardHistory.value.push({
       board: cloneBoard(board.value),
       currentTurn: currentTurn.value,
@@ -692,7 +700,7 @@ export function useGameState(
       checkStatus,
     )
     moveHistory.value.push(notation)
-    pushBoardHistory()
+    pushBoardHistory(selectedPiece.color)
 
     // ---- 更新状态 ----
     board.value = nextBoard
@@ -953,7 +961,7 @@ export function useGameState(
       checkStatus,
     )
     moveHistory.value.push(notation)
-    pushBoardHistory()
+    pushBoardHistory(selectedPiece.color)
 
     // 更新状态
     board.value = nextBoard
@@ -1503,6 +1511,7 @@ export function useGameState(
     lowTimePlayedBlack = false
 
     hasGameStarted.value = false
+    hasMovedByColor.value = { white: false, black: false }
     stopClock()
     timeoutWinner.value = null
     moveHistory.value = []
@@ -1788,6 +1797,11 @@ export function useGameState(
       : null
     halfmoveClock.value = snapshot.halfmoveClock
     moveHistory.value = [...snapshot.moveHistory]
+    // 重同步快照里有走子记录就说明对应方已开局（粘性，不因快照为空而复位）
+    const firstMover: Color = snapshot.startingTurn
+    const plyCount = snapshot.moveHistory.length
+    if (plyCount > 0) hasMovedByColor.value[firstMover] = true
+    if (plyCount > 1) hasMovedByColor.value[oppositeColor(firstMover)] = true
     startingTurn.value = snapshot.startingTurn
     boardHistory.value = []
     positionHistory.value = [getPositionKey(board.value, currentTurn.value, lastMove.value)]
@@ -2026,7 +2040,7 @@ export function useGameState(
         checkStatus,
       )
       moveHistory.value.push(notation)
-      pushBoardHistory()
+      pushBoardHistory(piece.color)
 
       board.value = nextBoard
       lastMove.value = { from: { row: aiMove.fromRow, col: aiMove.fromCol }, to: { row: aiMove.toRow, col: aiMove.toCol } }
@@ -2262,6 +2276,7 @@ export function useGameState(
     // 历史
     moveHistory,
     boardHistory,
+    hasMovedByColor,
 
     // 终止
     isAgreedDraw,

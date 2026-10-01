@@ -276,8 +276,8 @@ const REMOTE_ERROR_KEYS: Record<RemoteErrorCode, MessageKey> = {
     'protocol-mismatch': 'remote.protocolMismatch',
 }
 
-const remoteErrorText = computed<MessageKey | null>(() =>
-    props.remoteErrorCode ? REMOTE_ERROR_KEYS[props.remoteErrorCode] : null,
+const remoteErrorText = computed(() =>
+    props.remoteErrorCode ? t(REMOTE_ERROR_KEYS[props.remoteErrorCode]) : '',
 )
 
 

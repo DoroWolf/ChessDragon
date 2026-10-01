@@ -101,7 +101,9 @@ const statusText = computed(() => {
 
 .room-code-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
 }
 
@@ -208,5 +210,13 @@ const statusText = computed(() => {
 .room-strip-status {
   color: var(--color-text-muted);
   white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .room-code {
+    font-size: 1.3rem;
+    letter-spacing: 0.2em;
+    text-indent: 0.2em;
+  }
 }
 </style>
