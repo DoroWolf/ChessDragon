@@ -16,11 +16,9 @@
         <h2 class="screen-title">{{ t('remote.title') }}</h2>
         <div class="remote-actions">
             <button type="button" class="btn remote-action-btn btn-primary" @click="openRemoteCreate">
-                <span class="btn-icon" v-html="linkSvg"></span>
                 <span>{{ t('remote.createRoom') }}</span>
             </button>
             <button type="button" class="btn remote-action-btn" @click="screen = 'remote-join'">
-                <span class="btn-icon" v-html="copySvg"></span>
                 <span>{{ t('remote.joinRoom') }}</span>
             </button>
         </div>
@@ -199,8 +197,6 @@ import { titleImg, kingBlackIcon, kingRandomIcon, kingWhiteIcon } from '../asset
 import iconClassicSvg from '../assets/icon/classic.svg?raw'
 import iconChess960Svg from '../assets/icon/chess960.svg?raw'
 import iconCustomSvg from '../assets/icon/custom.svg?raw'
-import linkSvg from '../assets/icon/link.svg?raw'
-import copySvg from '../assets/icon/copy.svg?raw'
 import { useI18n } from '../composables/useI18n'
 import { validateFen, type FenErrorCode } from '../models/fen'
 import type { MessageKey } from '../data/i18n'
@@ -747,21 +743,6 @@ const handleStart = () => {
     gap: 0.4rem;
     padding: 0.75rem 1rem;
     font-size: 0.9rem;
-}
-
-.btn-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    flex-shrink: 0;
-}
-
-.btn-icon :deep(svg) {
-    width: 100%;
-    height: 100%;
-    display: block;
 }
 
 .remote-hint {

@@ -67,7 +67,7 @@
     <RemoteOverlay v-if="!showSetup" :pending-undo-request="pendingUndoRequest"
       :pending-draw-offer="pendingDrawOffer" :pending-rematch-request="pendingRematchRequest"
       :outgoing-request="outgoingRequest" :opponent-left="isOpponentLeft"
-      @respond="handleRemoteRespond" @cancel-request="cancelOutgoingRequest" @back-to-home="handleLeaveToHome" />
+      @respond="handleRemoteRespond" @cancel-request="() => cancelOutgoingRequest()" @back-to-home="handleLeaveToHome" />
   </section>
 </template>
 

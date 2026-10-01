@@ -18,7 +18,6 @@
 
   <!-- 对局中 / 侧边栏：紧凑条 -->
   <div v-else class="room-strip" :title="statusText">
-    <span class="room-strip-icon" v-html="linkSvg"></span>
     <span class="room-strip-code can-select">{{ roomCode }}</span>
     <span class="status-dot" :class="statusClass"></span>
     <span class="room-strip-status">{{ statusText }}</span>
@@ -32,7 +31,6 @@ import { copyText } from '../remote/roomCode'
 import type { RemoteConnectionState, RemoteLinkKind } from '../remote/types'
 import copySvg from '../assets/icon/copy.svg?raw'
 import checkSvg from '../assets/icon/check.svg?raw'
-import linkSvg from '../assets/icon/link.svg?raw'
 
 interface Props {
   roomCode: string
@@ -193,22 +191,6 @@ const statusText = computed(() => {
   font-size: 0.75rem;
   color: var(--color-text-primary);
   min-width: 0;
-}
-
-.room-strip-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.1rem;
-  height: 1.1rem;
-  flex-shrink: 0;
-  color: var(--color-text-primary);
-}
-
-.room-strip-icon :deep(svg) {
-  width: 100%;
-  height: 100%;
-  display: block;
 }
 
 .room-strip-code {

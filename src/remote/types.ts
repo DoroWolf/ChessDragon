@@ -63,7 +63,7 @@ export interface RoomConfigPayload {
 }
 
 /** 协议版本：握手时比对，避免新旧版本互连 */
-export const PROTOCOL_VERSION = 1
+export const PROTOCOL_VERSION = 2
 
 /** 对局内同步的一份完整状态快照（用于异常时的全量重同步） */
 export interface RemoteStateSnapshot {
@@ -98,18 +98,25 @@ export type RemoteMessage =
   | { type: 'clock'; clock: ClockSnapshot }
   /** 一方请求悔棋 */
   | { type: 'undo-request' }
-  /** 对悔棋请求的答复 */
+  /** 对悔棋请求的答复（仅表态，实际回退由发起方 commit） */
   | { type: 'undo-response'; accepted: boolean }
   /** 提议和棋 */
   | { type: 'draw-offer' }
-  /** 对和棋的答复 */
+  /** 对和棋的答复（仅表态，实际判和由发起方 commit） */
   | { type: 'draw-response'; accepted: boolean }
   /** 认输 */
   | { type: 'resign'; color: Color }
   /** 请求重赛 */
   | { type: 'rematch-request' }
-  /** 对重赛的答复 */
+  /** 对重赛的答复（仅表态，实际重开由发起方 commit） */
   | { type: 'rematch-response'; accepted: boolean }
+  /**
+   * 发起方确认执行：收到同意答复后由发起方广播，双方同时落地。
+   * 这样「走子撤回请求」不会导致一方已执行、另一方未执行的不同步。
+   */
+  | { type: 'commit'; kind: 'undo' | 'draw' | 'rematch' }
+  /** 发起方撤回尚未被回应的请求，对方据此收起提示 */
+  | { type: 'cancel-request' }
   /** 全量状态重同步（检测到不同步时由房主下发） */
   | { type: 'state'; snapshot: RemoteStateSnapshot }
   /** 心跳 */

@@ -6,12 +6,12 @@
       :is-ai-enabled="gameMode === 'ai'"
     />-->
 
-    <ChessClock :is-clock-enabled="isClockEnabled" :white-time-seconds="whiteTimeSeconds"
-      :black-time-seconds="blackTimeSeconds" :active-color="activeColor" :has-game-started="hasGameStarted" :test-id="clockTestId" />
-
-    <!-- 远程对局：房间状态条 -->
+    <!-- 远程对局：房间详情（位于棋钟上方） -->
     <RemoteRoomCard v-if="isRemote && roomCode" :room-code="roomCode" :state="remoteState"
       :link-kind="remoteLinkKind" variant="compact" />
+
+    <ChessClock :is-clock-enabled="isClockEnabled" :white-time-seconds="whiteTimeSeconds"
+      :black-time-seconds="blackTimeSeconds" :active-color="activeColor" :has-game-started="hasGameStarted" :test-id="clockTestId" />
 
     <div class="material-row">
       <div class=" material-diff">
@@ -69,13 +69,13 @@
       </button>
     </div>
 
-    <!-- 二次确认弹窗 Modal -->
+    <!-- 二次确认弹窗 Modal（提和 / 认输）：需要覆盖棋盘，先确认再执行 -->
     <div v-if="showConfirmModal" class="modal-backdrop">
       <div class="card dialog-box">
         <p class="dialog-message">{{ confirmMessage }}</p>
         <div class="dialog-buttons">
           <button type="button" class="btn" @click="cancelConfirm">{{ t('common.cancel') }}</button>
-          <button type="button" class="btn" @click="executeConfirm">{{ t('common.confirm') }}</button>
+          <button type="button" class="btn btn-primary" @click="executeConfirm">{{ t('common.confirm') }}</button>
         </div>
       </div>
     </div>
@@ -525,6 +525,7 @@ const materialDiffText = computed(() => {
   padding: 0.35rem 0.15rem;
 }
 
+/* 二次确认弹窗（提和 / 认输）：覆盖式，必须先表态才能继续 */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -545,7 +546,8 @@ const materialDiffText = computed(() => {
 
 .dialog-message {
   font-size: 0.85rem;
-  margin-bottom: 1rem;
+  margin: 0 0 1rem;
+  line-height: 1.3;
 }
 
 .dialog-buttons {

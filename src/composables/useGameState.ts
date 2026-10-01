@@ -55,6 +55,12 @@ const INITIAL_CLOCK_SECONDS: number | null = null
 /** 房主向客方广播权威棋钟的间隔（毫秒） */
 const REMOTE_CLOCK_BROADCAST_MS = 250
 
+/** 可发起请求的对局行为 */
+type RemoteRequestKind = 'undo' | 'draw' | 'rematch'
+
+/** 请求被拒绝后的冷却时长（毫秒）：冷却期内只在本机显示「已发送」，不打扰对手 */
+const REQUEST_COOLDOWN_MS = 60_000
+
 // 对局结束原因（与文案解耦，供本地化与台词选择使用）
 export type GameEndReason = 'resign' | 'timeout' | 'checkmate' | 'draw'
 
@@ -159,6 +165,17 @@ export function useGameState(
   const pendingRematchRequest = ref(false)
   /** 我方已发出的请求，等待对方回应 */
   const outgoingRequest = ref<'undo' | 'draw' | 'rematch' | null>(null)
+
+  /** 各行为的冷却截止时间戳（毫秒），被拒绝后 60 秒内不再真正打扰对手 */
+  const requestCooldownUntil = ref<Record<RemoteRequestKind, number>>({
+    undo: 0,
+    draw: 0,
+    rematch: 0,
+  })
+  /** 当前未决请求是否真的发给了对方（冷却期内的「已发送」是纯本机提示） */
+  let outgoingRequestWasSent = false
+  /** 冷却期内伪造的「已发送」提示到期后自动收起 */
+  let localOnlyRequestTimer: number | null = null
 
   const isRemote = computed(() => gameMode.value === 'remote')
   const isRemoteHost = computed(() => isRemote.value && remoteRole.value === 'host')
@@ -402,12 +419,20 @@ export function useGameState(
         (key) => key === getPositionKey(nextBoard, nextTurn, lastMove.value),
       ).length >= 5
 
+    // 「一个回合」（黑白各走一步）之后提和 / 认输即可用。
+    // 这里必须与棋钟是否启用解耦，否则无限制对局下按钮会永久禁用。
+    const isRoundComplete = moveHistory.value.length >= 2
+    const wasStarted = hasGameStarted.value
+    if (!terminalPosition && !wasStarted && isRoundComplete) {
+      hasGameStarted.value = true
+    }
+
     if (terminalPosition || whiteTimeSeconds.value === 0) {
       stopClock()
       return
     }
 
-    if (hasGameStarted.value) {
+    if (wasStarted) {
       if (moverColor === 'white') {
         if (whiteTimeSeconds.value !== null) {
           whiteTimeSeconds.value += clockIncrementSeconds.value
@@ -418,8 +443,7 @@ export function useGameState(
         }
       }
       startClock(nextTurn)
-    } else if (moveHistory.value.length >= 2) {
-      hasGameStarted.value = true
+    } else if (isRoundComplete) {
       startClock(nextTurn)
     }
   }
@@ -686,8 +710,9 @@ export function useGameState(
     applyClockAfterMove(selectedPiece.color, nextTurn, nextBoard)
     triggerGameStateAudio(isCapture, nextTurn, nextBoard)
 
-    // ---- 远程对局：把本地走子同步给对手 ----
+    // ---- 远程对局：走子即视为拒绝对方请求，并把本地走子同步给对手 ----
     if (origin === 'local') {
+      clearPendingRequestsOnMove()
       broadcastLocalMove({ row: from.row, col: from.col }, { row: move.row, col: move.col })
     }
 
@@ -943,8 +968,9 @@ export function useGameState(
     applyClockAfterMove(selectedPiece.color, nextTurn, nextBoard)
     triggerGameStateAudio(isCapture, nextTurn, nextBoard)
 
-    // ---- 远程对局：把本地走子（含升变）同步给对手 ----
+    // ---- 远程对局：走子即视为拒绝对方请求，并把本地走子（含升变）同步给对手 ----
     if (origin === 'local') {
+      clearPendingRequestsOnMove()
       broadcastLocalMove(
         { row: from.row, col: from.col },
         { row: to.row, col: to.col },
@@ -1230,8 +1256,9 @@ export function useGameState(
     // ---- 远程对局：悔棋需要先取得对方同意 ----
     if (isRemote.value) {
       if (outgoingRequest.value !== null || pendingUndoRequest.value) return
-      outgoingRequest.value = 'undo'
-      sendRemote({ type: 'undo-request' })
+      if (beginRemoteRequest('undo')) {
+        sendRemote({ type: 'undo-request' })
+      }
       return
     }
 
@@ -1342,8 +1369,9 @@ export function useGameState(
     // 远程对局：和棋需要双方同意
     if (isRemote.value) {
       if (outgoingRequest.value !== null || pendingDrawOffer.value) return
-      outgoingRequest.value = 'draw'
-      sendRemote({ type: 'draw-offer' })
+      if (beginRemoteRequest('draw')) {
+        sendRemote({ type: 'draw-offer' })
+      }
       return
     }
 
@@ -1366,8 +1394,9 @@ export function useGameState(
     // 远程对局：重赛需要对方同意
     if (isRemote.value) {
       if (outgoingRequest.value !== null || pendingRematchRequest.value) return
-      outgoingRequest.value = 'rematch'
-      sendRemote({ type: 'rematch-request' })
+      if (beginRemoteRequest('rematch')) {
+        sendRemote({ type: 'rematch-request' })
+      }
       return
     }
 
@@ -1376,6 +1405,8 @@ export function useGameState(
 
   const performRestart = (): void => {
     cancelAIMove()
+    // 新的一局：清掉上一局残留的请求状态，避免旧提示串场
+    clearRemoteRequestState()
     if (!lastSetupConfig.value) {
       showSetup.value = true
       return
@@ -1591,6 +1622,14 @@ export function useGameState(
     stopClock()
   }
 
+  /** 清空一切的远程请求状态（新的一局 / 离开房间时调用） */
+  const clearRemoteRequestState = () => {
+    finishOutgoingRequest()
+    pendingUndoRequest.value = false
+    pendingDrawOffer.value = false
+    pendingRematchRequest.value = false
+  }
+
   /** 重置远程会话（返回首页 / 主动离开时调用） */
   const resetRemoteSession = () => {
     stopClock()
@@ -1598,10 +1637,8 @@ export function useGameState(
     remoteRole.value = null
     remoteLinkKind.value = null
     roomCode.value = ''
-    pendingUndoRequest.value = false
-    pendingDrawOffer.value = false
-    pendingRematchRequest.value = false
-    outgoingRequest.value = null
+    clearRemoteRequestState()
+    requestCooldownUntil.value = { undo: 0, draw: 0, rematch: 0 }
   }
 
   /** 应用房主下发的权威棋钟快照（客方） */
@@ -1635,20 +1672,54 @@ export function useGameState(
     }
   }
 
-  /** 应用房主指令回退一手（客方） */
-  const applyRemoteUndoStep = () => {
-    premove.value = null
-    const previousState = boardHistory.value.pop()
-    if (!previousState) return
+  /** 两种执棋方互为对方 */
+  const oppositeColor = (color: Color): Color => (color === 'white' ? 'black' : 'white')
 
-    restoreHistoryState(previousState)
-    moveHistory.value.pop()
-    if (positionHistory.value.length > 1) {
-      positionHistory.value.pop()
+  /**
+   * 远程悔棋：回退到「请求方自己走棋之前」。
+   *
+   * 例如白黑各走一轮后轮到白方悔棋并通过，会把整个回合一起撤回（2 手），
+   * 而不是只撤掉黑方那一步 —— 撤回后正好轮到白方重新走那一手。
+   * 若请求方刚走完（当前轮到对方），则只回退 1 手。
+   *
+   * 本地 / 人机模式不走这里，仍然只回退 1 手。
+   */
+  const applyRemoteUndoStep = (requesterColor: Color) => {
+    premove.value = null
+
+    let targetState: (typeof boardHistory.value)[number] | null = null
+    let poppedPlies = 0
+
+    while (boardHistory.value.length > 0) {
+      const previousState = boardHistory.value.pop()
+      if (!previousState) break
+
+      targetState = previousState
+      poppedPlies += 1
+
+      // previousState.currentTurn 即「被撤销这一手的走子方」
+      if (previousState.currentTurn === requesterColor) break
     }
+
+    if (!targetState) return
+
+    restoreHistoryState(targetState)
+    for (let i = 0; i < poppedPlies; i += 1) {
+      moveHistory.value.pop()
+      if (positionHistory.value.length > 1) {
+        positionHistory.value.pop()
+      }
+    }
+
     selectedSquare.value = null
     promotionPending.value = null
     promotionStyle.value = {}
+
+    // 与本地悔棋保持一致：回退后仍视为「已开始」，提和 / 认输保持可用
+    if (!isGameOver.value && !hasGameStarted.value) {
+      hasGameStarted.value = true
+    }
+
     broadcastRemoteClock()
   }
 
@@ -1753,15 +1824,28 @@ export function useGameState(
         pendingUndoRequest.value = true
         break
       case 'undo-response':
-        outgoingRequest.value = null
-        if (message.accepted) applyRemoteUndoStep()
+        if (outgoingRequest.value !== 'undo') break
+        finishOutgoingRequest()
+        if (message.accepted) {
+          // 本方是请求方：回退到自己走棋之前
+          applyRemoteUndoStep(playerColor.value)
+          sendRemote({ type: 'commit', kind: 'undo' })
+        } else {
+          startRequestCooldown('undo')
+        }
         break
       case 'draw-offer':
         pendingDrawOffer.value = true
         break
       case 'draw-response':
-        outgoingRequest.value = null
-        if (message.accepted) applyAgreedDraw()
+        if (outgoingRequest.value !== 'draw') break
+        finishOutgoingRequest()
+        if (message.accepted) {
+          applyAgreedDraw()
+          sendRemote({ type: 'commit', kind: 'draw' })
+        } else {
+          startRequestCooldown('draw')
+        }
         break
       case 'resign':
         stopClock()
@@ -1772,41 +1856,131 @@ export function useGameState(
         pendingRematchRequest.value = true
         break
       case 'rematch-response':
-        outgoingRequest.value = null
-        if (message.accepted) performRestart()
+        if (outgoingRequest.value !== 'rematch') break
+        finishOutgoingRequest()
+        if (message.accepted) {
+          performRestart()
+          sendRemote({ type: 'commit', kind: 'rematch' })
+        } else {
+          startRequestCooldown('rematch')
+        }
+        break
+      case 'commit':
+        // 发起方已确认执行，本方跟随落地
+        if (message.kind === 'undo') {
+          // 本方是应答方，请求方是对方，回退基准按其执棋方计算
+          applyRemoteUndoStep(oppositeColor(playerColor.value))
+        } else if (message.kind === 'draw') {
+          applyAgreedDraw()
+        } else {
+          performRestart()
+        }
+        break
+      case 'cancel-request':
+        // 对方撤回了请求，收起提示（已经表态过则无事发生）
+        pendingUndoRequest.value = false
+        pendingDrawOffer.value = false
+        pendingRematchRequest.value = false
         break
       default:
         break
     }
   }
 
-  /** 回应对方的悔棋请求 */
+  /** 回应对方的悔棋请求（仅表态，实际回退由发起方 commit） */
   const respondToUndoRequest = (accepted: boolean) => {
     if (!pendingUndoRequest.value) return
     pendingUndoRequest.value = false
     sendRemote({ type: 'undo-response', accepted })
-    if (accepted) applyRemoteUndoStep()
   }
 
-  /** 回应对方的和棋提议 */
+  /** 回应对方的和棋提议（仅表态，实际判和由发起方 commit） */
   const respondToDrawOffer = (accepted: boolean) => {
     if (!pendingDrawOffer.value) return
     pendingDrawOffer.value = false
     sendRemote({ type: 'draw-response', accepted })
-    if (accepted) applyAgreedDraw()
   }
 
-  /** 回应对方的重赛请求 */
+  /** 回应对方的重赛请求（仅表态，实际重开由发起方 commit） */
   const respondToRematchRequest = (accepted: boolean) => {
     if (!pendingRematchRequest.value) return
     pendingRematchRequest.value = false
     sendRemote({ type: 'rematch-response', accepted })
-    if (accepted) performRestart()
   }
 
-  /** 撤销我方尚未被回应的请求 */
-  const cancelOutgoingRequest = () => {
+  /** 该行为的请求是否仍在冷却期内 */
+  const isRequestOnCooldown = (kind: RemoteRequestKind): boolean =>
+    Date.now() < requestCooldownUntil.value[kind]
+
+  /** 请求被拒绝后进入冷却，避免连续骚扰对手 */
+  const startRequestCooldown = (kind: RemoteRequestKind) => {
+    requestCooldownUntil.value = {
+      ...requestCooldownUntil.value,
+      [kind]: Date.now() + REQUEST_COOLDOWN_MS,
+    }
+  }
+
+  const clearLocalOnlyRequestTimer = () => {
+    if (localOnlyRequestTimer !== null) {
+      window.clearTimeout(localOnlyRequestTimer)
+      localOnlyRequestTimer = null
+    }
+  }
+
+  /** 结束我方未决请求的本机状态（不发送任何消息） */
+  const finishOutgoingRequest = () => {
+    clearLocalOnlyRequestTimer()
     outgoingRequest.value = null
+    outgoingRequestWasSent = false
+  }
+
+  /**
+   * 发起一次请求。
+   * 处于冷却期时只在本机显示「已发送」，对方收不到对应请求；返回是否真的发出了消息。
+   */
+  const beginRemoteRequest = (kind: RemoteRequestKind): boolean => {
+    outgoingRequest.value = kind
+
+    if (!isRequestOnCooldown(kind)) {
+      outgoingRequestWasSent = true
+      return true
+    }
+
+    outgoingRequestWasSent = false
+    clearLocalOnlyRequestTimer()
+
+    // 冷却结束即收起这条纯本机提示
+    const remaining = Math.max(requestCooldownUntil.value[kind] - Date.now(), 0)
+    localOnlyRequestTimer = window.setTimeout(() => {
+      localOnlyRequestTimer = null
+      if (outgoingRequest.value === kind) {
+        outgoingRequest.value = null
+      }
+    }, remaining)
+
+    return false
+  }
+
+  /** 撤销我方尚未被回应的请求（真的发出过才通知对方收起提示） */
+  const cancelOutgoingRequest = (notify = true) => {
+    if (outgoingRequest.value === null) return
+    const wasSent = outgoingRequestWasSent
+    finishOutgoingRequest()
+    if (notify && wasSent && isRemote.value) {
+      sendRemote({ type: 'cancel-request' })
+    }
+  }
+
+  /**
+   * 走子即视为「拒绝对方请求 + 撤回自己未决的请求」。
+   * 由于执行权统一在发起方的 commit，撤回不会造成双方状态不同步。
+   */
+  const clearPendingRequestsOnMove = () => {
+    if (!isRemote.value) return
+    respondToUndoRequest(false)
+    respondToDrawOffer(false)
+    respondToRematchRequest(false)
+    cancelOutgoingRequest()
   }
 
   // ============================================================
