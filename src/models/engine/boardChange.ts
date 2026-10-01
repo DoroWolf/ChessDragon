@@ -39,11 +39,11 @@ export function makeMove(
   let wasPromotion = false
 
   if (move.special === 'castle' && move.rookFrom && move.rookTo) {
-    makeChange(b, move.toRow, move.toCol, { ...piece, hasMoved: true }, changes)
-    makeChange(b, move.fromRow, move.fromCol, null, changes)
     const rook = b[move.rookFrom.row]![move.rookFrom.col]!
-    makeChange(b, move.rookTo.row, move.rookTo.col, { ...rook, hasMoved: true }, changes)
+    makeChange(b, move.fromRow, move.fromCol, null, changes)
     makeChange(b, move.rookFrom.row, move.rookFrom.col, null, changes)
+    makeChange(b, move.toRow, move.toCol, { ...piece, hasMoved: true }, changes)
+    makeChange(b, move.rookTo.row, move.rookTo.col, { ...rook, hasMoved: true }, changes)
   } else if (move.special === 'enPassant') {
     const promotedType = (move.toRow === 0 || move.toRow === 7)
       ? move.promotion ?? 'queen'

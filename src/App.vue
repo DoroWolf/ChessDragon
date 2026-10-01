@@ -14,6 +14,7 @@
       :premove="premove"
       :last-move="lastMove"
       :can-premove="canPremove"
+      :is-chess960="isChess960"
       :get-overlay-texture="getOverlayTexture"
       :get-piece-image="getPieceImage"
       :get-square-label="getSquareLabel"
@@ -101,6 +102,7 @@ const game = useGameState(isSoundEnabled, isFlipped)
 // 从 game 中解构所有模板所需的变量/函数
 const {
   showSetup,
+  isChess960,
   playerColor,
   isClockEnabled,
   gameMode,

@@ -110,6 +110,31 @@ export const parseFenBoardLayout = (boardPart: string): Board | null => {
   return board
 }
 
+const getCastlingRookCol = (board: Board, color: Color, right: string): number | null => {
+  const row = color === 'white' ? 7 : 0
+  const rank = board[row] ?? []
+  const kingCol = rank.findIndex((piece) => piece?.type === 'king' && piece.color === color)
+  if (kingCol < 0) return null
+
+  const rookCols = rank.reduce<number[]>((cols, piece, col) => {
+    if (piece?.type === 'rook' && piece.color === color) cols.push(col)
+    return cols
+  }, [])
+
+  if (right === 'K' || right === 'k') {
+    return rookCols.filter((col) => col > kingCol).at(-1) ?? null
+  }
+  if (right === 'Q' || right === 'q') {
+    return rookCols.find((col) => col < kingCol) ?? null
+  }
+
+  const col = right.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0)
+  return rookCols.includes(col) ? col : null
+}
+
+const isColorCastlingRight = (right: string, color: Color): boolean =>
+  color === 'white' ? right === right.toUpperCase() : right === right.toLowerCase()
+
 /** 解析棋盤與對局狀態欄位；缺少的選填欄位採 FEN 預設值。 */
 export const parseFen = (fen: string): ParsedFen | null => {
   const parts = fen.trim().split(/\s+/)
@@ -123,7 +148,10 @@ export const parseFen = (fen: string): ParsedFen | null => {
   const enPassantPart = parts[3] ?? '-'
   const halfmovePart = parts[4] ?? '0'
   const fullmovePart = parts[5] ?? '1'
-  if (!/^(?:-|K?Q?k?q?)$/.test(castlingPart)) return null
+  if (
+    !/^(?:-|[KQABCDEFGHkqabcdefgh]+)$/.test(castlingPart) ||
+    (castlingPart !== '-' && new Set(castlingPart).size !== castlingPart.length)
+  ) return null
   if (!/^(?:-|[a-h][36])$/.test(enPassantPart)) return null
   if (!/^\d+$/.test(halfmovePart) || !/^[1-9]\d*$/.test(fullmovePart)) return null
   if (!Number.isSafeInteger(Number(halfmovePart)) || !Number.isSafeInteger(Number(fullmovePart))) return null
@@ -133,21 +161,19 @@ export const parseFen = (fen: string): ParsedFen | null => {
 
   const turn: Color = turnPart === 'b' ? 'black' : 'white'
   const castlingRights = castlingPart === '-' ? '' : castlingPart
-  for (const [color, row, kingSide, queenSide] of [
-    ['white', 7, 'K', 'Q'],
-    ['black', 0, 'k', 'q'],
-  ] as const) {
-    const king = board[row]![4]
-    if (king?.type === 'king' && king.color === color) {
-      king.hasMoved = !castlingRights.includes(kingSide) && !castlingRights.includes(queenSide)
+  for (const color of ['white', 'black'] as const) {
+    const row = color === 'white' ? 7 : 0
+    const rights = [...castlingRights].filter((right) => isColorCastlingRight(right, color))
+    const king = board[row]!.find((piece) => piece?.type === 'king' && piece.color === color)
+    if (king) king.hasMoved = rights.length === 0
+
+    for (const piece of board[row]!) {
+      if (piece?.type === 'rook' && piece.color === color) piece.hasMoved = true
     }
-    const kingSideRook = board[row]![7]
-    if (kingSideRook?.type === 'rook' && kingSideRook.color === color) {
-      kingSideRook.hasMoved = !castlingRights.includes(kingSide)
-    }
-    const queenSideRook = board[row]![0]
-    if (queenSideRook?.type === 'rook' && queenSideRook.color === color) {
-      queenSideRook.hasMoved = !castlingRights.includes(queenSide)
+    for (const right of rights) {
+      const rookCol = getCastlingRookCol(board, color, right)
+      const rook = rookCol === null ? null : board[row]![rookCol]
+      if (rook) rook.hasMoved = false
     }
   }
 
@@ -191,7 +217,11 @@ export const validateFen = (fen: string): FenValidationResult => {
 
   if (!boardPart) return fail('format')
   if (turnPart !== 'w' && turnPart !== 'b') return fail('format')
-  if (castlingPart !== undefined && !/^(-|K?Q?k?q?)$/.test(castlingPart)) return fail('format')
+  if (
+    castlingPart !== undefined &&
+    (!/^(?:-|[KQABCDEFGHkqabcdefgh]+)$/.test(castlingPart) ||
+      (castlingPart !== '-' && new Set(castlingPart).size !== castlingPart.length))
+  ) return fail('format')
   if (enPassantPart !== undefined && !/^(-|[a-h][36])$/.test(enPassantPart)) return fail('format')
   if (halfmovePart !== undefined && !/^\d+$/.test(halfmovePart)) return fail('format')
   if (fullmovePart !== undefined && !/^[1-9]\d*$/.test(fullmovePart)) return fail('format')
@@ -203,17 +233,11 @@ export const validateFen = (fen: string): FenValidationResult => {
   if (!board) return fail('format', null, turn)
 
   if (castlingPart && castlingPart !== '-') {
-    const castlingChecks = [
-      { right: 'K', row: 7, col: 7, type: 'rook', color: 'white' },
-      { right: 'Q', row: 7, col: 0, type: 'rook', color: 'white' },
-      { right: 'k', row: 0, col: 7, type: 'rook', color: 'black' },
-      { right: 'q', row: 0, col: 0, type: 'rook', color: 'black' },
-    ] as const
-    for (const { right, row, col, color } of castlingChecks) {
-      if (!castlingPart.includes(right)) continue
-      const king = board[color === 'white' ? 7 : 0]![4]
-      const rook = board[row]![col]
-      if (king?.type !== 'king' || king.color !== color || rook?.type !== 'rook' || rook.color !== color) {
+    for (const right of castlingPart) {
+      const color: Color = right === right.toUpperCase() ? 'white' : 'black'
+      const row = color === 'white' ? 7 : 0
+      const king = board[row]!.find((piece) => piece?.type === 'king' && piece.color === color)
+      if (!king || getCastlingRookCol(board, color, right) === null) {
         return fail('castling', board, turn)
       }
     }

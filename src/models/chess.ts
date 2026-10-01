@@ -357,48 +357,61 @@ export const getPieceMoves = (
         }
       }
 
-      if (!piece.hasMoved) {
+      if (!piece.hasMoved && (row === 0 || row === 7)) {
         const enemyColor: Color = piece.color === 'white' ? 'black' : 'white'
+        const homeRow = piece.color === 'white' ? 7 : 0
 
-        const kingSideRook = board[row]?.[7] ?? null
-        if (
-          kingSideRook &&
-          kingSideRook.type === 'rook' &&
-          !kingSideRook.hasMoved &&
-          board[row]?.[5] === null &&
-          board[row]?.[6] === null &&
-          !isSquareAttacked(board, row, col, enemyColor) &&
-          !isSquareAttacked(board, row, col + 1, enemyColor) &&
-          !isSquareAttacked(board, row, col + 2, enemyColor)
-        ) {
-          moves.push({
-            row,
-            col: col + 2,
-            special: 'castle',
-            rookFrom: { row, col: 7 },
-            rookTo: { row, col: 5 },
-          })
-        }
+        for (const direction of [-1, 1]) {
+          let rookCol = col + direction
+          while (inBounds(row, rookCol)) {
+            const candidate = board[row]?.[rookCol] ?? null
+            if (candidate) {
+              if (
+                candidate.type === 'rook' &&
+                candidate.color === piece.color &&
+                !candidate.hasMoved
+              ) {
+                const kingToCol = direction > 0 ? 6 : 2
+                const rookToCol = direction > 0 ? 5 : 3
+                const pathIsClear = [kingToCol, rookToCol].every((destination) => {
+                  const startCol = destination === kingToCol ? col : rookCol
+                  const step = Math.sign(destination - startCol)
+                  if (step === 0) return true
+                  for (let pathCol = startCol + step; pathCol !== destination + step; pathCol += step) {
+                    const occupant = board[row]?.[pathCol] ?? null
+                    if (occupant && pathCol !== col && pathCol !== rookCol) return false
+                  }
+                  return true
+                })
 
-        const queenSideRook = board[row]?.[0] ?? null
-        if (
-          queenSideRook &&
-          queenSideRook.type === 'rook' &&
-          !queenSideRook.hasMoved &&
-          board[row]?.[1] === null &&
-          board[row]?.[2] === null &&
-          board[row]?.[3] === null &&
-          !isSquareAttacked(board, row, col, enemyColor) &&
-          !isSquareAttacked(board, row, col - 1, enemyColor) &&
-          !isSquareAttacked(board, row, col - 2, enemyColor)
-        ) {
-          moves.push({
-            row,
-            col: col - 2,
-            special: 'castle',
-            rookFrom: { row, col: 0 },
-            rookTo: { row, col: 3 },
-          })
+                let kingPathIsSafe = pathIsClear
+                const kingStep = Math.sign(kingToCol - col)
+                for (
+                  let kingCol = col;
+                  kingPathIsSafe && kingStep !== 0 && kingCol !== kingToCol + kingStep;
+                  kingCol += kingStep
+                ) {
+                  const transitBoard = cloneBoard(board)
+                  transitBoard[row]![col] = null
+                  if (kingCol === rookCol) transitBoard[row]![rookCol] = null
+                  transitBoard[row]![kingCol] = { ...piece, hasMoved: true }
+                  kingPathIsSafe = !isSquareAttacked(transitBoard, row, kingCol, enemyColor)
+                }
+
+                if (kingPathIsSafe && row === homeRow) {
+                  moves.push({
+                    row,
+                    col: kingToCol,
+                    special: 'castle',
+                    rookFrom: { row, col: rookCol },
+                    rookTo: { row, col: rookToCol },
+                  })
+                }
+              }
+              break
+            }
+            rookCol += direction
+          }
         }
       }
       break
@@ -447,10 +460,10 @@ export const getLegalMoves = (
 
     if (m.special === 'castle' && m.rookFrom && m.rookTo) {
       const rook = b[row]?.[m.rookFrom.col] ?? null
-      b[m.row]![m.col] = { ...piece, hasMoved: true }
       b[row]![col] = null
+      b[m.rookFrom.row]![m.rookFrom.col] = null
+      b[m.row]![m.col] = { ...piece, hasMoved: true }
       if (rook) {
-        b[m.rookFrom.row]![m.rookFrom.col] = null
         b[m.rookTo.row]![m.rookTo.col] = { ...rook, hasMoved: true }
       }
     } else if (m.special === 'enPassant') {
@@ -570,12 +583,10 @@ export const getPositionKey = (
           if (!piece) return '__'
           const isHomeKing =
             piece.type === 'king' &&
-            ((piece.color === 'white' && rowIndex === 7 && col === 4) ||
-              (piece.color === 'black' && rowIndex === 0 && col === 4))
+            rowIndex === (piece.color === 'white' ? 7 : 0)
           const isHomeRook =
             piece.type === 'rook' &&
-            ((piece.color === 'white' && rowIndex === 7 && (col === 0 || col === 7)) ||
-              (piece.color === 'black' && rowIndex === 0 && (col === 0 || col === 7)))
+            rowIndex === (piece.color === 'white' ? 7 : 0)
           const castlingState = (isHomeKing || isHomeRook) && piece.hasMoved ? '1' : '0'
           return `${typeCodeMap[piece.type]}${piece.color[0]}${castlingState}`
         })

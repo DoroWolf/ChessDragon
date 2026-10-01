@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import type { Board, Piece, Color } from '../models/chess'
+import type { Board, Piece, Color, Move } from '../models/chess'
 import { isWhiteSquare, isCheckmate, isKingInCheck } from '../models/chess'
 import {
   boardMoveHover,
@@ -9,6 +9,8 @@ import {
   boardPremovePlaceable,
   boardMoveCapture,
   boardMovePlaceable,
+  boardMoveCastling,
+  boardPremoveCastling,
   pieceImg,
 } from '../assets/resourcePaths'
 
@@ -37,7 +39,7 @@ export function useBoardDisplay() {
 const getOverlayTexture = (
   board: Board,
   selectedSquare: { row: number; col: number } | null,
-  possibleMoves: { row: number; col: number }[],
+  possibleMoves: Move[],
   isDragging: boolean,
   hoverSquare: { row: number; col: number } | null,
   row: number,
@@ -45,12 +47,29 @@ const getOverlayTexture = (
   premove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null,
   lastMove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null,
   canPremove?: boolean,
+  isChess960 = false,
 ): string | null => {
   const move = possibleMoves.find(
     (candidate) => candidate.row === row && candidate.col === col,
   )
   const targetPiece = board[row]?.[col] ?? null
   const isCapture = move !== undefined && targetPiece !== null
+
+  const isCastlingRookSquare = possibleMoves.some(
+    (candidate) =>
+      candidate.special === 'castle' &&
+      selectedSquare !== null &&
+      candidate.rookFrom?.row === row &&
+      candidate.rookFrom.col === col &&
+      (isChess960 || Math.abs(candidate.rookFrom.col - selectedSquare.col) <= 2),
+  )
+
+  if (isCastlingRookSquare) {
+    if (hoverSquare?.row === row && hoverSquare?.col === col) {
+      return canPremove ? boardPremoveHover : boardMoveHover
+    }
+    return canPremove ? boardPremoveCastling : boardMoveCastling
+  }
 
   if (isCapture) {
     if (hoverSquare?.row === row && hoverSquare?.col === col) {
@@ -69,6 +88,19 @@ const getOverlayTexture = (
 
   if (selectedSquare?.row === row && selectedSquare?.col === col) {
     return canPremove ? boardPremoveHover : boardMoveHover
+  }
+
+  const isOnlyCastlingDestination =
+    isChess960 &&
+    possibleMoves.some(
+      (candidate) => candidate.special === 'castle' && candidate.row === row && candidate.col === col,
+    ) &&
+    !possibleMoves.some(
+      (candidate) => candidate.special !== 'castle' && candidate.row === row && candidate.col === col,
+    )
+
+  if (isOnlyCastlingDestination) {
+    return null
   }
 
   if (move) {

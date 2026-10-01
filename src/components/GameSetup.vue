@@ -312,7 +312,10 @@ const buildChess960Fen = (): string => {
         const backRankLower = shuffled.join('')
         const backRankUpper = backRankLower.toUpperCase()
         const emptyRow = '8'
-        return `${backRankLower}/pppppppp/${emptyRow}/${emptyRow}/${emptyRow}/${emptyRow}/PPPPPPPP/${backRankUpper} w KQkq - 0 1`
+        const rookFiles = rookIndices.sort((a, b) => b - a)
+        const whiteRights = rookFiles.map((col) => String.fromCharCode(65 + col)).join('')
+        const blackRights = whiteRights.toLowerCase()
+        return `${backRankLower}/pppppppp/${emptyRow}/${emptyRow}/${emptyRow}/${emptyRow}/PPPPPPPP/${backRankUpper} w ${whiteRights}${blackRights} - 0 1`
     }
 }
 

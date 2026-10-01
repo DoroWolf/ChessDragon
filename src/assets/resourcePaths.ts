@@ -13,6 +13,8 @@ export const boardPremoveHover = new URL('./texture/board/board_premove_hover.pn
 export const boardPremoveCapture = new URL('./texture/board/board_premove_capture.png', import.meta.url).href
 export const boardPremoveHighlighted = new URL('./texture/board/board_premove_highlighted.png', import.meta.url).href
 export const boardPremovePlaceable = new URL('./texture/board/board_premove_placeable.png', import.meta.url).href
+export const boardMoveCastling = new URL('./texture/board/board_move_castling.png', import.meta.url).href
+export const boardPremoveCastling = new URL('./texture/board/board_premove_castling.png', import.meta.url).href
 export const titleImg = new URL('./texture/title.png', import.meta.url).href
 
 // ---------- 棋子 ----------

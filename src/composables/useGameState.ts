@@ -60,6 +60,7 @@ export function useGameState(
   const playerColor = ref<Color>('white')
   const isClockEnabled = ref(true)
   const lastSetupConfig = ref<GameSetupConfig | null>(null)
+  const isChess960 = computed(() => lastSetupConfig.value?.boardMode === 'chess960')
 
   // ---- 核心游戏状态 ----
   const board = ref<Board>(createInitialBoard())
@@ -467,11 +468,30 @@ export function useGameState(
     new Set(possibleMoves.value.map((move) => `${move.row}-${move.col}`)),
   )
 
+  const isCastlingRookTarget = (
+    move: Move,
+    row: number,
+    col: number,
+    kingSquare: { row: number; col: number },
+  ): boolean =>
+    move.special === 'castle' &&
+    move.rookFrom?.row === row &&
+    move.rookFrom.col === col &&
+    (isChess960.value || Math.abs(move.rookFrom.col - kingSquare.col) <= 2)
+
+  const findMoveForTarget = (row: number, col: number): Move | undefined =>
+    possibleMoves.value.find(
+      (move) =>
+        (move.row === row && move.col === col) ||
+        (selectedSquare.value !== null &&
+          isCastlingRookTarget(move, row, col, selectedSquare.value)),
+    )
+
   const canMoveTo = (row: number, col: number): boolean =>
-    highlightedPositions.value.has(`${row}-${col}`)
+    highlightedPositions.value.has(`${row}-${col}`) || !!findMoveForTarget(row, col)
 
   const canPremoveTo = (row: number, col: number): boolean =>
-    highlightedPositions.value.has(`${row}-${col}`)
+    highlightedPositions.value.has(`${row}-${col}`) || !!findMoveForTarget(row, col)
 
   const isSelectedSquare = (row: number, col: number): boolean =>
     selectedSquare.value?.row === row && selectedSquare.value?.col === col
@@ -499,10 +519,10 @@ export function useGameState(
     // ---- 执行移动 ----
     if (move.special === 'castle' && move.rookFrom && move.rookTo) {
       const rook = nextBoard[move.rookFrom.row]?.[move.rookFrom.col] ?? null
-      targetRow[move.col] = { ...selectedPiece, hasMoved: true }
       sourceRow[from.col] = null
+      nextBoard[move.rookFrom.row]![move.rookFrom.col] = null
+      targetRow[move.col] = { ...selectedPiece, hasMoved: true }
       if (rook) {
-        nextBoard[move.rookFrom.row]![move.rookFrom.col] = null
         nextBoard[move.rookTo.row]![move.rookTo.col] = { ...rook, hasMoved: true }
       }
     } else if (move.special === 'enPassant') {
@@ -614,7 +634,11 @@ export function useGameState(
       enPassantTarget,
     })
 
-    const matchingMove = legalMoves.find((m) => m.row === to.row && m.col === to.col)
+    const matchingMove = legalMoves.find(
+      (move) =>
+        (move.row === to.row && move.col === to.col) ||
+        isCastlingRookTarget(move, to.row, to.col, from),
+    )
 
     if (!matchingMove) {
       // premove 不再合法，清除
@@ -626,7 +650,9 @@ export function useGameState(
     // 执行 premove
     const targetPiece = board.value[to.row]?.[to.col] ?? null
     const isPawnMove = piece.type === 'pawn'
-    const isCapture = targetPiece !== null || matchingMove.special === 'enPassant'
+    const isCapture =
+      matchingMove.special !== 'castle' &&
+      (targetPiece !== null || matchingMove.special === 'enPassant')
 
     // 兵升变：premove 不支持自动升变（需要玩家选择），清除 premove
     if (isPawnMove && (to.row === 0 || to.row === 7)) {
@@ -677,13 +703,13 @@ export function useGameState(
     const selectedPiece = selected ? board.value[selected.row]?.[selected.col] ?? null : null
 
     if (selected && selectedPiece && canMoveTo(row, col)) {
-      const move = possibleMoves.value.find(
-        (candidate) => candidate.row === row && candidate.col === col,
-      )
+      const move = findMoveForTarget(row, col)
       if (!move) return
 
       const isPawnMove = selectedPiece.type === 'pawn'
-      const isCapture = targetPiece !== null || move.special === 'enPassant'
+      const isCapture =
+        move.special !== 'castle' &&
+        (targetPiece !== null || move.special === 'enPassant')
 
       // ---- 兵升变：弹出选择器 ----
       if (isPawnMove && (row === 0 || row === 7)) {
@@ -815,6 +841,11 @@ export function useGameState(
     if (!canInteract.value && !canPremove.value) return
 
     const piece = board.value[row]?.[col]
+    const selectedMove = findMoveForTarget(row, col)
+    if (piece?.type === 'rook' && selectedMove?.special === 'castle') {
+      handleSquareClick(row, col)
+      return
+    }
 
     const isPlayerPiece = piece && piece.color === (canPremove.value ? playerColor.value : currentTurn.value)
 
@@ -955,6 +986,11 @@ export function useGameState(
     if (!canInteract.value && !canPremove.value) return
 
     const piece = board.value[row]?.[col]
+    const selectedMove = findMoveForTarget(row, col)
+    if (piece?.type === 'rook' && selectedMove?.special === 'castle') {
+      handleSquareClick(row, col)
+      return
+    }
     const isPlayerPiece = piece && piece.color === (canPremove.value ? playerColor.value : currentTurn.value)
 
     if (isPlayerPiece) {
@@ -1538,6 +1574,7 @@ export function useGameState(
     showSetup,
     playerColor,
     isClockEnabled,
+    isChess960,
     gameMode,
     isAIThinking,
     premove,

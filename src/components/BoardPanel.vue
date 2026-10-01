@@ -19,11 +19,11 @@
               :src="isWhiteSquare(actualRow(displayRow - 1), actualCol(displayCol - 1)) ? lightSquareTexture : darkSquareTexture"
               alt="" />
 
-            <img v-if="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove, canPremove)"
+            <img v-if="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove, canPremove, isChess960)"
               class="square-background overlay"
               :class="{ 'placeable': isMovePlaceableOverlay(actualRow(displayRow - 1), actualCol(displayCol - 1)), 'placeable-mirror': shouldMirrorMoveableOverlay(actualRow(displayRow - 1), actualCol(displayCol - 1)) }"
               draggable="false"
-              :src="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove, canPremove)!"
+              :src="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove, canPremove, isChess960)!"
               alt="" />
 
             <img v-if="board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]" class="piece"
@@ -100,6 +100,7 @@ const props = defineProps<{
   premove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null
   lastMove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null
   canPremove?: boolean
+  isChess960?: boolean
   getOverlayTexture: (
     board: Board,
     selectedSquare: { row: number; col: number } | null,
@@ -111,6 +112,7 @@ const props = defineProps<{
     premove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null,
     lastMove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null,
     canPremove?: boolean,
+    isChess960?: boolean,
   ) => string | null
   getPieceImage: (
     piece: Piece,
@@ -176,6 +178,7 @@ const isMovePlaceableOverlay = (row: number, col: number): boolean => {
     props.premove,
     props.lastMove,
     props.canPremove,
+    props.isChess960,
   )
   return overlayTexture === boardMovePlaceable
 }
