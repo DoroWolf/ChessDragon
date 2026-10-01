@@ -71,8 +71,8 @@ export class MessageBuffer {
 /** 同浏览器标签页握手等待时间：超时即回退到 WebRTC */
 export const LOCAL_HANDSHAKE_TIMEOUT_MS = 900
 
-/** 跨设备 WebRTC 建连超时 */
-export const WEBRTC_CONNECT_TIMEOUT_MS = 15_000
+/** 单个信令后端的建连超时（加入方逐个回退时使用） */
+export const SIGNALING_CONNECT_TIMEOUT_MS = 8_000
 
 /** 心跳间隔与超时判定 */
 export const HEARTBEAT_INTERVAL_MS = 2_000

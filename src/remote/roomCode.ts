@@ -40,6 +40,12 @@ export const roomChannelName = (code: string): string => `chessdragon:room:${cod
 /** PeerJS 节点 id（小写，仅含字母数字与连字符） */
 export const roomPeerId = (code: string): string => `chessdragon-${code.toLowerCase()}`
 
+/** Trystero 房间 id（在 appId 命名空间之下，直接复用房间码即可） */
+export const trysteroRoomId = (code: string): string => `chessdragon-${code.toLowerCase()}`
+
+/** Trystero 会话口令：由房间码派生，双方必须一致，用作端到端加密密钥 */
+export const trysteroPassword = (code: string): string => `chessdragon:${code}`
+
 /** 复制到剪贴板（失败时回退到 execCommand，与 Sidebar 的 PGN 复制保持一致） */
 export const copyText = async (text: string): Promise<boolean> => {
   try {
