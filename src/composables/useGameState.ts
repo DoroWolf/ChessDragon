@@ -131,12 +131,24 @@ export function useGameState(
   const hasResigned = ref<Color | null>(null)
 
   // ---- 升变状态 ----
+  // prevBoard 保存「弹出升变选择器之前」的棋盘快照。
+  // 选择器出现时，兵已（临时）移动到升变格；取消升变时据此还原：
+  // 兵回到原位，若为斜走吃子则被吃的子也一并恢复。
   const promotionPending = ref<null | {
     from: { row: number; col: number }
     to: { row: number; col: number }
     color: Color
+    prevBoard: Board
   }>(null)
   const promotionStyle = ref<CSSProperties>({})
+
+  /**
+   * 供「子力优势」展示使用的棋盘。
+   * 升变选择器弹出期间兵已被临时移动（斜走吃子时被吃的子也暂时消失），
+   * 若直接用 board 会让子力差在升变确认前就提前变化；
+   * 这里回退到升变前的快照，等升变完成（board 正式更新）后再反映到子力优势字符串。
+   */
+  const materialBoard = computed<Board>(() => promotionPending.value?.prevBoard ?? board.value)
 
   // ---- 拖拽状态 ----
   const isMouseDown = ref(false)
@@ -344,6 +356,13 @@ export function useGameState(
   }
 
   const handleClockTimeout = (expiredColor: Color) => {
+    // 升变选择器弹出期间超时：强制取消升变（撤回临时的走子与吃子），
+    // 让棋盘恢复到走子前的局面后再结算超时，避免残留未确认的升变局面。
+    if (promotionPending.value) {
+      cancelPromotion()
+      selectedSquare.value = null
+    }
+
     // 客方不自行判定超时，一切以房主广播的快照为准
     if (isRemoteGuest.value) {
       stopClock()
@@ -555,6 +574,8 @@ export function useGameState(
       !isGameOver.value &&
       !isAIThinking.value &&
       !isAITurn.value &&
+      // 升变选择器弹出期间禁止选中/拖拽棋子（遮罩可能盖不住偏高的棋子）
+      !promotionPending.value &&
       (!isRemote.value || (isRemoteMyTurn.value && remoteConnected.value)),
   )
 
@@ -563,6 +584,7 @@ export function useGameState(
     () =>
       !showSetup.value &&
       !isGameOver.value &&
+      !promotionPending.value &&
       isAITurn.value &&
       gameMode.value === 'ai',
   )
@@ -617,11 +639,12 @@ export function useGameState(
   const isSelectedSquare = (row: number, col: number): boolean =>
     selectedSquare.value?.row === row && selectedSquare.value?.col === col
 
-  const pushBoardHistory = (mover: Color) => {
+  // snapshot 用于升变场景：此时 board.value 已被临时改动，需显式传入走子前的棋盘
+  const pushBoardHistory = (mover: Color, snapshot?: Board) => {
     // 记录一次走子即视为「该方已走出过半回合」，此后即便悔棋到底也不再视为未开局
     hasMovedByColor.value[mover] = true
     boardHistory.value.push({
-      board: cloneBoard(board.value),
+      board: cloneBoard(snapshot ?? board.value),
       currentTurn: currentTurn.value,
       lastMove: lastMove.value,
       halfmoveClock: halfmoveClock.value,
@@ -862,12 +885,22 @@ export function useGameState(
         move.special !== 'castle' &&
         (targetPiece !== null || move.special === 'enPassant')
 
-      // ---- 兵升变：弹出选择器 ----
+      // ---- 兵升变：先把兵临时移动到升变格，再弹出选择器 ----
+      // 这样选择器出现时兵已在底线上；斜走吃子时被吃的子也会随之消失。
+      // 若取消升变，则按 prevBoard 原路还原。
       if (isPawnMove && (row === 0 || row === 7)) {
+        const prevBoard = board.value
+        const tentativeBoard = cloneBoard(board.value)
+        tentativeBoard[row]![col] = { ...selectedPiece, hasMoved: true }
+        tentativeBoard[selected.row]![selected.col] = null
+
+        board.value = tentativeBoard
+        selectedSquare.value = null
         promotionPending.value = {
           from: { row: selected.row, col: selected.col },
           to: { row, col },
           color: selectedPiece.color,
+          prevBoard,
         }
         computePromotionStyle(row, col)
         return
@@ -890,6 +923,12 @@ export function useGameState(
 
   // ---- 升变 ----
   const cancelPromotion = () => {
+    const pending = promotionPending.value
+    if (pending) {
+      // 撤销临时移动：兵原路返回，斜走吃子时被吃的子也随快照一起恢复
+      board.value = pending.prevBoard
+      selectedSquare.value = pending.from
+    }
     promotionPending.value = null
     promotionStyle.value = {}
   }
@@ -919,19 +958,29 @@ export function useGameState(
     }
   })
 
+  // 对局结束时（认输 / 超时 / 和棋等），强制取消可能残留的升变选择，
+  // 避免棋盘停留在未确认的临时走子局面上。（超时路径已同步处理，此处为兜底。）
+  watch(isGameOver, (over) => {
+    if (over && promotionPending.value) {
+      cancelPromotion()
+      selectedSquare.value = null
+    }
+  })
+
   const applyPromotion = (newType: string, origin: 'local' | 'remote' = 'local') => {
     if (!promotionPending.value) return
-    const { from, to } = promotionPending.value
-    const selectedPiece = board.value[from.row]?.[from.col] ?? null
+    // 以升变选择器弹出前的棋盘为基准计算（此时 board.value 可能已被临时改动）
+    const { from, to, prevBoard } = promotionPending.value
+    const selectedPiece = prevBoard[from.row]?.[from.col] ?? null
     if (!selectedPiece) {
       cancelPromotion()
       return
     }
 
-    const targetPiece = board.value[to.row]?.[to.col] ?? null
+    const targetPiece = prevBoard[to.row]?.[to.col] ?? null
     const isCapture = targetPiece !== null
 
-    const nextBoard = cloneBoard(board.value)
+    const nextBoard = cloneBoard(prevBoard)
     nextBoard[to.row]![to.col] = {
       type: newType as Piece['type'],
       color: selectedPiece.color,
@@ -951,7 +1000,7 @@ export function useGameState(
 
     // 记录棋谱
     const notation = generateMoveNotation(
-      board.value,
+      prevBoard,
       from.row,
       from.col,
       to.row,
@@ -961,7 +1010,7 @@ export function useGameState(
       checkStatus,
     )
     moveHistory.value.push(notation)
-    pushBoardHistory(selectedPiece.color)
+    pushBoardHistory(selectedPiece.color, prevBoard)
 
     // 更新状态
     board.value = nextBoard
@@ -1656,6 +1705,12 @@ export function useGameState(
     blackTimeSeconds.value = snapshot.blackTimeSeconds
     hasGameStarted.value = snapshot.hasGameStarted
 
+    // 房主已判定超时：同步强制取消本地可能存在的升变选择，恢复走子前局面
+    if (snapshot.timeoutWinner && promotionPending.value) {
+      cancelPromotion()
+      selectedSquare.value = null
+    }
+
     if (snapshot.timeoutWinner && !timeoutWinner.value) {
       timeoutWinner.value = snapshot.timeoutWinner
       playSound(snapshot.timeoutWinner === playerColor.value ? 'victory' : 'defeat')
@@ -1763,7 +1818,7 @@ export function useGameState(
     }
 
     if (promotion) {
-      promotionPending.value = { from, to, color: piece.color }
+      promotionPending.value = { from, to, color: piece.color, prevBoard: board.value }
       applyPromotion(promotion, 'remote')
       promotionPending.value = null
       promotionStyle.value = {}
@@ -2309,6 +2364,7 @@ export function useGameState(
     // 升变
     promotionPending,
     promotionStyle,
+    materialBoard,
     cancelPromotion,
     computePromotionStyle,
     applyPromotion,

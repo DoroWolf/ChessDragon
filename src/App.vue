@@ -37,7 +37,7 @@
     <Sidebar v-if="!showSetup" :is-clock-enabled="isClockEnabled" :move-history="moveHistory" :current-turn="currentTurn"
       :starting-turn="startingTurn" :starting-fullmove-number="startingFullmoveNumber"
       :game-status="gameStatusMessage" :halfmove-clock="halfmoveClock" :position-count="getPositionCount()"
-      :is-game-over="isGameOver" :is-flipped="isFlipped" :board="board" :player-color="playerColor"
+      :is-game-over="isGameOver" :is-flipped="isFlipped" :board="board" :material-board="materialBoard" :player-color="playerColor"
       :white-time-seconds="whiteTimeSeconds"
       :black-time-seconds="blackTimeSeconds" :active-color="currentTurn" :clock-test-id="'sidebar-chess-clock'"
       :game-mode="gameMode"
@@ -184,6 +184,7 @@ const {
   possibleMoves,
   promotionPending,
   promotionStyle,
+  materialBoard,
   isMouseDown,
   isDragging,
   dragStartSquare,

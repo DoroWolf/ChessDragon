@@ -108,6 +108,8 @@ interface Props {
   isSoundEnabled: boolean
   coordinateLabelMode: 'off' | 'inside' | 'outside'
   board?: Board | null
+  /** 专门用于计算「子力优势」的棋盘：升变选择器弹出期间为升变前的快照 */
+  materialBoard?: Board | null
   playerColor?: Color
   whiteTimeSeconds?: number | null
   blackTimeSeconds?: number | null
@@ -360,7 +362,10 @@ const formatPieceIcons = (pieces: string[], limit = 10): string => {
 }
 
 const materialDiffText = computed(() => {
-  if (!props.board) return ''
+  // 优先使用 materialBoard：升变选择器弹出期间它指向升变前的棋盘，
+  // 从而避免斜走吃子的升变在确认前就提前改变子力优势字符串。
+  const board = props.materialBoard ?? props.board
+  if (!board) return ''
 
   // 统计当前棋盘上双方存活棋子数量
   const whiteCounts: Record<PieceType, number> = {
@@ -372,7 +377,7 @@ const materialDiffText = computed(() => {
 
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
-      const piece = props.board[r]?.[c] ?? null
+      const piece = board[r]?.[c] ?? null
       if (piece && piece.type !== 'king') {
         if (piece.color === 'white') {
           whiteCounts[piece.type]++

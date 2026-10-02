@@ -1,13 +1,13 @@
 <template>
   <div class="game-panel" :style="boardSizeStyle">
     <div ref="boardFrameRef" class="board-frame" :class="{ 'coordinates-outside': coordinateLabelMode === 'outside' }" :style="boardSizeStyle">
-      <div class="board-grid" ref="boardGridRef"
+      <div class="board-grid" ref="boardGridRef" :class="{ 'promotion-active': !!promotionPending }"
         @touchmove.prevent="handleBoardGridTouchMove($event)"
         @touchend="handleBoardGridTouchEnd($event)">
         <template v-for="displayRow in 8" :key="`rank-${displayRow}`">
           <button v-for="displayCol in 8" :key="`${displayRow}-${displayCol}`" type="button" class="board-square"
             :class="{
-              'draggable-piece': board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]?.color === currentTurn,
+              'draggable-piece': !promotionPending && board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]?.color === currentTurn,
               'has-piece': !!board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)],
             }"
             @mousedown="$emit('square-mousedown', actualRow(displayRow - 1), actualCol(displayCol - 1), $event)"
@@ -392,6 +392,12 @@ watch(pieceScale, (val) => {
 
 .board-square.draggable-piece {
   cursor: grab;
+}
+
+/* 升变选择器弹出期间：棋子不可拖拽/悬停，避免遮罩盖不住偏高的棋子 */
+.board-grid.promotion-active .piece {
+  pointer-events: none;
+  cursor: default;
 }
 
 .square-background,
