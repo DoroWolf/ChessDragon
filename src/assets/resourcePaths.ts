@@ -22,6 +22,9 @@ export function pieceImg(type: string, color: string): string {
   return new URL(`./texture/pieces/${type}_${color}.png`, import.meta.url).href
 }
 
+// 教程挑战用的金币：与棋子放在同一目录，作为一枚棋子渲染在棋盘上
+export const pieceCoin = new URL('./texture/pieces/coin.png', import.meta.url).href
+
 // ---------- 图标 SVGs ----------
 export const iconClassic = new URL('./icon/classic.svg', import.meta.url).href
 export const iconChess960 = new URL('./icon/chess960.svg', import.meta.url).href

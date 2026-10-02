@@ -7,6 +7,10 @@ export const MAIN_PAGE = 'index.html'
 
 export const toolPageUrl = (page: string): string => `${import.meta.env.BASE_URL}${page}`
 
+// 目录与专题共用 tutorial.html，专题由查询参数定位
+export const tutorialTopicUrl = (categoryId: string, topicId: string): string =>
+  `${toolPageUrl(TUTORIAL_PAGE)}?category=${encodeURIComponent(categoryId)}&topic=${encodeURIComponent(topicId)}`
+
 export const openToolTab = (page: string, search = ''): void => {
   window.open(`${toolPageUrl(page)}${search}`, '_blank')
 }
@@ -14,11 +18,3 @@ export const openToolTab = (page: string, search = ''): void => {
 export const encodeFenQuery = (fen: string): string => fen.replace(/ /g, '_')
 
 export const decodeFenQuery = (value: string): string => value.replace(/_/g, ' ')
-
-export const openToolWindow = (
-  page: string,
-  name: string,
-  features = 'noopener,width=1024,height=860',
-): void => {
-  window.open(toolPageUrl(page), name, features)
-}

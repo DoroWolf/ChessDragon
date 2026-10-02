@@ -48,7 +48,7 @@
       @draw="handleDrawOffer" @resign="handleResign" @restart="handleRestart" @back-to-home="handleLeaveToHome" />
 
     <div class="top-left-fabs">
-      <button type="button" class="fab-btn" :title="t('app.help')" @click="openHelpWindow">
+      <button type="button" class="fab-btn" :title="t('app.tutorial')" @click="openHelpWindow">
         <span class="fab-icon" v-html="tutorialSvg"></span>
       </button>
       <button type="button" class="fab-btn" :title="t('app.editor')" @click="openEditorWindow">
@@ -92,7 +92,7 @@ import { useGameState } from './composables/useGameState'
 import { useRemoteGame } from './composables/useRemoteGame'
 import { useI18n } from './composables/useI18n'
 import { consumeQuickPlay } from './data/quickPlay'
-import { EDITOR_PAGE, TUTORIAL_PAGE, openToolTab, openToolWindow } from './data/toolPages'
+import { EDITOR_PAGE, TUTORIAL_PAGE, openToolTab } from './data/toolPages'
 import settingSvg from './assets/icon/setting.svg?raw'
 import githubSvg from './assets/icon/github.svg?raw'
 import tutorialSvg from './assets/icon/openedBook.svg?raw'
@@ -104,8 +104,7 @@ const { t } = useI18n()
 
 const showSettingsModal = ref(false)
 
-const openHelpWindow = () => {}
-  // TODO: 教程
+const openHelpWindow = () => openToolTab(TUTORIAL_PAGE)
 
 const openEditorWindow = () => openToolTab(EDITOR_PAGE)
 

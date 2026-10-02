@@ -1,4 +1,3 @@
-// UI English strings (AI dialogue is not localized, see src/data/dialogue/zh_cn.json)
 import type { MessageKey } from './zh_cn'
 
 const en: Record<MessageKey, string> = {
@@ -7,7 +6,7 @@ const en: Record<MessageKey, string> = {
   'common.done': 'Done',
 
   'app.settings': 'Settings',
-  'app.help': 'Help',
+  'app.tutorial': 'Tutorial',
   'app.editor': 'Board Editor',
 
   'home.vsAI': 'Play Against AI',
@@ -124,7 +123,6 @@ const en: Record<MessageKey, string> = {
   'editor.pieceRook': 'Rook',
   'editor.pieceQueen': 'Queen',
   'editor.pieceKing': 'King',
-  'editor.turn': 'Side to Move',
   'editor.castling': 'Castling Rights',
   'editor.castleWhiteShort': 'White kingside',
   'editor.castleWhiteLong': 'White queenside',
@@ -141,6 +139,50 @@ const en: Record<MessageKey, string> = {
   'editor.quickPlayAi': 'vs AI',
   'editor.quickPlayHuman': 'Two Players',
   'editor.quickPlayRemote': 'Remote',
+
+  'tutorial.title': 'Tutorial',
+  'tutorial.category.pieces': 'Meet the Pieces',
+  'tutorial.topic.rook': 'Rook',
+  'tutorial.topic.rook.desc': 'Moves in straight lines',
+  'tutorial.topic.bishop': 'Bishop',
+  'tutorial.topic.bishop.desc': 'Moves diagonally',
+  'tutorial.topic.queen': 'Queen',
+  'tutorial.topic.queen.desc': 'Moves any way, any distance',
+  'tutorial.topic.king': 'King',
+  'tutorial.topic.king.desc': 'One square at a time',
+  'tutorial.topic.knight': 'Knight',
+  'tutorial.topic.knight.desc': 'Jumps in an "L" shape',
+  'tutorial.topic.pawn': 'Pawn',
+  'tutorial.topic.pawn.desc': 'The little soldier marching forward',
+  'tutorial.intro.rook1': 'A rook moves in straight lines along ranks and files, as far as it likes until it reaches the edge of the board.',
+  'tutorial.intro.rook2': 'Look at the highlighted squares: they show every square the rook can reach right now — 14 in total.',
+  'tutorial.intro.bishop1': 'A bishop moves diagonally, and like the rook it can travel any distance until it hits the edge.',
+  'tutorial.intro.bishop2': 'So a bishop always stays on the same colour of square. The dots below show where it can go.',
+  'tutorial.intro.queen1': 'The queen is the strongest piece on the board: it moves in straight lines like a rook and diagonally like a bishop, as far as it likes.',
+  'tutorial.intro.queen2': 'Look at the highlighted squares: the queen can reach more squares than any other piece.',
+  'tutorial.intro.king1': 'The king is the most important piece of all, but it is slow: it can only step one square in any direction.',
+  'tutorial.intro.king2': 'Look at the highlighted squares: the king can only step to one of the 8 neighbouring squares.',
+  'tutorial.intro.knight1': 'The knight moves in a special way: two squares straight and then one square sideways, tracing the shape of an "L", one jump per turn.',
+  'tutorial.intro.knight2': 'Even better, the knight jumps over anything in its path — even if friendly pieces surround it, it can still jump out.',
+  'tutorial.intro.pawn1': 'A pawn only moves forward, one square at a time; from its starting square it may also move two squares at once.',
+  'tutorial.intro.pawn2': 'A pawn cannot turn while going forward; it may capture diagonally only when a coin (or enemy piece) is there. A pawn that reaches the last rank promotes.',
+  'tutorial.challenge.pawnMoveOne': 'Move one square forward as required',
+  'tutorial.challenge.pawnMoveTwo': 'Move two squares forward as required',
+  'tutorial.challenge.pawnPromote': 'March the pawn to the last rank and promote',
+
+  'tutorial.notFound': 'This tutorial page could not be found.',
+  'tutorial.backToOverview': 'Back to overview',
+  'tutorial.continue': 'Continue',
+  'tutorial.step': 'Challenge {current} / {total}',
+  'tutorial.sectionDone': 'Section complete!',
+  'tutorial.nextSection': 'Next section',
+  'tutorial.challenge.instruction': 'Move the piece to collect all the coins',
+  'tutorial.challenge.failed': 'That move is not right. Try again',
+  'tutorial.challenge.reset': 'Try again',
+  'tutorial.praise.great': 'Great!',
+  'tutorial.praise.wellDone': 'Very good!',
+  'tutorial.praise.excellent': 'Well done!',
+  'tutorial.praise.nice': 'Nice!',
 }
 
 export default en

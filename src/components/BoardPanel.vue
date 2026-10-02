@@ -35,6 +35,10 @@
               }" :src="getPieceImage(board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]!, board, isDraw, hasResigned, timeoutWinner)"
               :alt="board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]!.type" />
 
+            <img v-if="markerAt(actualRow(displayRow - 1), actualCol(displayCol - 1))" class="marker"
+              draggable="false" alt=""
+              :src="markerAt(actualRow(displayRow - 1), actualCol(displayCol - 1))!.image" />
+
             <div v-if="coordinateLabelMode === 'inside' && displayCol === 1" class="coordinate-label rank"
               :class="isWhiteSquare(actualRow(displayRow - 1), actualCol(displayCol - 1)) ? 'text-black' : 'text-white'">
               {{ 8 - actualRow(displayRow - 1) }}
@@ -100,6 +104,8 @@ const props = defineProps<{
   currentTurn: Color
   selectedSquare: { row: number; col: number } | null
   possibleMoves: { row: number; col: number }[]
+  /** 叠加在棋盘上的额外图片（教程金币等），与棋子一样按格子渲染 */
+  markers?: { row: number; col: number; image: string }[]
   isDragging: boolean
   dragStartSquare: { row: number; col: number } | null
   hoverSquare: { row: number; col: number } | null
@@ -139,10 +145,13 @@ const props = defineProps<{
   ) => string
   getSquareLabel: (row: number, col: number) => string
   isWhiteSquare: (row: number, col: number) => boolean
+  /** 受控的棋盘像素尺寸；未传入时由组件内部自行管理（默认 80vmin） */
+  boardSize?: number | null
 }>()
 
 const emit = defineEmits<{
   (e: 'update:pieceScale', value: number): void
+  (e: 'update:boardSize', value: number): void
   (e: 'square-mousedown', row: number, col: number, event: MouseEvent): void
   (e: 'square-touchstart', row: number, col: number, event: TouchEvent): void
   (e: 'square-mouseenter', row: number, col: number): void
@@ -179,6 +188,10 @@ const displayedFile = (displayCol: number): string =>
 
 const displayedRank = (displayRow: number): string =>
   `${8 - actualRow(displayRow - 1)}`
+
+/** 查找某个格子上的额外图层（教程金币等） */
+const markerAt = (row: number, col: number): { row: number; col: number; image: string } | null =>
+  props.markers?.find((marker) => marker.row === row && marker.col === col) ?? null
 
 const isMovePlaceableOverlay = (row: number, col: number): boolean => {
   const overlayTexture = props.getOverlayTexture(
@@ -219,8 +232,19 @@ const shouldMirrorMoveableOverlay = (row: number, col: number): boolean => {
 const pieceScale = ref(1.5)
 const boardGridRef = ref<HTMLElement | null>(null)
 const boardFrameRef = ref<HTMLElement | null>(null)
-const boardSize = ref<number | null>(null)
-const boardSizeStyle = computed(() => boardSize.value === null ? undefined : { width: `${boardSize.value}px` })
+// 棋盘尺寸默认由组件内部管理；父级传入 boardSize（v-model:board-size）时改为受控，
+// 这样棋盘重挂载（例如教程切换到下一关）时能保留用户手动调整过的尺寸。
+const internalBoardSize = ref<number | null>(null)
+const boardSize = computed<number | null>(() =>
+  props.boardSize !== undefined ? props.boardSize : internalBoardSize.value,
+)
+const boardSizeStyle = computed(() =>
+  boardSize.value === null ? undefined : { width: `${boardSize.value}px` },
+)
+const setBoardSize = (size: number) => {
+  if (props.boardSize !== undefined) emit('update:boardSize', size)
+  else internalBoardSize.value = size
+}
 let boardResizeObserver: ResizeObserver | null = null
 let resizePointerId: number | null = null
 let resizeStartX = 0
@@ -240,7 +264,7 @@ const handleResizePointerDown = (event: PointerEvent) => {
   resizeStartX = event.clientX
   resizeStartY = event.clientY
   resizeStartSize = boardFrameRef.value?.clientWidth ?? window.innerWidth * 0.8
-  boardSize.value = resizeStartSize
+  setBoardSize(resizeStartSize)
   const handle = event.currentTarget as HTMLElement
   handle.setPointerCapture(event.pointerId)
 }
@@ -248,7 +272,7 @@ const handleResizePointerDown = (event: PointerEvent) => {
 const handleResizePointerMove = (event: PointerEvent) => {
   if (event.pointerId !== resizePointerId) return
   const delta = ((event.clientX - resizeStartX) + (event.clientY - resizeStartY)) / 2
-  boardSize.value = clampBoardSize(resizeStartSize + delta)
+  setBoardSize(clampBoardSize(resizeStartSize + delta))
 }
 
 const handleResizePointerEnd = (event: PointerEvent) => {
@@ -261,7 +285,7 @@ const handleResizeKeydown = (event: KeyboardEvent) => {
   if (!increase && !decrease) return
   event.preventDefault()
   const currentSize = boardFrameRef.value?.clientWidth ?? window.innerWidth * 0.8
-  boardSize.value = clampBoardSize(currentSize + (increase ? 16 : -16))
+  setBoardSize(clampBoardSize(currentSize + (increase ? 16 : -16)))
 }
 
 const updatePieceScale = () => {
@@ -437,6 +461,19 @@ watch(pieceScale, (val) => {
 
 .piece.dragging-hidden {
   opacity: 0;
+}
+
+/* 额外图层（教程金币等）：居中显示在格子上，位于棋子之下 */
+.marker {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 52%;
+  height: 52%;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 5;
 }
 
 .floating-piece {

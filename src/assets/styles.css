@@ -58,6 +58,7 @@ textarea,
   color: var(--color-text-primary);
   cursor: pointer;
   text-align: center;
+  text-decoration: none;
   box-shadow: 2px 2px 0 var(--color-surface-shadow);
 }
 

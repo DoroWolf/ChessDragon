@@ -1,14 +1,12 @@
 <template>
   <section class="editor-container" :class="{ 'cursor-mode': isCursorTool, 'is-dragging': isDragging }"
     :style="{ '--piece-scale': pieceScale }">
-    <!-- 左上角按钮组：与主页一致的 FAB 样式 -->
     <div class="top-left-fabs">
-      <button type="button" class="fab-btn" :title="t('app.help')" @click="openHelpWindow">
+      <button type="button" class="fab-btn" :title="t('app.tutorial')" @click="openHelpWindow">
         <span class="fab-icon" v-html="tutorialSvg"></span>
       </button>
     </div>
 
-    <!-- 右上角按钮组：与主页一致的 GitHub / 设置 -->
     <div class="top-right-fabs">
       <a href="https://github.com/DoroWolf/ChessDragon" target="_blank" rel="noopener" class="fab-btn"
         title="GitHub">
@@ -20,7 +18,6 @@
     </div>
 
     <div class="editor-body">
-      <!-- 左：正式对局棋盘（沿用 BoardPanel，含缩放把手与坐标样式） -->
       <section class="board-column" @contextmenu.prevent="handleContextMenu">
         <BoardPanel :board="board" :current-turn="turn" :selected-square="null" :possible-moves="[]"
           :is-dragging="isDragging" :drag-start-square="dragStartSquare" :hover-square="hoverSquare"
@@ -39,13 +36,11 @@
           @board-touchend="handleBoardTouchEnd" />
       </section>
 
-      <!-- 右：控制面板 -->
       <section class="panel-column">
         <div class="card panel-section">
           <EditorPalette :selected="selectedTool" @select="selectedTool = $event" />
         </div>
 
-        <!-- 走棋方 / 易位权 / 吃过路兵：统一使用同一种小标题 -->
         <div class="card panel-section">
           <div class="select-wrapper select-wrapper-block">
             <select class="select-input" :value="turn" @change="handleTurnChange">
@@ -55,7 +50,6 @@
           </div>
 
           <h4 class="sub-heading">{{ t('editor.castling') }}</h4>
-          <!-- 白方一列、黑方一列 -->
           <div class="castle-grid">
             <label v-for="right in CASTLING_RIGHTS" :key="right" class="option-chip"
               :class="{ active: castling[right], disabled: !castlingAvailable[right] }">
@@ -65,7 +59,6 @@
             </label>
           </div>
 
-          <!-- 吃过路兵：标题内联，与下拉菜单同一行 -->
           <div class="field-row">
             <h4 class="sub-heading">{{ t('editor.enPassant') }}</h4>
             <div class="select-wrapper">
@@ -77,10 +70,8 @@
           </div>
         </div>
 
-        <!-- FEN：输入即自动导入，右侧带复制按钮 -->
         <div class="card panel-section">
           <h3 class="section-heading">{{ t('editor.fen') }}</h3>
-          <!-- 输入即自动导入；失焦/回车时不合法则回退文本；右侧放复制按钮 -->
           <div class="fen-input-row">
             <input v-model="fenText" type="text" class="fen-input can-select" spellcheck="false"
               autocomplete="off" @blur="commitFen" @keyup.enter="commitFen" />
@@ -89,7 +80,6 @@
               <span class="btn-icon" v-html="isCopied ? checkSvg : copySvg"></span>
             </button>
           </div>
-          <!-- 预留固定高度的警告区，避免 FEN 框随提示出现/消失而跳动 -->
           <div class="fen-warning">
             <p v-if="fenErrorKey" class="error-text">{{ t(fenErrorKey) }}</p>
             <p v-else-if="copyFailed" class="error-text">{{ t('editor.copyFailed') }}</p>
@@ -156,7 +146,7 @@ import {
 import { FEN_ERROR_KEYS } from '../data/fenErrorKeys'
 import type { MessageKey } from '../data/i18n'
 import { writeQuickPlay, type QuickPlayGameMode } from '../data/quickPlay'
-import { TUTORIAL_PAGE, MAIN_PAGE, decodeFenQuery, encodeFenQuery, openToolWindow, toolPageUrl } from '../data/toolPages'
+import { TUTORIAL_PAGE, MAIN_PAGE, decodeFenQuery, encodeFenQuery, openToolTab, toolPageUrl } from '../data/toolPages'
 import { boardMoveHighlighted, pieceImg } from '../assets/resourcePaths'
 import { copyText } from '../remote/roomCode'
 import tutorialSvg from '../assets/icon/openedBook.svg?raw'
@@ -167,12 +157,10 @@ import checkSvg from '../assets/icon/check.svg?raw'
 
 const { t } = useI18n()
 
-// 界面上不再显示大标题，改用浏览器标签页标题体现（随语言切换更新）
 watchEffect(() => {
   document.title = `Chess Dragon · ${t('editor.title')}`
 })
 
-// 主题 / 坐标标签 / 音效与主程序共用 localStorage，两个页面的观感与设置保持一致
 const { isSoundEnabled, coordinateLabelMode, theme } = useSettings()
 
 const { isFlipped, getOverlayTexture, getPieceImage, getSquareLabel, isWhiteSquare } =
@@ -180,7 +168,6 @@ const { isFlipped, getOverlayTexture, getPieceImage, getSquareLabel, isWhiteSqua
 
 const CASTLING_RIGHTS: CastlingRight[] = ['K', 'Q', 'k', 'q']
 
-/** 四个易位权对应的界面文案（白方/黑方 × 短/长 易位） */
 const CASTLING_LABEL_KEYS: Record<CastlingRight, MessageKey> = {
   K: 'editor.castleWhiteShort',
   Q: 'editor.castleWhiteLong',
@@ -643,8 +630,8 @@ const startQuickPlay = (mode: QuickPlayGameMode) => {
   window.location.assign(toolPageUrl(MAIN_PAGE))
 }
 
-const openHelpWindow = () => {}
-  // TODO: 教程
+// 教程：新开一个完整的标签页（不用弹出式小窗口）
+const openHelpWindow = () => openToolTab(TUTORIAL_PAGE)
 </script>
 
 <style scoped>
