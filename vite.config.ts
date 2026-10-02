@@ -20,7 +20,6 @@ export default defineConfig({
       input: {
         main: fileURLToPath(new URL('./index.html', import.meta.url)),
         editor: fileURLToPath(new URL('./editor.html', import.meta.url)),
-        help: fileURLToPath(new URL('./help.html', import.meta.url)),
       },
     },
   },
