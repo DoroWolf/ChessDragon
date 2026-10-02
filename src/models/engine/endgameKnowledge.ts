@@ -1,4 +1,3 @@
-// ============================================================
 // Endgame Knowledge - KBNK（残局知识：王 + 象 + 马 vs 王）
 // KBNK 是唯一"有子力优势却不能自动取胜"的常规残局：
 //   必须把孤王赶到 *与象同色* 的角落才能成杀。
@@ -15,12 +14,8 @@
 // 引擎搜索较浅时（例如 AI 棋钟剩余很少、每步仅 50ms），
 // 进攻方可能在正确角落附近反复盘旋而无法完成最后的杀网 ——
 // 要做到 100% 收网需要残局库或专门的杀王算法。
-// ============================================================
 import type { Board, Color, Square } from '../chess'
 
-// ============================================================
-// 常量
-// ============================================================
 /** 开放 KBNK 残局知识所需的最低 AI 强度等级 */
 export const KBNK_MIN_LEVEL = 3
 
@@ -48,9 +43,6 @@ const CORNER_SQUARES: ReadonlyArray<readonly [number, number]> = [
   [7, 7],
 ]
 
-// ============================================================
-// 类型
-// ============================================================
 /** KBNK 局面信息 */
 export interface KBNKInfo {
   /** 进攻方（持有象 + 马的一方） */
@@ -63,9 +55,6 @@ export interface KBNKInfo {
   knight: Square
 }
 
-// ============================================================
-// 基础工具
-// ============================================================
 /** 切比雪夫距离（国际象棋中王的步数距离） */
 export function chebyshev(a: Square, b: Square): number {
   return Math.max(Math.abs(a.row - b.row), Math.abs(a.col - b.col))
@@ -101,9 +90,6 @@ export function cornerDistance(square: Square, parity: number): number {
   return best
 }
 
-// ============================================================
-// 局面识别
-// ============================================================
 /**
  * 识别棋盘是否为 KBNK 局面（一方 王+象+马，另一方 单王）。
  * 非 KBNK 局面返回 null，调用方只需在总子力为 650 时调用，常规局面零开销。
@@ -184,9 +170,6 @@ export function detectKBNK(b: Board): KBNKInfo | null {
 }
 
 
-// ============================================================
-// 马的安全性
-// ============================================================
 /** 象是否沿对角线攻击到 (row, col)（忽略目标格上的棋子） */
 function bishopAttacks(b: Board, row: number, col: number, bishop: Square): boolean {
   const dRow = row - bishop.row
@@ -215,9 +198,6 @@ function isKnightDefended(b: Board, info: KBNKInfo): boolean {
   return bishopAttacks(b, knight.row, knight.col, bishop)
 }
 
-// ============================================================
-// 逃逸格封锁（mop-up）
-// ============================================================
 /** (row, col) 是否被进攻方（王 / 象 / 马）攻击 */
 function isAttackedByAttacker(b: Board, row: number, col: number, info: KBNKInfo): boolean {
   const { attackerKing, bishop, knight } = info
@@ -266,9 +246,6 @@ function countKingEscapes(
   return { free, badEscapes }
 }
 
-// ============================================================
-// 进攻方评分（KBNK 知识核心）
-// ============================================================
 /**
  * 从进攻方视角评估 KBNK 局面的"取胜进度"。
  * 分数越高表示越接近将杀，用于引导 AI 完成标准杀王流程。
@@ -334,9 +311,6 @@ export function scoreKBNKForAttacker(b: Board, info: KBNKInfo): number {
   return score
 }
 
-// ============================================================
-// 对外评估入口
-// ============================================================
 /**
  * KBNK 残局知识评估：返回从 perspective 视角看的分数。
  * 非 KBNK 局面返回 0，因此可安全地在常规局面调用。

@@ -1,21 +1,17 @@
 // 界面简体中文文案（AI 对话不在此处，见 src/data/dialogue/zh_cn.json）
 const zhCN = {
-  // ---- 通用 ----
   'common.cancel': '取消',
   'common.confirm': '确认',
   'common.done': '完成',
 
-  // ---- 顶栏 ----
   'app.settings': '设置',
   'app.help': '帮助',
   'app.editor': '棋盘编辑器',
 
-  // ---- 首页 ----
   'home.vsAI': '人机对局',
   'home.vsHuman': '双人对局',
   'home.remote': '远程对局',
 
-  // ---- 对局设置 ----
   'setup.board': '棋盘',
   'setup.boardStandard': '标准棋盘',
   'setup.boardChess960': 'Chess960',
@@ -51,7 +47,6 @@ const zhCN = {
   'setup.back': '返回',
   'setup.start': '开始对局',
 
-  // ---- 远程对局 ----
   'remote.title': '远程对局',
   'remote.createRoom': '创建房间',
   'remote.joinRoom': '加入房间',
@@ -80,7 +75,6 @@ const zhCN = {
   'remote.accept': '同意',
   'remote.decline': '拒绝',
 
-  // ---- 侧边栏 ----
   'sidebar.flipBoard': '翻转棋盘',
   'sidebar.turnToMove': '{side}执子',
   'sidebar.sideWhite': '白方',
@@ -97,7 +91,6 @@ const zhCN = {
   'sidebar.confirmResignWithSide': '确定要让{side}认输吗？',
   'sidebar.confirmBackToHome': '确定要返回首页吗？',
 
-  // ---- 对局状态 ----
   'status.winByResign': '{side}胜利（对手认输）',
   'status.winByTimeout': '{side}胜利（超时）',
   'status.winByCheckmate': '{side}胜利（将死）',
@@ -105,7 +98,6 @@ const zhCN = {
   'status.sideWhite': '白方',
   'status.sideBlack': '黑方',
 
-  // ---- 设置 ----
   'settings.title': '游戏设置',
   'settings.sound': '音效',
   'settings.boardLabels': '棋盘标志',
@@ -119,7 +111,6 @@ const zhCN = {
   'settings.langZh': '中文',
   'settings.langEn': 'English',
 
-  // ---- 棋盘编辑器 ----
   'editor.title': '棋盘编辑器',
   'editor.move': '移动',
   'editor.remove': '移除',

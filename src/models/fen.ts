@@ -1,9 +1,3 @@
-// ============================================================
-// FEN 解析与合法性校验
-//   - parseFenBoardLayout：只解析棋子摆放（用于输入过程中的实时预览）
-//   - parseFen：解析棋子摆放 + 走棋方
-//   - validateFen：在格式校验之外，进一步校验局面是否符合国际象棋规则
-// ============================================================
 import {
   hasInsufficientMaterial,
   isCheckmate,
@@ -38,13 +32,9 @@ export type FenErrorCode =
   | 'insufficientMaterial'
 
 export interface FenValidationResult {
-  /** 是否可以通过校验并开始对局 */
   valid: boolean
-  /** 失败原因；校验通过时为 null */
   error: FenErrorCode | null
-  /** 棋子摆放解析成功时给出棋盘，否则为 null */
   board: Board | null
-  /** 走棋方解析成功时给出，否则为 null */
   turn: Color | null
 }
 
@@ -135,7 +125,6 @@ const getCastlingRookCol = (board: Board, color: Color, right: string): number |
 const isColorCastlingRight = (right: string, color: Color): boolean =>
   color === 'white' ? right === right.toUpperCase() : right === right.toLowerCase()
 
-/** 解析棋盤與對局狀態欄位；缺少的選填欄位採 FEN 預設值。 */
 export const parseFen = (fen: string): ParsedFen | null => {
   const parts = fen.trim().split(/\s+/)
   if (parts.length < 2 || parts.length > 6) return null
@@ -261,7 +250,6 @@ export const validateFen = (fen: string): FenValidationResult => {
     }
   }
 
-  // ---- 子力统计 ----
   const counts: Record<Color, { total: number; pawns: number; kings: number }> = {
     white: { total: 0, pawns: 0, kings: 0 },
     black: { total: 0, pawns: 0, kings: 0 },
@@ -288,7 +276,6 @@ export const validateFen = (fen: string): FenValidationResult => {
     }
   }
 
-  // ---- 双王必须各有一枚 ----
   if (counts.white.kings !== 1 || counts.black.kings !== 1) {
     return fail('king', board, turn)
   }
@@ -312,9 +299,6 @@ export const validateFen = (fen: string): FenValidationResult => {
   return { valid: true, error: null, board, turn }
 }
 
-// ============================================================
-// 棋盘 -> FEN 序列化（棋盘编辑器使用）
-// ============================================================
 
 /** FEN 中的棋子字符：小写为黑方，大写为白方 */
 const PIECE_FEN_CHARS: Record<Piece['type'], string> = {
@@ -326,7 +310,6 @@ const PIECE_FEN_CHARS: Record<Piece['type'], string> = {
   king: 'k',
 }
 
-/** 标准易位权顺序，用于归一化输出 */
 const CASTLING_RIGHT_ORDER = ['K', 'Q', 'k', 'q'] as const
 
 export type CastlingRight = (typeof CASTLING_RIGHT_ORDER)[number]
@@ -338,13 +321,10 @@ export interface FenSerializeOptions {
   castling?: string
   /** 吃过路兵目标格，如 'e3'；非法或空表示无 */
   enPassant?: string
-  /** 半回合计数，缺省 0 */
   halfmoveClock?: number
-  /** 回合数，缺省 1 */
   fullmoveNumber?: number
 }
 
-/** 把棋盘序列化为完整的 FEN 字符串，缺失的可选字段按 FEN 规范取默认值。 */
 export const boardToFen = (board: Board, options: FenSerializeOptions = {}): string => {
   const rows: string[] = []
 

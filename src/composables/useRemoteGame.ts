@@ -1,8 +1,3 @@
-// ============================================================
-// 远程对局：房间会话（传输层 ⇄ 游戏状态 的桥梁）
-//   - 单例：整个应用只有一个对局实例，因此状态放在模块作用域
-//   - 负责建房/加入/离开、心跳保活、消息路由
-// ============================================================
 import { ref, type Ref } from 'vue'
 import type { Color } from '../models/chess'
 import type { GameSetupConfig } from '../components/GameSetup.vue'
@@ -34,10 +29,8 @@ export interface RemoteGameBridge {
   resetRemoteSession: () => void
 }
 
-/** 建房失败（房间码连续被占用）时的重试次数 */
 const MAX_CREATE_ATTEMPTS = 4
 
-// ---- 模块级单例状态 ----
 const state = ref<RemoteConnectionState>('idle')
 const roomCode = ref<string>('')
 const errorCode = ref<RemoteErrorCode | null>(null)
@@ -48,7 +41,6 @@ let session: RoomSession | null = null
 let heartbeatTimer: number | null = null
 let lastPongAt = 0
 let opponentHidden: boolean | null = null
-/** 建连进行中的取消句柄（建房等待 / 加入房间） */
 let pendingAbort: AbortController | null = null
 
 const send = (message: RemoteMessage): void => {
@@ -140,7 +132,6 @@ const handleVisibilityChange = (): void => {
 const toErrorCode = (error: unknown): RemoteErrorCode =>
   error instanceof RemoteTransportError ? error.code : 'connection-failed'
 
-/** 链路建立后的公共装配：注册回调 + 心跳 + 标记在线 */
 const attachSession = (active: RoomSession): void => {
   session = active
   linkKind.value = active.kind
@@ -178,7 +169,6 @@ const registerGame = (api: RemoteGameBridge): void => {
   bridge = api
 }
 
-/** 房主：生成房间码并等待对手加入 */
 const createRoom = async (
   config: GameSetupConfig,
   hostColorChoice: 'white' | 'black' | 'random',
@@ -234,7 +224,6 @@ const createRoom = async (
   state.value = 'error'
 }
 
-/** 加入方：凭房间码加入房间 */
 const joinRoomByCode = async (rawCode: string): Promise<boolean> => {
   const code = normalizeRoomCode(rawCode)
   if (!isValidRoomCode(code)) {
@@ -271,7 +260,6 @@ const joinRoomByCode = async (rawCode: string): Promise<boolean> => {
   }
 }
 
-/** 主动离开房间（返回首页 / 放弃等待） */
 const leaveRoom = (): void => {
   if (session) {
     try {
@@ -287,7 +275,6 @@ const leaveRoom = (): void => {
   state.value = 'closed'
 }
 
-/** 建房等待期间取消 */
 const cancelWaiting = (): void => {
   leaveRoom()
   state.value = 'idle'
@@ -299,12 +286,10 @@ const resetError = (): void => {
 
 export function useRemoteGame() {
   return {
-    // 状态
     state,
     roomCode,
     errorCode,
     linkKind,
-    // 动作
     registerGame,
     createRoom,
     joinRoomByCode,

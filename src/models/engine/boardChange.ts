@@ -1,14 +1,9 @@
-// ============================================================
 // Board Change Tracking（棋盘变更追踪）—— Make/Unmake 机制
 // 执行走法时记录所有变更，撤销时按逆序还原
 // 支持王车易位、吃过路兵、兵的升变等特殊走法
-// ============================================================
 import type { Board, Piece, Square } from '../chess'
 import type { BoardChange, AIDetailedMove } from './types'
 
-// ============================================================
-// 单格变更辅助函数
-// ============================================================
 export function makeChange(
   b: Board,
   row: number,
@@ -20,10 +15,8 @@ export function makeChange(
   b[row]![col] = newPiece
 }
 
-// ============================================================
 // 执行走法
 // 返回：变更列表、新的过路兵目标、是否升变
-// ============================================================
 export function makeMove(
   b: Board,
   move: AIDetailedMove,
@@ -86,9 +79,6 @@ export function makeMove(
   return { changes, newEnPassantTarget, wasPromotion }
 }
 
-// ============================================================
-// 撤销走法
-// ============================================================
 export function unmakeMove(b: Board, changes: BoardChange[]): void {
   for (let i = changes.length - 1; i >= 0; i--) {
     const ch = changes[i]!

@@ -1,4 +1,3 @@
-// ============================================================
 // Move Ordering（走法排序）
 // 对走法进行评分排序，使好的走法优先搜索
 // 排序优先级：
@@ -7,24 +6,17 @@
 //   3. 升变
 //   4. 杀手走法 (Killer Moves)
 //   5. 历史表启发 (History Heuristic)
-// ============================================================
 import type { Board } from '../chess'
 import type { AIDetailedMove } from './types'
 import { PIECE_VALUES, COLOR_INDEX } from './types'
 import { killerMoves, historyTable } from './killerHistory'
 import { movesMatch } from './moveGeneration'
 
-// ============================================================
-// 走法评分常量
-// ============================================================
 export const MOVE_SCORE_TT = 10000000
 export const MOVE_SCORE_CAPTURE_BASE = 1000000
 export const MOVE_SCORE_KILLER_BASE = 900000
 export const MOVE_SCORE_KILLER2 = 800000
 
-// ============================================================
-// 走法评分函数
-// ============================================================
 export function scoreMoveForOrdering(
   move: AIDetailedMove,
   ttMove: AIDetailedMove | null,

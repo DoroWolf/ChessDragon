@@ -1,20 +1,12 @@
-// ============================================================
 // Transposition Table（置换表）
 // 存储已搜索局面的评估结果，避免重复搜索同一局面
 // 使用 Zobrist 哈希作为键，支持精确值 / Alpha 上界 / Beta 下界三种存储类型
-// ============================================================
 import { TT_SIZE, TT_MASK, TT_EXACT, TT_ALPHA, TT_BETA } from './types'
 import type { TTEntry, AIDetailedMove } from './types'
 
-// ============================================================
-// 置换表存储
-// ============================================================
 export const tt: (TTEntry | null)[] = new Array(TT_SIZE).fill(null)
 export let ttHits = 0
 
-// ============================================================
-// 从置换表获取局面
-// ============================================================
 export function probeTT(hash: number, depth: number, alpha: number, beta: number): {
   hit: boolean
   score: number
@@ -37,9 +29,6 @@ export function probeTT(hash: number, depth: number, alpha: number, beta: number
   return { hit: false, score: 0, bestMove: entry?.bestMove ?? null }
 }
 
-// ============================================================
-// 存入置换表
-// ============================================================
 export function storeTT(
   hash: number,
   depth: number,

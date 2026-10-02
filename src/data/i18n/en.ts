@@ -2,22 +2,18 @@
 import type { MessageKey } from './zh_cn'
 
 const en: Record<MessageKey, string> = {
-  // ---- Common ----
   'common.cancel': 'Cancel',
   'common.confirm': 'Confirm',
   'common.done': 'Done',
 
-  // ---- Top bar ----
   'app.settings': 'Settings',
   'app.help': 'Help',
   'app.editor': 'Board Editor',
 
-  // ---- Home ----
   'home.vsAI': 'Play Against AI',
   'home.vsHuman': 'Two Players',
   'home.remote': 'Remote Game',
 
-  // ---- Game setup ----
   'setup.board': 'Board',
   'setup.boardStandard': 'Standard',
   'setup.boardChess960': 'Chess960',
@@ -53,7 +49,6 @@ const en: Record<MessageKey, string> = {
   'setup.back': 'Back',
   'setup.start': 'Start Game',
 
-  // ---- Remote game ----
   'remote.title': 'Remote Game',
   'remote.createRoom': 'Create Room',
   'remote.joinRoom': 'Join Room',
@@ -82,7 +77,6 @@ const en: Record<MessageKey, string> = {
   'remote.accept': 'Accept',
   'remote.decline': 'Decline',
 
-  // ---- Sidebar ----
   'sidebar.flipBoard': 'Flip Board',
   'sidebar.turnToMove': '{side}\'s Turn',
   'sidebar.sideWhite': 'White',
@@ -99,7 +93,6 @@ const en: Record<MessageKey, string> = {
   'sidebar.confirmResignWithSide': 'Resign for {side}?',
   'sidebar.confirmBackToHome': 'Return to homepage?',
 
-  // ---- Game status ----
   'status.winByResign': '{side} wins (by resignation)',
   'status.winByTimeout': '{side} wins (on time)',
   'status.winByCheckmate': '{side} wins (by checkmate)',
@@ -107,7 +100,6 @@ const en: Record<MessageKey, string> = {
   'status.sideWhite': 'White',
   'status.sideBlack': 'Black',
 
-  // ---- Settings ----
   'settings.title': 'Game Settings',
   'settings.sound': 'Sound',
   'settings.boardLabels': 'Board Labels',
@@ -121,7 +113,6 @@ const en: Record<MessageKey, string> = {
   'settings.langZh': '中文',
   'settings.langEn': 'English',
 
-  // ---- Board editor ----
   'editor.title': 'Board Editor',
   'editor.move': 'Move',
   'editor.remove': 'Remove',

@@ -33,7 +33,6 @@
       @cancel-promotion="cancelPromotion"
       @apply-promotion="(piece: string) => applyPromotion(piece)" />
 
-    <!-- 侧边栏 -->
     <Sidebar v-if="!showSetup" :is-clock-enabled="isClockEnabled" :move-history="moveHistory" :current-turn="currentTurn"
       :starting-turn="startingTurn" :starting-fullmove-number="startingFullmoveNumber"
       :game-status="gameStatusMessage" :halfmove-clock="halfmoveClock" :position-count="getPositionCount()"
@@ -48,7 +47,6 @@
       @toggle-flip="isFlipped = !isFlipped" :has-game-started="hasGameStarted" @undo="handleUndo"
       @draw="handleDrawOffer" @resign="handleResign" @restart="handleRestart" @back-to-home="handleLeaveToHome" />
 
-    <!-- 左上角固定按钮组：帮助 / 棋盘编辑器（均在新窗口打开，不打断当前对局） -->
     <div class="top-left-fabs">
       <button type="button" class="fab-btn" :title="t('app.help')" @click="openHelpWindow">
         <span class="fab-icon" v-html="tutorialSvg"></span>
@@ -58,7 +56,6 @@
       </button>
     </div>
 
-    <!-- 右上角固定按钮组 -->
     <div class="top-right-fabs">
       <a href="https://github.com/DoroWolf/ChessDragon" target="_blank" rel="noopener" class="fab-btn" title="GitHub">
         <span class="fab-icon" v-html="githubSvg"></span>
@@ -68,14 +65,12 @@
       </button>
     </div>
 
-    <!-- 设置弹窗 Modal -->
     <SettingsModal :visible="showSettingsModal" :is-sound-enabled="isSoundEnabled"
       :coordinate-label-mode="coordinateLabelMode" :theme="theme" @close="showSettingsModal = false"
       @update:is-sound-enabled="(val: boolean) => isSoundEnabled = val"
       @update:coordinate-label-mode="(val: 'off' | 'inside' | 'outside') => coordinateLabelMode = val"
       @update:theme="(val: 'light' | 'dark') => theme = val" />
 
-    <!-- 远程对局：请求 / 断线提示 -->
     <RemoteOverlay v-if="!showSetup" :pending-undo-request="pendingUndoRequest"
       :pending-draw-offer="pendingDrawOffer" :pending-rematch-request="pendingRematchRequest"
       :outgoing-request="outgoingRequest" :opponent-left="isOpponentLeft"
@@ -103,23 +98,17 @@ import githubSvg from './assets/icon/github.svg?raw'
 import tutorialSvg from './assets/icon/openedBook.svg?raw'
 import iconCustomSvg from './assets/icon/custom.svg?raw'
 
-// ---- 设置持久化 ----
 const { isSoundEnabled, coordinateLabelMode, theme } = useSettings()
 
-// ---- 国际化 ----
 const { t } = useI18n()
 
-// ---- 设置弹窗状态 ----
 const showSettingsModal = ref(false)
 
-// ---- 辅助工具页：帮助用受控弹窗，棋盘编辑器用普通标签页（保留前进后退/刷新/可编辑 URL）----
 const openHelpWindow = () => {}
   // TODO: 教程
 
 const openEditorWindow = () => openToolTab(EDITOR_PAGE)
 
-// ---- 「快速对局」交接：编辑器跳转过来时直接进入棋盘设置并预填 FEN ----
-// 一次性消费 sessionStorage，避免刷新页面时重复进入设置界面
 const quickPlayPayload = consumeQuickPlay()
 
 const initialSetup = ref<GameSetupInitial | undefined>(
@@ -133,13 +122,10 @@ const initialSetup = ref<GameSetupInitial | undefined>(
     : undefined,
 )
 
-// 仅用于首次挂载：GameSetup 在 setup 阶段即读取该 prop，
-// 挂载后立刻清空，之后「返回首页」重挂载时便不会再次跳过首页。
 onMounted(() => {
   initialSetup.value = undefined
 })
 
-// ---- 棋盘显示 ----
 const {
   isFlipped,
   getOverlayTexture,
@@ -148,13 +134,10 @@ const {
   isWhiteSquare,
 } = useBoardDisplay()
 
-// ---- pieceScale（由 BoardPanel 通过事件更新） ----
 const pieceScale = ref(2)
 
-// ---- 游戏核心状态（含棋钟、拖拽、音效、走棋） ----
 const game = useGameState(isSoundEnabled, isFlipped)
 
-// 从 game 中解构所有模板所需的变量/函数
 const {
   showSetup,
   isChess960,
@@ -207,7 +190,6 @@ const {
   applyPromotion,
   getPositionCount,
   stopClock,
-  // ---- 远程对局 ----
   isRemote,
   pendingUndoRequest,
   pendingDrawOffer,
@@ -219,7 +201,6 @@ const {
   cancelOutgoingRequest,
 } = game
 
-// ---- 远程对局 ----
 const remote = useRemoteGame()
 remote.registerGame(game)
 
@@ -244,7 +225,6 @@ const resetRemoteError = () => {
   remote.resetError()
 }
 
-/** 回应对手的悔棋 / 和棋 / 重赛请求 */
 const handleRemoteRespond = (accepted: boolean) => {
   if (pendingUndoRequest.value) {
     respondToUndoRequest(accepted)
@@ -263,7 +243,6 @@ const handleLeaveToHome = () => {
   handleBackToHome()
 }
 
-// ---- 生命周期 ----
 onUnmounted(() => {
   stopClock()
   if (isRemote.value) {
@@ -313,7 +292,6 @@ onUnmounted(() => {
   gap: 10px;
 }
 
-/* 无边框 FAB 按钮 */
 .fab-btn {
   width: 44px;
   height: 44px;
@@ -335,7 +313,6 @@ onUnmounted(() => {
   opacity: 0.8;
 }
 
-/* FAB 图标容器 */
 .fab-icon {
   display: inline-flex;
   align-items: center;

@@ -1,8 +1,6 @@
-// ============================================================
 // Search State Management（搜索状态管理）
 // 管理搜索过程中的全局状态：棋盘引用、搜索参数、
 // 王的增量追踪位置、总子力等
-// ============================================================
 import type { Board, Color } from '../chess'
 import type { AIStyle, AIDetailedMove } from './types'
 import { PIECE_VALUES } from './types'
@@ -10,9 +8,6 @@ import { computeHash } from './zobrist'
 import type { CastlingRights } from './zobrist'
 import { getEnPassantTarget, getPositionKey } from '../chess'
 
-// ============================================================
-// 模块级搜索状态
-// ============================================================
 export let board: Board = []
 export let searchColor: Color = 'white'
 export let searchStyle: AIStyle = 'balanced'
@@ -55,9 +50,6 @@ export let trackedBlackKingRow = 0
 export let trackedBlackKingCol = 4
 export let trackedMaterial = 0 // 总子力（不包括王）
 
-// ============================================================
-// 王位置访问器
-// ============================================================
 export function getKingRow(color: Color): number {
   return color === 'white' ? trackedWhiteKingRow : trackedBlackKingRow
 }
@@ -76,10 +68,8 @@ export function setKingPos(color: Color, row: number, col: number): void {
   }
 }
 
-// ============================================================
 // 走法后增量追踪更新
 // 必须在 makeMove 之后调用
-// ============================================================
 export function updateTrackingAfterMove(move: AIDetailedMove, materialDelta: number): void {
   const movedPiece = board[move.toRow]![move.toCol]!
   if (movedPiece && movedPiece.type === 'king') {
@@ -88,9 +78,6 @@ export function updateTrackingAfterMove(move: AIDetailedMove, materialDelta: num
   trackedMaterial += materialDelta
 }
 
-// ============================================================
-// 恢复追踪到已保存状态（在 unmakeMove 之后调用）
-// ============================================================
 export function restoreTracking(
   wkr: number, wkc: number,
   bkr: number, bkc: number,
@@ -103,9 +90,6 @@ export function restoreTracking(
   trackedMaterial = material
 }
 
-// ============================================================
-// 时间限制检查
-// ============================================================
 export function checkTimeLimit(): boolean {
   if (searchStopped) return true
   if (performance.now() - searchStartTime >= searchTimeLimit) {
@@ -115,10 +99,8 @@ export function checkTimeLimit(): boolean {
   return false
 }
 
-// ============================================================
 // 从棋盘计算走法前后子力差
 // 在 makeMove 之前调用（使用走前棋盘状态）
-// ============================================================
 export function computeMaterialDelta(move: AIDetailedMove): number {
   const piece = board[move.fromRow]![move.fromCol]!
   let delta = 0
@@ -144,9 +126,6 @@ export function computeMaterialDelta(move: AIDetailedMove): number {
   return delta
 }
 
-// ============================================================
-// 从棋盘快速计算总子力（仅供初始化使用）
-// ============================================================
 export function computeMaterialFromBoard(b: Board): number {
   let total = 0
   for (let r = 0; r < 8; r++) {
@@ -160,17 +139,11 @@ export function computeMaterialFromBoard(b: Board): number {
   return total
 }
 
-// ============================================================
-// 快速残局判定（O(1)，使用追踪的子力值）
-// ============================================================
 export function isEndgameFast(material: number): boolean {
   // 残局阈值：除王以外的总子力 <= 1400
   return material <= 1400
 }
 
-// ============================================================
-// 查找王的位置（工具函数——仅初始化时使用一次）
-// ============================================================
 export function findKing(b: Board, color: Color): { row: number; col: number } {
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
@@ -183,9 +156,6 @@ export function findKing(b: Board, color: Color): { row: number; col: number } {
   return { row: 0, col: 0 }
 }
 
-// ============================================================
-// 王车易位权利检测
-// ============================================================
 export function getCastlingRights(b: Board): CastlingRights {
   let rights = 0
   const wk = b[7]![4]
@@ -213,9 +183,6 @@ export function getCastlingRights(b: Board): CastlingRights {
   return rights
 }
 
-// ============================================================
-// 初始化搜索状态
-// ============================================================
 export function initSearchState(b: Board, color: Color, style: AIStyle, difficulty: number, lastMove: { from: { row: number; col: number }; to: { row: number; col: number } } | null, aiTimeRemainingMs?: number, positionHistory: readonly string[] = []): void {
   board = b
   searchColor = color

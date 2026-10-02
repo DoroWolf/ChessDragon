@@ -1,4 +1,3 @@
-// ============================================================
 // Syzygy Tablebase - 运行时管理器（等级门槛 + 按需懒加载）
 //
 // 等级门槛（按需求设定）：
@@ -13,7 +12,6 @@
 //   * 只有当前局面确实可用时才加载对应材料表
 //   * 通过 "缺失表记录 -> 加载 -> 重试" 的方式按需补齐吃子依赖
 //   * 带 LRU 上限，避免内存无限增长
-// ============================================================
 import type { Board, Color } from '../../chess'
 import { makeMove, unmakeMove } from '../boardChange'
 import type { AIDetailedMove } from '../types'
@@ -127,9 +125,7 @@ export class SyzygyStore {
     this.loadedBytes = 0
   }
 
-  // ----------------------------------------------------------
   // 文件加载
-  // ----------------------------------------------------------
   private async fetchFile(fileName: string): Promise<Uint8Array | null> {
     const existing = this.inflight.get(fileName)
     if (existing) return existing
@@ -191,9 +187,7 @@ export class SyzygyStore {
     return true
   }
 
-  // ----------------------------------------------------------
   // 查询准备：按需补齐缺失的表
-  // ----------------------------------------------------------
   async prepare(board: Board, turn: Color, hasEnPassant: boolean): Promise<void> {
     if (!this.active || hasEnPassant) return
     const total = pieceCount(board)
@@ -227,9 +221,7 @@ export class SyzygyStore {
     }
   }
 
-  // ----------------------------------------------------------
   // 同步探测（供搜索使用）
-  // ----------------------------------------------------------
   probeWdl(board: Board, turn: Color, hasEnPassant: boolean): number | undefined {
     if (!this.active || hasEnPassant) return undefined
     const max = maxWdlPieces(this.level)
@@ -334,9 +326,6 @@ export class SyzygyStore {
   }
 }
 
-// ============================================================
-// 全局单例（搜索与评估共用）
-// ============================================================
 const store = new SyzygyStore()
 
 export function getSyzygyStore(): SyzygyStore {

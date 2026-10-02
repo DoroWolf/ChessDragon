@@ -17,12 +17,10 @@ import {
 export function useBoardDisplay() {
   const isFlipped = ref(false)
 
-  /** 视觉坐标转为逻辑坐标（行） */
   const getActualRow = (displayRow: number): number => {
     return isFlipped.value ? 7 - displayRow : displayRow
   }
 
-  /** 视觉坐标转为逻辑坐标（列） */
   const getActualCol = (displayCol: number): number => {
     return isFlipped.value ? 7 - displayCol : displayCol
   }
@@ -35,7 +33,6 @@ export function useBoardDisplay() {
     return `${8 - getActualRow(displayRow - 1)}`
   }
 
-  // --- Overlay 纹理：用于高亮选中格子、合法走法、premove、上一步移动 ---
 const getOverlayTexture = (
   board: Board,
   selectedSquare: { row: number; col: number } | null,
@@ -57,7 +54,6 @@ const getOverlayTexture = (
    const isCapture =
      move !== undefined && targetPiece !== null && selectedPiece?.color !== targetPiece.color
 
-   // 拖拽期间保持起始格子的高亮（与选中状态一致）
    if (isDragging && selectedSquare?.row === row && selectedSquare.col === col) {
      return canPremove ? boardPremoveHover : boardMoveHover
    }
@@ -128,7 +124,6 @@ const getOverlayTexture = (
   return null
 }
 
-  // --- 棋子图片 ---
   const getPieceImage = (
     piece: Piece,
     board: Board,
@@ -156,7 +151,6 @@ const getOverlayTexture = (
     return pieceImg(piece.type, piece.color)
   }
 
-  // --- 缩放适配 ---
   const pieceScale = ref(1.5)
   const boardGridRef = ref<HTMLElement | null>(null)
   let boardResizeObserver: ResizeObserver | null = null

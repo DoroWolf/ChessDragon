@@ -1,14 +1,8 @@
-// ============================================================
-// 房间码：生成 / 归一化 / 校验
-//   字母表刻意剔除 I O 0 1 等易混字符，方便口头或手抄传递
-// ============================================================
+// 字母表刻意剔除 I O 易混字符，方便口头或手抄传递。
+const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789'
 
-const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-
-/** 房间码长度 */
 export const ROOM_CODE_LENGTH = 6
 
-/** 生成一个新的房间码 */
 export const generateRoomCode = (): string => {
   let code = ''
   for (let i = 0; i < ROOM_CODE_LENGTH; i += 1) {
@@ -17,7 +11,6 @@ export const generateRoomCode = (): string => {
   return code
 }
 
-/** 归一化用户输入：大写、剔除非法字符、截断到固定长度 */
 export const normalizeRoomCode = (input: string): string => {
   const upper = input.toUpperCase()
   let code = ''
@@ -30,14 +23,11 @@ export const normalizeRoomCode = (input: string): string => {
   return code
 }
 
-/** 是否为合法（可直接使用）的房间码 */
 export const isValidRoomCode = (code: string): boolean =>
   code.length === ROOM_CODE_LENGTH && [...code].every((char) => ALPHABET.includes(char))
 
-/** BroadcastChannel 频道名 */
 export const roomChannelName = (code: string): string => `chessdragon:room:${code}`
 
-/** PeerJS 节点 id（小写，仅含字母数字与连字符） */
 export const roomPeerId = (code: string): string => `chessdragon-${code.toLowerCase()}`
 
 /** 复制到剪贴板（失败时回退到 execCommand，与 Sidebar 的 PGN 复制保持一致） */

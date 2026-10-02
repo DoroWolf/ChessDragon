@@ -1,5 +1,4 @@
 <template>
-  <!-- 对方已离开：覆盖式弹窗，需要玩家确认后返回首页 -->
   <div v-if="opponentLeft" class="modal-backdrop">
     <div class="card dialog-box">
       <p class="dialog-message">{{ t('remote.opponentLeft') }}</p>
@@ -12,7 +11,6 @@
     </div>
   </div>
 
-  <!-- 请求相关提示：非阻塞提示条，容器不接管指针事件，棋盘始终可用 -->
   <div v-else-if="mode" class="notice-stack">
     <div class="card notice-card">
       <span class="notice-message">{{ messageText }}</span>
@@ -99,7 +97,6 @@ const messageText = computed(() => {
 </script>
 
 <style scoped>
-/* ---- 覆盖式弹窗：对方已离开 ---- */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -142,7 +139,6 @@ const messageText = computed(() => {
   padding: 0.25rem 0.5rem;
 }
 
-/* ---- 非阻塞提示条：固定在底部中央，避开棋盘上方内容以减少遮挡观感 ---- */
 .notice-stack {
   position: fixed;
   bottom: 8px;
@@ -160,7 +156,6 @@ const messageText = computed(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
-  /* 只有卡片自身可交互 */
   pointer-events: auto;
 }
 

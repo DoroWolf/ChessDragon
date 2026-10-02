@@ -1,8 +1,3 @@
-// ============================================================
-// 远程对局：信令后端注册表
-//   - 统一在这里决定启用哪些信令与它们的优先级
-//   - room.ts 只依赖本文件，不感知具体实现
-// ============================================================
 import { mqttRelayProvider } from './mqttRelay'
 import { peerjsProvider } from './peerjs'
 import type { SignalingProvider } from './types'

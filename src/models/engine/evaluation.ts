@@ -1,10 +1,8 @@
-// ============================================================
 // Board Evaluation（棋盘评估）
 // 评估棋盘当前局面的优劣，从指定视角打分
 // 包含：
 //   - Piece-Square Table 评估：棋子基础价值 + 位置价值
 //   - 风格调整：aggressive（积极进攻）、defensive（稳固防守）
-// ============================================================
 import type { Board, Color } from '../chess'
 import { PIECE_VALUE_ARRAY, PIECE_TYPE_INDEX, COLOR_INDEX } from './types'
 import { PST_BY_COLOR, PST_KING_ENDGAME } from './pieceSquareTables'
@@ -13,9 +11,6 @@ import { searchStyle, searchDifficulty, searchCastlingRights, trackedMaterial } 
 import { evaluateKBNK, KBNK_MATERIAL, KBNK_MIN_LEVEL } from './endgameKnowledge'
 import { getSyzygyStore, wdlToScore } from './syzygy/store'
 
-// ============================================================
-// 内部棋盘评估函数
-// ============================================================
 export function evaluateBoardInternal(
   b: Board,
   perspective: Color,

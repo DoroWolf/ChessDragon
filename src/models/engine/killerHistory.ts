@@ -1,15 +1,10 @@
-// ============================================================
 // Killer Moves & History Table（杀手走法 & 历史表）
 // Killer Moves：记录在某深度引起 Beta 截断的走法，优先搜索
 // History Table：记录走法在历史搜索中的表现好坏，用于走法排序
-// ============================================================
 import { MAX_DEPTH, COLOR_INDEX } from './types'
 import type { AIDetailedMove } from './types'
 import type { Board, Color } from '../chess'
 
-// ============================================================
-// Killer Moves
-// ============================================================
 export const killerMoves: (AIDetailedMove | null)[][] = Array.from({ length: MAX_DEPTH }, () => [
   null,
   null,
@@ -34,9 +29,6 @@ export function recordKillerMove(
   slot[0] = move
 }
 
-// ============================================================
-// History Table
-// ============================================================
 export const historyTable: number[][][][][] = Array.from({ length: 2 }, () =>
   Array.from({ length: 8 }, () =>
     Array.from({ length: 8 }, () =>

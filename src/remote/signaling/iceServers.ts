@@ -24,5 +24,4 @@ const buildIceServers = (): RTCIceServer[] => {
   return servers
 }
 
-/** PeerJS 使用的 ICE 配置（STUN + 可选 TURN） */
 export const iceServers: RTCIceServer[] = buildIceServers()

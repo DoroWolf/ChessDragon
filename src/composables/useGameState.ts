@@ -37,9 +37,6 @@ import {
   soundLowTime,
 } from '../assets/resourcePaths'
 
-// ============================================================
-// 音频资源（模块级，避免重复创建 Audio 对象）
-// ============================================================
 const sounds = {
   move: new Audio(soundMove),
   capture: new Audio(soundCapture),
@@ -55,7 +52,6 @@ const INITIAL_CLOCK_SECONDS: number | null = null
 /** 房主向客方广播权威棋钟的间隔（毫秒） */
 const REMOTE_CLOCK_BROADCAST_MS = 250
 
-/** 可发起请求的对局行为 */
 type RemoteRequestKind = 'undo' | 'draw' | 'rematch'
 
 /** 请求被拒绝后的冷却时长（毫秒）：冷却期内只在本机显示「已发送」，不打扰对手 */
@@ -64,23 +60,18 @@ const REQUEST_COOLDOWN_MS = 60_000
 // 对局结束原因（与文案解耦，供本地化与台词选择使用）
 export type GameEndReason = 'resign' | 'timeout' | 'checkmate' | 'draw'
 
-// ============================================================
-// 游戏状态 Composable
-// ============================================================
 export function useGameState(
   isSoundEnabled: import('vue').Ref<boolean>,
   isFlipped: import('vue').Ref<boolean>,
 ) {
   const { t } = useI18n()
 
-  // ---- 初始设置 ----
   const showSetup = ref(true)
   const playerColor = ref<Color>('white')
   const isClockEnabled = ref(true)
   const lastSetupConfig = ref<GameSetupConfig | null>(null)
   const isChess960 = computed(() => lastSetupConfig.value?.boardMode === 'chess960')
 
-  // ---- 核心游戏状态 ----
   const board = ref<Board>(createInitialBoard())
   const currentTurn = ref<Color>('white')
   const selectedSquare = ref<{ row: number; col: number } | null>(null)
@@ -91,7 +82,6 @@ export function useGameState(
   const startingTurn = ref<Color>('white')
   const startingFullmoveNumber = ref(1)
 
-  // ---- 对局历史（用于悔棋） ----
   const moveHistory = ref<string[]>([])
   /**
    * 本局各方是否已经走出过至少一步（按颜色记录，只增不减）。
@@ -114,7 +104,6 @@ export function useGameState(
     }>
   >([])
 
-  // ---- 棋钟状态 ----
   const hasGameStarted = ref(false)
   const clockStarted = ref(false)
   const activeClockColor = ref<Color | null>(null)
@@ -225,9 +214,7 @@ export function useGameState(
   // ---- Premove 状态 ----
   const premove = ref<{ from: { row: number; col: number }; to: { row: number; col: number } } | null>(null)
 
-  // ============================================================
   // 辅助函数
-  // ============================================================
   const getStarterColor = (starter: GameSetupConfig['starter']): Color => {
     if (starter === 'black') return 'black'
     if (starter === 'white') return 'white'
@@ -236,9 +223,7 @@ export function useGameState(
 
   const parseFenToBoard = (fen: string) => parseFen(fen)
 
-  // ============================================================
   // 音效
-  // ============================================================
   const playSound = (soundName: keyof typeof sounds) => {
     if (!isSoundEnabled.value) return
     const audio = sounds[soundName]
@@ -278,9 +263,7 @@ export function useGameState(
     playSound(isCapture ? 'capture' : 'move')
   }
 
-  // ============================================================
   // 棋钟逻辑
-  // ============================================================
   const canColorCheckmate = (boardVal: Board, attackerColor: Color): boolean => {
     const attackerPieces: Piece[] = []
     const victimPieces: Piece[] = []
@@ -473,9 +456,6 @@ export function useGameState(
     }
   }
 
-  // ============================================================
-  // 终止状态计算（computed）
-  // ============================================================
   const isDrawByStalemate = computed(() =>
     isStalemate(board.value, currentTurn.value, {
       lastMove: lastMove.value,
@@ -589,9 +569,7 @@ export function useGameState(
       gameMode.value === 'ai',
   )
 
-  // ============================================================
   // 走棋逻辑
-  // ============================================================
   const possibleMoves = computed<Move[]>(() => {
     if (!selectedSquare.value) return []
     if (!canInteract.value && !canPremove.value) return []
@@ -747,7 +725,6 @@ export function useGameState(
       broadcastLocalMove({ row: from.row, col: from.col }, { row: move.row, col: move.col })
     }
 
-    // ---- 触发 AI（如果当前轮次是 AI 的回合） ----
     void nextTick(() => {
       checkAndTriggerAI()
     })
@@ -849,7 +826,6 @@ export function useGameState(
       const selectedPiece = selected ? board.value[selected.row]?.[selected.col] ?? null : null
 
       if (selected && selectedPiece && canPremoveTo(row, col)) {
-        // 设置 premove
         premove.value = {
           from: { row: selected.row, col: selected.col },
           to: { row, col },
@@ -951,7 +927,6 @@ export function useGameState(
     }
   }
 
-  // 棋盘翻转时，重新计算升变 UI 位置
   watch(isFlipped, () => {
     if (promotionPending.value) {
       computePromotionStyle(promotionPending.value.to.row, promotionPending.value.to.col)
@@ -990,7 +965,6 @@ export function useGameState(
 
     const nextTurn = currentTurn.value === 'white' ? 'black' : 'white'
 
-    // 将/将死检测
     let checkStatus: 'check' | 'checkmate' | undefined = undefined
     if (isCheckmate(nextBoard, nextTurn)) {
       checkStatus = 'checkmate'
@@ -998,7 +972,6 @@ export function useGameState(
       checkStatus = 'check'
     }
 
-    // 记录棋谱
     const notation = generateMoveNotation(
       prevBoard,
       from.row,
@@ -1012,7 +985,6 @@ export function useGameState(
     moveHistory.value.push(notation)
     pushBoardHistory(selectedPiece.color, prevBoard)
 
-    // 更新状态
     board.value = nextBoard
     lastMove.value = { from: { row: from.row, col: from.col }, to: { row: to.row, col: to.col } }
     halfmoveClock.value = 0
@@ -1035,19 +1007,14 @@ export function useGameState(
       )
     }
 
-    // ---- 触发 AI（如果当前轮次是 AI 的回合） ----
     void nextTick(() => {
       checkAndTriggerAI()
     })
   }
 
-  // ============================================================
-  // 拖拽处理
-  // ============================================================
   const handleMouseDown = (row: number, col: number, event: MouseEvent) => {
     if (event.button !== 0) return
 
-    // 既不能正常交互，也不能 premove 时直接返回
     if (!canInteract.value && !canPremove.value) return
 
     const piece = board.value[row]?.[col]
@@ -1074,7 +1041,6 @@ export function useGameState(
       window.addEventListener('mousemove', handleMouseMove)
       window.addEventListener('mouseup', handleMouseUp)
     } else {
-      // 点击空格或对方棋子
       handleSquareClick(row, col)
     }
   }
@@ -1104,7 +1070,6 @@ export function useGameState(
       if (canMoveTo(toSquare.row, toSquare.col)) {
         handleSquareClick(toSquare.row, toSquare.col)
       } else {
-        // 修复：拖拽到不合法棋格（包括己方棋子格）时，取消选择
         selectedSquare.value = null
       }
     } else {
@@ -1126,57 +1091,44 @@ export function useGameState(
 
     if (!from) return
 
-    // ---- 1. 单击（没有发生拖拽） ----
     if (!hadDragged) {
       if (wasAlreadySelected) {
-        // 再次点击已选中的棋子则取消选择并清除 premove
         selectedSquare.value = null
         premove.value = null
       }
       return
     }
 
-    // ---- 2. 拖拽释放 ----
     if (to) {
-      // 拖回原位
       if (from.row === to.row && from.col === to.col) {
         if (wasAlreadySelected) selectedSquare.value = null
         return
       }
 
-      // A. 处于 Premove 模式下的拖拽释放
       if (canPremove.value) {
         if (canPremoveTo(to.row, to.col)) {
-          // 拖拽到合法格：成功设置 premove
           premove.value = {
             from: { row: from.row, col: from.col },
             to: { row: to.row, col: to.col },
           }
         } else {
-          // 拖拽到非法格：清除 premove
           premove.value = null
         }
         selectedSquare.value = null
         return
       }
 
-      // B. 处于正常玩家回合下的拖拽释放
       handleDropResult(from, to)
     } else {
-      // 拖到棋盘外，清空选择
       selectedSquare.value = null
       premove.value = null
     }
   }
 
-  // ============================================================
-  // 触摸事件处理（移动端拖拽支持）
-  // ============================================================
   const findSquareFromPoint = (clientX: number, clientY: number): { row: number; col: number } | null => {
     const el = document.elementFromPoint(clientX, clientY)
     if (!el) return null
 
-    // 查找最近的带有 data-row/data-col 的 button.board-square 元素
     const squareBtn = el.closest('.board-square') as HTMLElement | null
     if (!squareBtn) return null
 
@@ -1192,7 +1144,6 @@ export function useGameState(
   }
 
   const handleTouchStart = (row: number, col: number, event: TouchEvent) => {
-    // 既不能正常交互，也不能 premove 时直接返回
     if (!canInteract.value && !canPremove.value) return
 
     const piece = board.value[row]?.[col]
@@ -1217,7 +1168,6 @@ export function useGameState(
         mousePos.value = { x: touch.clientX, y: touch.clientY }
       }
     } else {
-      // 点击空格或对方棋子
       handleSquareClick(row, col)
     }
   }
@@ -1239,7 +1189,6 @@ export function useGameState(
       }
     }
 
-    // 更新 hoverSquare（通过触摸点查找下方方格）
     const square = findSquareFromPoint(touch.clientX, touch.clientY)
     if (square) {
       hoverSquare.value = square
@@ -1260,28 +1209,22 @@ export function useGameState(
 
     if (!from) return
 
-    // ---- 1. 单击（没有发生拖拽） ----
     if (!hadDragged) {
       if (wasAlreadySelected) {
-        // 再次点击已选中的棋子则取消选择
         selectedSquare.value = null
         premove.value = null
       } else {
-        // 点击未选中的棋子：选中它
         selectedSquare.value = { row: from.row, col: from.col }
       }
       return
     }
 
-    // ---- 2. 拖拽释放 ----
     if (to) {
-      // 拖回原位
       if (from.row === to.row && from.col === to.col) {
         if (wasAlreadySelected) selectedSquare.value = null
         return
       }
 
-      // A. Premove 模式下的拖拽释放
       if (canPremove.value) {
         if (canPremoveTo(to.row, to.col)) {
           premove.value = {
@@ -1295,22 +1238,16 @@ export function useGameState(
         return
       }
 
-      // B. 正常玩家回合下的拖拽释放
       handleDropResult(from, to)
     } else {
-      // 拖到棋盘外
       selectedSquare.value = null
       premove.value = null
     }
   }
 
-  // ============================================================
-  // 游戏操作：悔棋 / 认输 / 和棋 / 重新开始
-  // ============================================================
   const handleUndo = (): void => {
     if (boardHistory.value.length === 0) return
 
-    // ---- 远程对局：悔棋需要先取得对方同意 ----
     if (isRemote.value) {
       if (outgoingRequest.value !== null || pendingUndoRequest.value) return
       if (beginRemoteRequest('undo')) {
@@ -1319,15 +1256,12 @@ export function useGameState(
       return
     }
 
-    // 清除 premove
     premove.value = null
 
     // AI 对局中，悔棋撤回两步（撤消 AI 的走棋 + 玩家的上一步）
     if (gameMode.value === 'ai') {
-      // 取消可能正在等待的 AI 走棋
       cancelAIMove()
 
-      // 撤回 AI 的走棋（如果最后一步是 AI 走的）
       if (boardHistory.value.length > 0) {
         const lastTurnBefore = boardHistory.value[boardHistory.value.length - 1]!.currentTurn
         const aiColor = playerColor.value === 'white' ? 'black' : 'white'
@@ -1343,9 +1277,7 @@ export function useGameState(
         }
       }
 
-      // 再撤回一步（玩家的上一步）
       if (boardHistory.value.length > 0) {
-        // 玩家执黑时不能撤回 AI 的第一步
         if (playerColor.value === 'black' && boardHistory.value.length <= 1) {
           const lastTurnBefore = boardHistory.value[boardHistory.value.length - 1]!.currentTurn
           if (lastTurnBefore === 'white') {
@@ -1404,7 +1336,6 @@ export function useGameState(
   }
 
   const handleResign = (): void => {
-    // 远程对局：立即生效，同时通知对手
     if (isRemote.value) {
       const color = playerColor.value
       stopClock()
@@ -1438,7 +1369,6 @@ export function useGameState(
     playSound('draw')
   }
 
-  /** 双方达成和棋（远程对局） */
   const applyAgreedDraw = (): void => {
     stopClock()
     cancelAIMove()
@@ -1499,9 +1429,6 @@ export function useGameState(
     showSetup.value = true
   }
 
-  // ============================================================
-  // 对局初始化
-  // ============================================================
   const applyGameSetup = (config: GameSetupConfig) => {
     let initialBoard: Board
     let fenPosition: ReturnType<typeof parseFen> = null
@@ -1517,10 +1444,8 @@ export function useGameState(
 
     cancelAIMove()
 
-    // 保存本次配置，供重赛使用
     lastSetupConfig.value = config
 
-    // 设置 AI 参数
     gameMode.value = config.gameMode
     if (config.gameMode === 'ai') {
       aiDifficulty.value = config.difficulty as AIDifficulty
@@ -1572,7 +1497,6 @@ export function useGameState(
     positionHistory.value = [getPositionKey(board.value, currentTurn.value, lastMove.value)]
     showSetup.value = false
 
-    // ---- AI 模式下，确定玩家执棋方 ----
     // currentTurn 已在上面由 fenTurn（FEN 自定义棋盘）或 starterColor 设定，此处仅设定 playerColor
     if (config.gameMode === 'ai') {
       const resolvedPlayerColor = getStarterColor(config.starter)
@@ -1596,15 +1520,10 @@ export function useGameState(
 
     startingTurn.value = currentTurn.value
 
-    // ---- AI 先走的触发 ----
     void nextTick(() => {
       checkAndTriggerAI()
     })
   }
-  // ============================================================
-  // 远程对局：会话生命周期
-  // ============================================================
-  /** 依据房主执棋方推导双方的执棋方与棋盘朝向 */
   const applyRemoteColors = (hostColor: Color) => {
     remoteHostColor.value = hostColor
     playerColor.value =
@@ -1612,7 +1531,6 @@ export function useGameState(
     isFlipped.value = playerColor.value === 'black'
   }
 
-  /** 把房主下发的配置转换成内部对局配置 */
   const toRemoteSetupConfig = (payload: RoomConfigPayload): GameSetupConfig => ({
     boardMode: payload.boardMode,
     fen: payload.fen,
@@ -1644,7 +1562,6 @@ export function useGameState(
     }
   }
 
-  /** 房主：房间创建完成，进入对局，并把配置回传给会话层用于下发 */
   const startRemoteHost = (
     code: string,
     config: GameSetupConfig,
@@ -1658,7 +1575,6 @@ export function useGameState(
     return payload
   }
 
-  /** 客方：收到 welcome 后进入对局 */
   const startRemoteGuest = (code: string, payload: RoomConfigPayload) => {
     roomCode.value = code
     remoteRole.value = 'guest'
@@ -1674,13 +1590,11 @@ export function useGameState(
     remoteConnected.value = connected
   }
 
-  /** 对手离开：停止棋钟并标记离线 */
   const handleRemoteOpponentLeft = () => {
     remoteConnected.value = false
     stopClock()
   }
 
-  /** 清空一切的远程请求状态（新的一局 / 离开房间时调用） */
   const clearRemoteRequestState = () => {
     finishOutgoingRequest()
     pendingUndoRequest.value = false
@@ -1688,7 +1602,6 @@ export function useGameState(
     pendingRematchRequest.value = false
   }
 
-  /** 重置远程会话（返回首页 / 主动离开时调用） */
   const resetRemoteSession = () => {
     stopClock()
     remoteConnected.value = false
@@ -1699,7 +1612,6 @@ export function useGameState(
     requestCooldownUntil.value = { undo: 0, draw: 0, rematch: 0 }
   }
 
-  /** 应用房主下发的权威棋钟快照（客方） */
   const applyRemoteClock = (snapshot: ClockSnapshot) => {
     whiteTimeSeconds.value = snapshot.whiteTimeSeconds
     blackTimeSeconds.value = snapshot.blackTimeSeconds
@@ -1736,7 +1648,6 @@ export function useGameState(
     }
   }
 
-  /** 两种执棋方互为对方 */
   const oppositeColor = (color: Color): Color => (color === 'white' ? 'black' : 'white')
 
   /**
@@ -1787,7 +1698,6 @@ export function useGameState(
     broadcastRemoteClock()
   }
 
-  /** 应用对手广播的走子 */
   const applyRemoteMove = (
     from: { row: number; col: number },
     to: { row: number; col: number },
@@ -1831,7 +1741,6 @@ export function useGameState(
       executeMove(cloneBoard(board.value), move, from, isPawnMove, isCapture, 'remote')
     }
 
-    // 校验双方是否仍然同步
     if (expectedPositionKey) {
       const localKey = getPositionKey(board.value, currentTurn.value, lastMove.value)
       if (localKey !== expectedPositionKey) {
@@ -1840,7 +1749,6 @@ export function useGameState(
     }
   }
 
-  /** 应用房主下发的全量状态（异常恢复用） */
   const applyRemoteState = (snapshot: RemoteStateSnapshot) => {
     board.value = snapshot.board
     currentTurn.value = snapshot.currentTurn
@@ -1866,7 +1774,6 @@ export function useGameState(
     applyRemoteClock(snapshot.clock)
   }
 
-  /** 统一处理来自对手的消息 */
   const handleRemoteMessage = (message: RemoteMessage) => {
     switch (message.type) {
       case 'welcome': {
@@ -1977,7 +1884,6 @@ export function useGameState(
     sendRemote({ type: 'rematch-response', accepted })
   }
 
-  /** 该行为的请求是否仍在冷却期内 */
   const isRequestOnCooldown = (kind: RemoteRequestKind): boolean =>
     Date.now() < requestCooldownUntil.value[kind]
 
@@ -1996,7 +1902,6 @@ export function useGameState(
     }
   }
 
-  /** 结束我方未决请求的本机状态（不发送任何消息） */
   const finishOutgoingRequest = () => {
     clearLocalOnlyRequestTimer()
     outgoingRequest.value = null
@@ -2018,7 +1923,6 @@ export function useGameState(
     outgoingRequestWasSent = false
     clearLocalOnlyRequestTimer()
 
-    // 冷却结束即收起这条纯本机提示
     const remaining = Math.max(requestCooldownUntil.value[kind] - Date.now(), 0)
     localOnlyRequestTimer = window.setTimeout(() => {
       localOnlyRequestTimer = null
@@ -2052,9 +1956,6 @@ export function useGameState(
     cancelOutgoingRequest()
   }
 
-  // ============================================================
-  // AI 走棋调度
-  // ============================================================
   const executeAIMoveOnBoard = (aiMove: AIDetailedMove) => {
     const from = { row: aiMove.fromRow, col: aiMove.fromCol }
     const piece = board.value[aiMove.fromRow]?.[aiMove.fromCol]
@@ -2064,7 +1965,6 @@ export function useGameState(
     const targetPiece = board.value[aiMove.toRow]?.[aiMove.toCol]
     const isCapture = targetPiece !== null || aiMove.special === 'enPassant'
 
-    // 兵升变：AI 自动选择
     if (isPawnMove && (aiMove.toRow === 0 || aiMove.toRow === 7)) {
       const promoChoice = getPromotionChoice(board.value, aiMove.toRow, aiMove.toCol, piece.color)
       const newType = promoChoice as Piece['type']
@@ -2128,7 +2028,6 @@ export function useGameState(
     cancelAIMove()
     isAIThinking.value = true
 
-    // 获取 AI 方当前棋钟剩余时间（秒），转换为毫秒
     const aiTimeRemainingSec = aiColor === 'white' ? whiteTimeSeconds.value : blackTimeSeconds.value
     const aiTimeRemainingMs = aiTimeRemainingSec !== null ? aiTimeRemainingSec * 1000 : null
 
@@ -2165,7 +2064,6 @@ export function useGameState(
 
       if (positionRepeatCount >= 3 || halfmoveClock.value >= 100) {
         isAIThinking.value = false
-        // AI 宣告和棋
         stopClock()
         isAgreedDraw.value = true
         playSound('draw')
@@ -2219,7 +2117,6 @@ export function useGameState(
           dragStartSquare.value = savedDragStartSquare
           isMouseDown.value = savedIsMouseDown
 
-          // AI 走棋完成后，尝试执行玩家预设的 premove
           if (!isGameOver.value && gameMode.value === 'ai') {
             void nextTick(() => {
               tryExecutePremove()
@@ -2289,17 +2186,12 @@ export function useGameState(
     return positionHistory.value.filter((key) => key === currentKey).length
   }
 
-  // ---- 清理 ----
   onUnmounted(() => {
     stopClock()
     cancelAIMove()
   })
 
-  // ============================================================
-  // 导出
-  // ============================================================
   return {
-    // 设置
     showSetup,
     playerColor,
     isClockEnabled,
@@ -2308,7 +2200,6 @@ export function useGameState(
     isAIThinking,
     premove,
 
-    // 核心状态
     board,
     currentTurn,
     startingTurn,
@@ -2319,7 +2210,6 @@ export function useGameState(
     positionHistory,
     halfmoveClock,
 
-    // 棋钟
     hasGameStarted,
     clockStarted,
     activeClockColor,
@@ -2328,16 +2218,13 @@ export function useGameState(
     blackTimeSeconds,
     clockIncrementSeconds,
 
-    // 历史
     moveHistory,
     boardHistory,
     hasMovedByColor,
 
-    // 终止
     isAgreedDraw,
     hasResigned,
 
-    // Computed
     isDraw,
     isDrawByStalemate,
     isDrawByInsufficientMaterial,
@@ -2352,7 +2239,6 @@ export function useGameState(
     canPremove,
     isAITurn,
 
-    // 走棋
     possibleMoves,
     highlightedPositions,
     canMoveTo,
@@ -2361,7 +2247,6 @@ export function useGameState(
     pushBoardHistory,
     executeMove,
 
-    // 升变
     promotionPending,
     promotionStyle,
     materialBoard,
@@ -2369,7 +2254,6 @@ export function useGameState(
     computePromotionStyle,
     applyPromotion,
 
-    // 拖拽
     isMouseDown,
     isDragging,
     dragStartSquare,
@@ -2381,7 +2265,6 @@ export function useGameState(
     handleTouchMove,
     handleTouchEnd,
 
-    // 操作
     handleUndo,
     handleResign,
     handleDrawOffer,
@@ -2389,7 +2272,6 @@ export function useGameState(
     handleBackToHome,
     handleGameSetupStart,
 
-    // 远程对局
     isRemote,
     isRemoteHost,
     isRemoteGuest,
@@ -2416,7 +2298,6 @@ export function useGameState(
     respondToRematchRequest,
     cancelOutgoingRequest,
 
-    // 工具
     getPositionCount,
     playSound,
     stopClock,

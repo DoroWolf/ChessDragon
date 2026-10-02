@@ -1,4 +1,3 @@
-// ============================================================
 // Syzygy Tablebase - 索引表常量（Index Tables）
 // 移植自 python-chess 的 chess/syzygy.py（MIT License），
 // 这些常量与数据格式均来自 Ronald de Man 的 Syzygy 残局库规范。
@@ -6,7 +5,6 @@
 // 坐标系说明：库文件使用"python-chess 方格编号"——
 //   square = (7 - row) * 8 + col，即 rank1 = 0..7、file a = 0。
 //   本工程棋盘 row 0 = 第 8 横线、col 0 = a 线，转换见 sqOf()。
-// ============================================================
 
 export const TBPIECES = 7
 
@@ -187,9 +185,6 @@ export const KK_IDX: number[][] = [
 ]
 
 
-// ============================================================
-// 常量与数学工具
-// ============================================================
 export const PCHR = ['K', 'Q', 'R', 'B', 'N', 'P']
 
 /** 库文件中的棋子编码：1=兵 2=马 3=象 4=车 5=后 6=王 */
@@ -256,9 +251,6 @@ export function dtzBeforeZeroing(wdl: number): number {
   return sign * (Math.abs(wdl) === 2 ? 1 : 101)
 }
 
-// ============================================================
-// 兵索引表（与参考实现一致，在模块加载时计算）
-// ============================================================
 export const PAWNIDX: number[][] = []
 export const PFACTOR: number[][] = []
 
@@ -282,9 +274,6 @@ for (let i = 0; i < 5; i++) {
 }
 
 
-// ============================================================
-// 方格坐标工具（库文件坐标系）
-// ============================================================
 /** 本工程 (row, col) -> 库文件方格编号 */
 export function sqOf(row: number, col: number): number {
   return (7 - row) * 8 + col
@@ -310,9 +299,6 @@ export function flipdiag(sq: number): number {
   return ((sq >> 3) | (sq << 3)) & 63
 }
 
-// ============================================================
-// 表名（tablename）工具
-// ============================================================
 const TABLENAME_REGEX = /^[KQRBNP]+v[KQRBNP]+$/
 
 function pieceOrder(char: string): number {

@@ -1,11 +1,9 @@
-// ============================================================
 // Syzygy Tablebase - 表文件解析与解压（Table / PairsData）
 // 移植自 python-chess 的 chess/syzygy.py（MIT License）
 //
 // .rtbw / .rtbz 文件是 RE-PAIR 压缩的定长记录表：
 //   文件头 -> 棋子编码表 -> Huffman 表 -> 索引表 -> 数据块
 // 查询流程：位置编码(idx) -> 二分定位数据块 -> Huffman 解压 -> WDL/DTZ 值
-// ============================================================
 import {
   TBPIECES,
   PCHR,
@@ -31,9 +29,6 @@ import {
 
 import type { Color } from '../../chess'
 
-// ============================================================
-// 类型
-// ============================================================
 /** Huffman 解压所需的块级元数据 */
 export interface PairsData {
   indextable: number
@@ -68,9 +63,6 @@ export interface PawnFileDataDtz {
 /** 由外部提供的"取某类棋子所在格"函数（结果需按方格编号升序） */
 export type PieceSquaresFn = (pieceCode: number, colorIndex: number) => number[]
 
-// ============================================================
-// 字节读取工具（库文件为小端，位流为大端）
-// ============================================================
 export function readU8(data: Uint8Array, ptr: number): number {
   return data[ptr] ?? 0
 }
@@ -108,9 +100,6 @@ function shr64(hi: number, lo: number, n: number): number {
   return Number(v >> BigInt(n))
 }
 
-// ============================================================
-// Table：单个残局表文件（WDL 或 DTZ）
-// ============================================================
 export class Table {
   data: Uint8Array | null
   initialized = false
@@ -178,9 +167,7 @@ export class Table {
     return readU32Be(this.data!, ptr)
   }
 
-  // ----------------------------------------------------------
   // 压缩块头解析
-  // ----------------------------------------------------------
   protected setupPairs(dataPtr: number, tbSize: number, sizeIdx: number, wdl: boolean): PairsData {
     const d: PairsData = {
       indextable: 0,
@@ -286,9 +273,7 @@ export class Table {
     }
   }
 
-  // ----------------------------------------------------------
   // 归一化（norm）与因子（factor）表
-  // ----------------------------------------------------------
   protected setNormPiece(norm: number[], pieces: number[]): void {
     norm[0] = this.encType === 0 ? 3 : 2
 
@@ -386,9 +371,7 @@ export class Table {
     return FILE_TO_FILE[pos[0]! & 0x07]!
   }
 
-  // ----------------------------------------------------------
   // 位置编码
-  // ----------------------------------------------------------
   /**
    * 无兵残局的位置编码。
    * 标准象棋中 encType 只会是 0（111：三个"单件"）或 2（K2：两个王）。
@@ -563,9 +546,7 @@ export class Table {
     return idx
   }
 
-  // ----------------------------------------------------------
   // Huffman 解压：取第 idx 条记录
-  // ----------------------------------------------------------
   protected decompressPairs(d: PairsData, idx: number): number {
     // 整表同值
     if (!d.idxbits) return d.minLen
@@ -677,9 +658,6 @@ export class Table {
   }
 }
 
-// ============================================================
-// WDL 表（Win / Draw / Loss）
-// ============================================================
 export class WdlTable extends Table {
   private precomp: PairsData[] = []
   private pieces: number[][] = []
@@ -862,9 +840,7 @@ export class WdlTable extends Table {
     this.initialized = true
   }
 
-  // ----------------------------------------------------------
   // 查询 WDL（返回 -2..2，未减去 2 之前为 0..4）
-  // ----------------------------------------------------------
   probeWdlTable(key: string, turn: Color, squares: PieceSquaresFn): number {
     this.initTableWdl()
 
@@ -942,11 +918,9 @@ export class WdlTable extends Table {
 }
 
 
-// ============================================================
 // DTZ 表（Distance To Zeroing）
 // 注意：每个 DTZ 表只存一方（flags & 1）的数据，
 // 另一方需要通过 probe_ab / 递归查询推导。
-// ============================================================
 export class DtzTable extends Table {
   private precomp: PairsData | null = null
   private pieces: number[] = []

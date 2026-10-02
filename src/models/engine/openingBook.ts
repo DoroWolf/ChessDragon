@@ -1,15 +1,10 @@
-// ============================================================
 // Opening Book（开局库）
 // Polyglot 风格：Zobrist Hash → 加权走法列表的映射
 // 数据由 scripts/generateOpeningBook.ts 从 openingLines.yaml
 // 预计算生成，运行时直接加载 JSON 无需重算 Zobrist
-// ============================================================
 import type { AIDetailedMove } from './types'
 import bookData from '@/data/openingBook.json'
 
-// ============================================================
-// Types
-// ============================================================
 
 /** 预计算的带权重走法（与 JSON 格式一致） */
 interface PrecomputedBookMove {
@@ -33,9 +28,6 @@ export interface BookMove {
   minLevel: number
 }
 
-// ============================================================
-// Book state（从 JSON 加载）
-// ============================================================
 
 /** 开局库映射：Zobrist Hash → 候选走法列表 */
 let bookMap: Map<number, BookMove[]> | null = null
@@ -64,9 +56,6 @@ function ensureLoaded(): void {
   }
 }
 
-// ============================================================
-// 查询开局库
-// ============================================================
 
 /**
  * 根据 Zobrist Hash 查询开局库

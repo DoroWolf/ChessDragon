@@ -153,7 +153,6 @@ const emit = defineEmits<{
   (e: 'apply-promotion', piece: string): void
 }>()
 
-// 棋盘纹理：亮色主题 white/gray，暗色主题 gray/black
 const lightSquareTexture = computed(() => (props.theme === 'dark' ? boardGray : boardWhite))
 const darkSquareTexture = computed(() => (props.theme === 'dark' ? boardBlack : boardGray))
 
@@ -169,7 +168,6 @@ const handleBoardGridTouchEnd = (event: TouchEvent) => {
   emit('board-touchend', event)
 }
 
-// 视觉坐标 -> 逻辑坐标（内联，依赖 isFlipped prop）
 const actualRow = (displayRow: number): number =>
   props.isFlipped ? 7 - displayRow : displayRow
 
@@ -213,13 +211,11 @@ const shouldMirrorMoveableOverlay = (row: number, col: number): boolean => {
   if (!piece) {
     return false
   }
-  // 当前位于棋盘上方的一方
   const topColor: Color =
     props.isFlipped ? 'white' : 'black'
 
   return piece.color === topColor
 }
-// 缩放适配
 const pieceScale = ref(1.5)
 const boardGridRef = ref<HTMLElement | null>(null)
 const boardFrameRef = ref<HTMLElement | null>(null)
@@ -394,7 +390,6 @@ watch(pieceScale, (val) => {
   cursor: grab;
 }
 
-/* 升变选择器弹出期间：棋子不可拖拽/悬停，避免遮罩盖不住偏高的棋子 */
 .board-grid.promotion-active .piece {
   pointer-events: none;
   cursor: default;

@@ -1,11 +1,6 @@
-// ============================================================
-// 远程对局：消息协议与公共类型
-//   - 传输层（BroadcastChannel / 各信令后端）与业务层都只依赖本文件
-//   - 所有消息必须保持「纯 JSON 可序列化」，以便在两种传输间复用
-// ============================================================
+// 所有消息必须保持纯 JSON 可序列化，以便在两种传输间复用。
 import type { Board, Color, PieceType } from '../models/chess'
 
-/** 远程对局中的角色 */
 export type RemoteRole = 'host' | 'guest'
 
 /** 底层链路类型：local = 同浏览器 BroadcastChannel，webrtc = 跨设备（P2P 或中继） */
@@ -46,7 +41,6 @@ export interface ClockSnapshot {
   at: number
 }
 
-/** 房主建房时下发到客方的完整对局配置 */
 export interface RoomConfigPayload {
   roomCode: string
   boardMode: 'standard' | 'chess960' | 'custom'

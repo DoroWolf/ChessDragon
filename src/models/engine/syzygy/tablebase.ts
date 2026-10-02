@@ -1,4 +1,3 @@
-// ============================================================
 // Syzygy Tablebase - 查询入口（Tablebase）
 // 移植自 python-chess 的 chess/syzygy.py（MIT License）
 //
@@ -6,7 +5,6 @@
 //   * 只支持标准象棋；王车易位权利 / 吃过路兵局面不查询（由调用方跳过）
 //   * 缺失的表（含被吃子后需要的表）会让本次查询返回 undefined，
 //     调用方应回退到常规搜索，保证不会给出错误结论
-// ============================================================
 import type { Board, Color, PieceType, Square } from '../../chess'
 import { getPieceMoves } from '../../chess'
 import { makeMove, unmakeMove } from '../boardChange'
@@ -20,9 +18,6 @@ import {
   dtzBeforeZeroing,
 } from './tables'
 
-// ============================================================
-// 工具
-// ============================================================
 const TYPE_TO_CHAR: Record<PieceType, string> = {
   king: 'K',
   queen: 'Q',
@@ -110,9 +105,6 @@ function findKing(b: Board, color: Color): Square {
   return { row: 0, col: 0 }
 }
 
-// ============================================================
-// Tablebase
-// ============================================================
 export class Tablebase {
   private wdl = new Map<string, WdlTable>()
   private dtz = new Map<string, DtzTable>()
@@ -176,9 +168,7 @@ export class Tablebase {
     this.dtz.clear()
   }
 
-  // ----------------------------------------------------------
   // 走法生成（不使用全局追踪状态，可安全地在搜索中调用）
-  // ----------------------------------------------------------
   private generateMoves(b: Board, color: Color, capturesOnly: boolean): AIDetailedMove[] {
     const moves: AIDetailedMove[] = []
     const enemy = oppositeColor(color)
@@ -232,9 +222,7 @@ export class Tablebase {
     return this.generateMoves(b, color, false).length === 0
   }
 
-  // ----------------------------------------------------------
   // WDL
-  // ----------------------------------------------------------
   private probeWdlTable(b: Board, turn: Color): number | undefined {
     // 王对王：必和（库中没有 KvK 表）
     if (pieceCount(b) === 2) return 0
@@ -288,9 +276,7 @@ export class Tablebase {
     return result ? result.value : undefined
   }
 
-  // ----------------------------------------------------------
   // DTZ
-  // ----------------------------------------------------------
   private probeDtzTable(
     b: Board,
     turn: Color,

@@ -175,7 +175,6 @@ watchEffect(() => {
 // 主题 / 坐标标签 / 音效与主程序共用 localStorage，两个页面的观感与设置保持一致
 const { isSoundEnabled, coordinateLabelMode, theme } = useSettings()
 
-// 棋盘渲染所需的共用能力（棋子图片、叠加纹理、坐标标签、翻转）
 const { isFlipped, getOverlayTexture, getPieceImage, getSquareLabel, isWhiteSquare } =
   useBoardDisplay()
 
@@ -199,7 +198,6 @@ const createCastling = (value: boolean): Record<CastlingRight, boolean> => ({
   q: value,
 })
 
-// ---- 编辑器状态 ----
 const board = ref<Board>(createInitialBoard())
 const turn = ref<Color>('white')
 const castling = ref<Record<CastlingRight, boolean>>(createCastling(true))
@@ -214,15 +212,12 @@ const showQuickPlayModes = ref(false)
 /** FEN 单行栏：既是输出，也可以直接编辑 / 粘贴后载入 */
 const fenText = ref('')
 
-// ---- 拖拽状态（供 BoardPanel 渲染跟随光标的棋子）----
 const dragStartSquare = ref<Square | null>(null)
 const isDragging = computed(() => dragStartSquare.value !== null)
 const hoverSquare = ref<Square | null>(null)
-/** 是否正在按住左键「刷」棋盘（批量添加 / 删除） */
 const isPainting = ref(false)
 /** 本次刷棋盘是否已移动到其他格子；移动过则不再触发单击的快捷删除 */
 const paintMoved = ref(false)
-/** 刷棋盘的起始格 */
 const paintStartSquare = ref<Square | null>(null)
 /** 起始格在按下前是否已是同款棋子（仅单击时移除） */
 const paintStartSame = ref(false)
@@ -322,7 +317,6 @@ const resetEnPassantIfStale = () => {
   }
 }
 
-// ---- 棋盘写入 ----
 const isInside = (row: number, col: number): boolean =>
   row >= 0 && row < 8 && col >= 0 && col < 8
 
@@ -369,7 +363,6 @@ const clearSquare = (row: number, col: number) => {
   })
 }
 
-// ---- 拖拽：光标工具下拖动棋子，拖到棋盘外即删除 ----
 const beginDrag = (row: number, col: number, clientX: number, clientY: number): boolean => {
   if (!isInside(row, col) || !board.value[row]?.[col]) return false
   dragStartSquare.value = { row, col }
@@ -395,7 +388,6 @@ const handleWindowMouseUp = (event: MouseEvent) => {
   finishDrag(event.clientX, event.clientY)
 }
 
-/** 用屏幕坐标反查落点格；落在棋盘之外时返回 null */
 const findSquareAt = (clientX: number, clientY: number): Square | null => {
   const element = document.elementFromPoint(clientX, clientY)
   const square = element?.closest<HTMLElement>('[data-row][data-col]') ?? null
@@ -421,7 +413,6 @@ const finishDrag = (clientX: number, clientY: number) => {
 
   if (!from) return
 
-  // 拖到棋盘外：删除这枚棋子
   if (!target) {
     clearSquare(from.row, from.col)
     return
@@ -459,7 +450,6 @@ const handleSquareMouseDown = (row: number, col: number, event: MouseEvent) => {
   window.addEventListener('mouseup', handleWindowMouseUp)
 }
 
-/** 悬停格子：更新高亮；若正按住左键刷棋盘，则连续放置 / 擦除扫过的每一格 */
 const handleSquareMouseEnter = (row: number, col: number) => {
   hoverSquare.value = { row, col }
   if (!isPainting.value) return
@@ -503,7 +493,6 @@ const handleContextMenu = (event: MouseEvent) => {
   if (!Number.isInteger(row) || !Number.isInteger(col)) return
   clearSquare(row, col)
 }
-// ---- 快捷操作 ----
 const loadInitialPosition = () => {
   board.value = createInitialBoard()
   castling.value = createCastling(true)
@@ -518,7 +507,6 @@ const clearBoard = () => {
   enPassant.value = '-'
 }
 
-// 棋盘变化后自动清理失效的易位权与吃过路兵目标格
 watch(board, () => {
   syncCastlingWithBoard()
   resetEnPassantIfStale()
@@ -526,7 +514,6 @@ watch(board, () => {
 
 watch(turn, resetEnPassantIfStale)
 
-// ---- FEN ----
 const castlingString = computed(() =>
   CASTLING_RIGHTS.filter((right) => castling.value[right]).join(''),
 )
@@ -565,7 +552,6 @@ const copyFen = async () => {
   if (ok) window.setTimeout(() => (isCopied.value = false), 1500)
 }
 
-/** 把 FEN 应用到编辑器状态（棋盘 + 走棋方 + 易位权 + 吃过路兵）；解析失败返回 false */
 const applyFen = (raw: string): boolean => {
   const value = raw.trim()
   const parsed = parseFen(value)
@@ -633,7 +619,6 @@ const readFenFromUrl = (): string => {
   }
 }
 
-/** 把当前 FEN 同步到地址栏：默认局面清除参数，其余局面写入参数（replaceState 不新增历史记录） */
 const syncFenToUrl = (value: string) => {
   try {
     const url = new URL(window.location.href)
@@ -646,16 +631,12 @@ const syncFenToUrl = (value: string) => {
   }
 }
 
-// 局面变化时同步到 URL，避免刷新后丢失摆好的局面
 watch(fen, syncFenToUrl)
 
-// 启动时优先从 URL 参数恢复局面
 const fenFromUrl = readFenFromUrl()
 if (fenFromUrl) applyFen(fenFromUrl)
-// 首次加载即归一化地址栏（无参数时保持干净，有参数时统一编码）
 syncFenToUrl(fen.value)
 
-// ---- 快速对局：把当前 FEN 交给主程序的对局设置界面（原地跳转，不新开窗口）----
 const startQuickPlay = (mode: QuickPlayGameMode) => {
   if (!validation.value.valid) return
   writeQuickPlay({ fen: fen.value, gameMode: mode })
@@ -667,7 +648,6 @@ const openHelpWindow = () => {}
 </script>
 
 <style scoped>
-/* 与主页 .game-container 保持一致的页面骨架 */
 .editor-container {
   position: relative;
   width: 100%;
@@ -684,7 +664,6 @@ const openHelpWindow = () => {}
   cursor: auto;
 }
 
-/* ---- 与主页完全一致的角落 FAB 按钮组 ---- */
 .top-left-fabs {
   position: absolute;
   top: 16px;
@@ -738,7 +717,6 @@ const openHelpWindow = () => {}
   display: block;
 }
 
-/* ---- 主体两栏 ---- */
 .editor-body {
   width: 100%;
   display: flex;
@@ -772,7 +750,6 @@ const openHelpWindow = () => {}
 .editor-container.is-dragging :deep(.piece) {
   cursor: grabbing !important;
 }
-/* ---- 右侧控制面板 ---- */
 .panel-column {
   display: flex;
   flex-direction: column;
@@ -816,7 +793,6 @@ const openHelpWindow = () => {}
   margin: 0;
 }
 
-/* 易位权：白方一列、黑方一列 */
 .castle-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -842,7 +818,6 @@ const openHelpWindow = () => {}
   width: 100%;
 }
 
-/* 内联表单行：小标题与下拉菜单同一行 */
 .field-row {
 display: flex;
   align-items: center;
@@ -874,7 +849,6 @@ display: flex;
   font-size: 0.78rem;
 }
 
-/* FEN 文本栏 + 右侧复制按钮 */
 .fen-input-row {
   display: flex;
   align-items: stretch;
@@ -893,7 +867,6 @@ display: flex;
   padding: 0 10px;
 }
 
-/* ---- 翻转棋盘按钮：与主页侧边栏完全一致 ---- */
 .btn-flip {
   display: inline-flex;
   align-items: center;
@@ -919,7 +892,6 @@ display: flex;
   display: block;
 }
 
-/* 小标题：走棋方 / 易位权 / 吃过路兵 */
 .sub-heading {
   margin: 12px 0 6px;
   font-size: 0.8rem;
@@ -931,7 +903,6 @@ display: flex;
   margin-top: 0;
 }
 
-/* 不套外框的按钮组：竖向一排 */
 .plain-section {
   display: flex;
   flex-direction: column;
@@ -945,7 +916,6 @@ display: flex;
   gap: 8px;
 }
 
-/* 纯图标按钮（FEN 的载入 / 复制） */
 .icon-btn {
   display: inline-flex;
   align-items: center;
@@ -953,7 +923,6 @@ display: flex;
   padding: 0.2rem 0.35rem;
 }
 
-/* FEN 的图标按钮比翻转按钮更小巧 */
 .icon-btn .btn-icon {
   width: 1.3em;
   height: 1.1rem;
@@ -975,7 +944,6 @@ display: flex;
   margin: 0;
 }
 
-/* ---- 快速对局选择遮罩 ---- */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -993,7 +961,6 @@ display: flex;
   text-align: center;
 }
 
-/* 快速对局的三个模式按钮：竖向排列 */
 .dialog-buttons {
   display: flex;
   flex-direction: column;

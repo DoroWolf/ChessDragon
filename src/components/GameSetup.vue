@@ -1,5 +1,4 @@
 <template>
-  <!-- 首页：上方 Logo，下方三个按钮 -->
   <section v-if="screen === 'home'" class="home-panel">
     <div class="title-section">
       <img :src="titleImg" alt="Chess Dragon" class="title-img" />
@@ -11,7 +10,6 @@
     </div>
   </section>
 
-  <!-- 远程对局：创建 / 加入 入口 -->
   <section v-else-if="screen === 'remote'" class="setup-panel with-title">
     <h2 class="screen-title">{{ t('remote.title') }}</h2>
     <div class="remote-actions">
@@ -29,7 +27,6 @@
     </div>
   </section>
 
-  <!-- 远程对局：加入房间 -->
   <section v-else-if="screen === 'remote-join'" class="setup-panel with-title">
     <h2 class="screen-title">{{ t('remote.joinRoom') }}</h2>
     <p class="remote-hint">{{ t('remote.joinHint') }}</p>
@@ -61,7 +58,6 @@
     </div>
   </section>
 
-  <!-- 远程对局：等待对手加入 -->
   <section v-else-if="screen === 'remote-waiting'" class="setup-panel with-title">
     <h2 class="screen-title">{{ t('remote.waitingOpponent') }}</h2>
     <RemoteRoomCard :room-code="remoteRoomCode" :state="remoteState" :link-kind="remoteLinkKind" />
@@ -73,7 +69,6 @@
     </div>
   </section>
 
-  <!-- 对局设置面板 -->
   <section v-else class="setup-panel with-title">
     <div class="setup-section">
       <h3>{{ t('setup.board') }}</h3>
@@ -102,7 +97,6 @@
           class="fen-input"
           :placeholder="t('setup.fenPlaceholder')"
         />
-        <!-- 在当前局面下打开棋盘编辑器；FEN 合法时顺带带过去 -->
         <button
           type="button"
           class="btn fen-editor-btn"
@@ -114,7 +108,6 @@
       </div>
 
       <template v-if="boardMode === 'custom' && fenInput.trim()">
-        <!-- 用棋盘与棋子 icon 拼出当前 FEN 的预览 -->
         <FenPreview
           v-if="fenPreviewBoard"
           :board="fenPreviewBoard"
@@ -141,7 +134,6 @@
         <strong>{{ t('setup.seconds', { n: incrementSeconds }) }}</strong>
       </label>
 
-      <!-- 快捷棋钟组合按钮 -->
       <div class="preset-clock-group">
         <button
           v-for="preset in presetClocks"
@@ -156,7 +148,6 @@
       </div>
     </div>
 
-    <!-- 强度设置（仅人机对局） -->
     <div v-if="gameMode === 'ai'" class="setup-section">
       <h3>{{ t('setup.strength') }}</h3>
       <div class="option-group">
@@ -172,7 +163,6 @@
       </div>
     </div>
 
-    <!-- AI 风格设置（仅人机对局） -->
     <div v-if="gameMode === 'ai'" class="setup-section">
       <h3>{{ t('setup.aiStyle') }}</h3>
       <div class="option-group">
@@ -260,13 +250,10 @@ import { isValidRoomCode, normalizeRoomCode } from '../remote/roomCode'
 import FenPreview from './FenPreview.vue'
 import RemoteRoomCard from './RemoteRoomCard.vue'
 
-/** 「快速对局」交接的初始设置：由棋盘编辑器跳转过来时预置界面状态 */
 export interface GameSetupInitial {
-  /** 需要直接进入的界面 */
   screen: 'setup' | 'remote-create'
   gameMode: 'ai' | 'human' | 'remote'
   boardMode: 'standard' | 'custom' | 'chess960'
-  /** 预填的自定义棋盘 FEN */
   fen: string
 }
 
@@ -277,7 +264,6 @@ const props = withDefaults(
     remoteRoomCode?: string
     remoteLinkKind?: RemoteLinkKind | null
     remoteErrorCode?: RemoteErrorCode | null
-    /** 「快速对局」交接的初始设置；缺省时按原有的首页流程展示 */
     initialSetup?: GameSetupInitial
   }>(),
   {
@@ -329,7 +315,6 @@ const incrementSeconds = ref(0)
 const starter = ref<'black' | 'random' | 'white'>('white')
 const errorMessage = ref('')
 
-// ---- 远程对局 ----
 const roomCodeInput = ref('')
 
 const isRemoteSetup = computed(() => screen.value === 'remote-create')
@@ -349,9 +334,6 @@ const remoteErrorText = computed(() =>
   props.remoteErrorCode ? t(REMOTE_ERROR_KEYS[props.remoteErrorCode]) : '',
 )
 
-// ============================================================
-// 常用棋钟预设组合
-// ============================================================
 const presetClocks = [
   { label: '1+0', minutes: 1, increment: 0 },
   { label: '1+1', minutes: 1, increment: 1 },
@@ -414,7 +396,6 @@ const handleCancelRoom = () => {
   emit('remote-cancel')
 }
 
-// 房主建房后进入等待界面；取消 / 关闭后回到远程对局入口
 watch(
   () => props.remoteState,
   (state) => {
@@ -428,7 +409,6 @@ watch(
   },
 )
 
-// 进出加入房间界面时清空上一次的失败提示
 watch(screen, (next, previous) => {
   if (next === 'remote-join' || previous === 'remote-join') {
     roomCodeInput.value = ''
@@ -436,9 +416,6 @@ watch(screen, (next, previous) => {
   }
 })
 
-// ============================================================
-// Chess960 生成
-// ============================================================
 const generateChess960 = () => {
   chess960Id.value = Math.floor(Math.random() * 960) + 1
 }
@@ -449,9 +426,6 @@ watch(boardMode, (newMode) => {
   }
 })
 
-// ============================================================
-// FEN 验证与预览
-// ============================================================
 const fenValidation = computed(() => validateFen(fenInput.value))
 
 // 空输入时只禁止开始，不提示错误
@@ -472,7 +446,6 @@ const fenErrorKey = computed<MessageKey | null>(() => {
   return error ? FEN_ERROR_KEYS[error] : null
 })
 
-/** 在新窗口打开棋盘编辑器；当前 FEN 合法时通过 ?fen= 参数带过去，否则打开默认局面 */
 const openBoardEditor = () => {
   const trimmed = fenInput.value.trim()
   const fen = trimmed && fenValidation.value.valid ? trimmed : ''
@@ -656,7 +629,6 @@ const handleStart = () => {
   white-space: nowrap;
 }
 
-/* 隐藏原生的单选框圆点 */
 .option-card-btn input[type='radio'] {
   display: none;
 }
@@ -708,7 +680,6 @@ const handleStart = () => {
   box-sizing: border-box;
 }
 
-/* FEN 输入框 + 右侧「在棋盘编辑器中打开」按钮 */
 .fen-input-row {
   display: flex;
   align-items: stretch;
@@ -769,7 +740,6 @@ const handleStart = () => {
   white-space: nowrap;
 }
 
-/* 棋钟快捷选项样式 */
 .preset-clock-group {
   display: flex;
   flex-wrap: wrap;
@@ -828,7 +798,6 @@ const handleStart = () => {
   flex: 1;
 }
 
-/* ===== 远程对局 ===== */
 .screen-title {
   margin: 0 0 16px;
   font-size: 1.1rem;

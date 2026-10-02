@@ -1,6 +1,3 @@
-// ============================================================
-// Types
-// ============================================================
 import type { Board, Color, Piece, Square } from '../chess'
 
 export type AIDifficulty = 1 | 2 | 3 | 4 | 5
@@ -17,9 +14,6 @@ export interface AIDetailedMove {
   promotion?: 'queen' | 'knight' | 'rook' | 'bishop'
 }
 
-// ============================================================
-// Constants
-// ============================================================
 export const PIECE_VALUES: Record<string, number> = {
   pawn: 100,
   knight: 320,
@@ -56,9 +50,6 @@ export const TT_MASK = TT_SIZE - 1
 export const INF = 999999
 export const MATE_SCORE = 99999
 
-// ============================================================
-// Transposition Table Entry Interface
-// ============================================================
 export interface TTEntry {
   hash: number
   depth: number
@@ -67,18 +58,12 @@ export interface TTEntry {
   bestMove: AIDetailedMove | null
 }
 
-// ============================================================
-// Board Change (Make/Unmake) Interface
-// ============================================================
 export interface BoardChange {
   row: number
   col: number
   oldPiece: Piece | null
 }
 
-// ============================================================
-// Search State Interface
-// ============================================================
 export interface SearchState {
   board: Board
   searchColor: Color

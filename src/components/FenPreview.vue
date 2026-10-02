@@ -1,5 +1,4 @@
 <template>
-  <!-- 自定义局面的棋盘预览：棋盘纹理 + 棋子 icon -->
   <div class="fen-preview" :class="[`theme-${theme}`, { invalid: !valid }]">
     <div class="preview-grid">
       <template v-for="displayRow in 8" :key="`rank-${displayRow}`">
@@ -25,7 +24,6 @@ const props = withDefaults(
   defineProps<{
     board: Board
     theme?: 'light' | 'dark'
-    /** 局面是否通过校验；未通过时在预览外框上给出提示色 */
     valid?: boolean
   }>(),
   {
@@ -34,13 +32,11 @@ const props = withDefaults(
   },
 )
 
-// 棋盘纹理：亮色主题 white/gray，暗色主题 gray/black（与对局棋盘保持一致）
 const lightSquareTexture = computed(() => (props.theme === 'dark' ? boardGray : boardWhite))
 const darkSquareTexture = computed(() => (props.theme === 'dark' ? boardBlack : boardGray))
 
 const pieceAt = (row: number, col: number): Piece | null => props.board[row]?.[col] ?? null
 
-// 棋子统一使用 32×32 的方形 icon（自带留白，铺满棋格即可）
 const pieceIcon = (piece: Piece): string => pieceIconImg(piece.type, piece.color)
 </script>
 
@@ -48,7 +44,6 @@ const pieceIcon = (piece: Piece): string => pieceIconImg(piece.type, piece.color
 .fen-preview {
   width: 100%;
   max-width: 280px;
-  /* 水平居中 */
   margin: 10px auto 0;
   padding: 4px;
   box-sizing: border-box;

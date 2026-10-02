@@ -1,8 +1,6 @@
-// ============================================================
 // Alpha-Beta（Alpha-Beta 剪枝搜索）
 // Minimax 搜索的剪枝优化——维护 alpha（下界）和 beta（上界），
 // 当搜索窗口坍缩时跳过不可能被选择的走法分支
-// ============================================================
 import { getPositionKey, type Color, type Square } from '../chess'
 import { INF, MATE_SCORE, MAX_DEPTH, TT_ALPHA, TT_EXACT, TT_BETA } from './types'
 import type { AIDetailedMove } from './types'
@@ -37,9 +35,6 @@ import {
   removeRepetition,
 } from './searchState'
 
-// ============================================================
-// Alpha-Beta
-// ============================================================
 export function alphaBeta(
   depth: number,
   alpha: number,
@@ -70,7 +65,6 @@ export function alphaBeta(
     return ttEntry.score
   }
 
-  // --- 终局检查 ---
   const kRow = getKingRow(currentColor)
   const kCol = getKingCol(currentColor)
   const moves = generateLegalMoves(board, currentColor, enPassantTarget, false, lastMove, kRow, kCol)
@@ -88,7 +82,6 @@ export function alphaBeta(
     return quiescenceSearch(alpha, beta, enPassantTarget, lastMove, currentColor)
   }
 
-  // --- 走法评分与排序 ---
   const ttBestMove = ttEntry.bestMove
   const numMoves = moves.length
 
@@ -100,7 +93,6 @@ export function alphaBeta(
   const indices = Array.from({ length: numMoves }, (_, i) => i)
   indices.sort((a, b) => scores[b]! - scores[a]!)
 
-  // --- 搜索走法 ---
   let bestScore = -INF
   let bestMove: AIDetailedMove | null = null
   let flag = TT_ALPHA

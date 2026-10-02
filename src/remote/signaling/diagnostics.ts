@@ -1,13 +1,6 @@
-// ============================================================
-// 远程对局：建连诊断
-//   - 输出每个信令后端的尝试结果与耗时，便于区分「中继不可达」与「ICE 打洞失败」
-//   - 纯观测用途，不参与任何业务逻辑
-// ============================================================
-
 const describeError = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
 
-/** 记录一次信令尝试结果并输出到控制台 */
 export const reportSignalingAttempt = (
   provider: string,
   role: 'host' | 'guest',

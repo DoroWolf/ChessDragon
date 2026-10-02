@@ -1,16 +1,11 @@
-// ============================================================
 // Zobrist Hashing（Zobrist 哈希）
 // 用于快速生成局面哈希值，配合置换表实现局面复用
 // 通过增量更新哈希值（而非每次从头计算），大幅提升搜索效率
-// ============================================================
 import { PIECE_TYPE_INDEX, COLOR_INDEX } from './types'
 import type { Piece, Color } from '../chess'
 import type { Board } from '../chess'
 import type { AIDetailedMove } from './types'
 
-// ============================================================
-// Seeded PRNG（带种子的伪随机数生成器，xorshift32）
-// ============================================================
 function xorshift32(state: number): () => number {
   return () => {
     state ^= state << 13
@@ -22,9 +17,6 @@ function xorshift32(state: number): () => number {
 
 const rng = xorshift32(0xdeadbeef)
 
-// ============================================================
-// Zobrist 哈希表
-// ============================================================
 export const zobristPiece: number[][][] = Array.from({ length: 6 }, () =>
   Array.from({ length: 2 }, () => new Array(64).fill(0)),
 )
@@ -49,21 +41,12 @@ export let zobristBlackToMove = 0
   zobristBlackToMove = rng()
 })()
 
-// ============================================================
-// 工具函数
-// ============================================================
 export function oppositeColor(color: Color): Color {
   return color === 'white' ? 'black' : 'white'
 }
 
-// ============================================================
-// 王车易位权利常量
-// ============================================================
 export type CastlingRights = number
 
-// ============================================================
-// 王车易位权利哈希
-// ============================================================
 export function castlingHash(rights: CastlingRights): number {
   let h = 0
   if (rights & 1) h ^= zobristCastling[0]!
@@ -73,9 +56,6 @@ export function castlingHash(rights: CastlingRights): number {
   return h
 }
 
-// ============================================================
-// 从局面计算 Zobrist 哈希值
-// ============================================================
 export function computeHash(
   b: Board,
   currentTurn: Color,
@@ -103,9 +83,6 @@ export function computeHash(
   return h >>> 0
 }
 
-// ============================================================
-// 增量哈希更新：单枚棋子移动
-// ============================================================
 export function updateHashPiece(
   hash: number,
   piece: Piece,
@@ -120,9 +97,6 @@ export function updateHashPiece(
   return h
 }
 
-// ============================================================
-// 移除某方向上的王车易位权利
-// ============================================================
 export function removeCastlingRights(rights: number, color: Color, which: 'both' | 'kingside' | 'queenside'): number {
   let r = rights
   if (color === 'white') {
@@ -135,10 +109,8 @@ export function removeCastlingRights(rights: number, color: Color, which: 'both'
   return r
 }
 
-// ============================================================
 // 增量更新走法后的 Zobrist 哈希值
 // 返回新的哈希值和更新后的王车易位权利
-// ============================================================
 export function hashAfterMove(
   board: Board,
   oldHash: number,

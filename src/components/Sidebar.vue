@@ -66,7 +66,6 @@
       </button>
     </div>
 
-    <!-- 二次确认弹窗 Modal（提和 / 认输 / 返回首页）：需要覆盖棋盘，先确认再执行 -->
     <div v-if="showConfirmModal" class="modal-backdrop">
       <div class="card dialog-box">
         <p class="dialog-message">{{ confirmMessage }}</p>
@@ -108,7 +107,6 @@ interface Props {
   isSoundEnabled: boolean
   coordinateLabelMode: 'off' | 'inside' | 'outside'
   board?: Board | null
-  /** 专门用于计算「子力优势」的棋盘：升变选择器弹出期间为升变前的快照 */
   materialBoard?: Board | null
   playerColor?: Color
   whiteTimeSeconds?: number | null
@@ -116,7 +114,6 @@ interface Props {
   activeColor?: Color | null
   clockTestId?: string
   hasGameStarted?: boolean
-  /** 本局各方是否已走出过至少一步（按颜色记录，悔棋到底也不会复位） */
   movedColors?: Record<Color, boolean>
   gameMode?: 'ai' | 'human' | 'remote'
   dialogueText?: string
@@ -353,7 +350,6 @@ const INITIAL_PIECES: Record<PieceType, number> = {
   king: 1,
 }
 
-// 辅助函数：当棋子数量超过 10 个时截断并加上省略号
 const formatPieceIcons = (pieces: string[], limit = 10): string => {
   if (pieces.length <= limit) {
     return pieces.join('')
@@ -362,12 +358,9 @@ const formatPieceIcons = (pieces: string[], limit = 10): string => {
 }
 
 const materialDiffText = computed(() => {
-  // 优先使用 materialBoard：升变选择器弹出期间它指向升变前的棋盘，
-  // 从而避免斜走吃子的升变在确认前就提前改变子力优势字符串。
   const board = props.materialBoard ?? props.board
   if (!board) return ''
 
-  // 统计当前棋盘上双方存活棋子数量
   const whiteCounts: Record<PieceType, number> = {
     pawn: 0, rook: 0, knight: 0, bishop: 0, queen: 0, king: 0,
   }
@@ -388,7 +381,6 @@ const materialDiffText = computed(() => {
     }
   }
 
-  // 计算被吃掉的棋子：初始数量 - 存活数量
   const whiteLost: Record<PieceType, number> = {
     pawn: INITIAL_PIECES.pawn - whiteCounts.pawn,
     rook: INITIAL_PIECES.rook - whiteCounts.rook,
@@ -406,34 +398,26 @@ const materialDiffText = computed(() => {
     king: 0,
   }
 
-  // 计算纯子力差距（白方视角）：白方被吃 = 黑方获得，黑方被吃 = 白方获得
-  // 正值 = 白方优势
   let netScore = 0
   for (const type of ['pawn', 'knight', 'bishop', 'rook', 'queen'] as PieceType[]) {
     netScore += (blackLost[type] - whiteLost[type]) * PIECE_VALUE[type]
   }
 
-  // 抵消完全相同类型的棋子
   const whiteDisplay: string[] = []
   const blackDisplay: string[] = []
 
   const displayOrder: PieceType[] = ['queen', 'rook', 'bishop', 'knight', 'pawn']
 
   for (const type of displayOrder) {
-    // 白方被吃 = 黑方持有的优势显示为黑色棋子
     const wLost = whiteLost[type]
-    // 黑方被吃 = 白方持有的优势显示为白色棋子
     const bLost = blackLost[type]
 
-    // 互相抵消
     const net = wLost - bLost
     if (net > 0) {
-      // 白方多丢了此类型棋子，黑方优势，显示黑色棋子
       for (let i = 0; i < net; i++) {
         blackDisplay.push(pieceGlyphs.value[type].black)
       }
     } else if (net < 0) {
-      // 黑方多丢了此类型棋子，白方优势，显示白色棋子
       for (let i = 0; i < -net; i++) {
         whiteDisplay.push(pieceGlyphs.value[type].white)
       }
@@ -546,7 +530,6 @@ const materialDiffText = computed(() => {
   padding: 0.35rem 0.15rem;
 }
 
-/* 二次确认弹窗（提和 / 认输）：覆盖式，必须先表态才能继续 */
 .modal-backdrop {
   position: fixed;
   inset: 0;

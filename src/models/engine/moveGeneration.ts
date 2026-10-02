@@ -1,8 +1,6 @@
-// ============================================================
 // Move Generation（走法生成）
 // 为指定颜色生成所有合法走法
 // 包含快速攻击检测（用于合法性检查）
-// ============================================================
 import type { Board, Color, Square, Move, Piece, PieceType, MoveOptions } from '../chess'
 import { getPieceMoves, getEnPassantTarget } from '../chess'
 import type { AIDetailedMove } from './types'
@@ -10,9 +8,6 @@ import { makeMove, unmakeMove } from './boardChange'
 import { oppositeColor } from './zobrist'
 import { board, getKingRow, getKingCol } from './searchState'
 
-// ============================================================
-// 工具函数
-// ============================================================
 export function packMove(move: AIDetailedMove): number {
   return (move.fromRow << 9) | (move.fromCol << 6) | (move.toRow << 3) | move.toCol
 }
@@ -24,9 +19,6 @@ export function movesMatch(a: AIDetailedMove | null, b: AIDetailedMove): boolean
     a.special === b.special
 }
 
-// ============================================================
-// 快速攻击检测
-// ============================================================
 export function isSquareAttackedFast(
   b: Board,
   row: number,
@@ -101,9 +93,6 @@ export function isSquareAttackedFast(
   return false
 }
 
-// ============================================================
-// 快速将军检测（使用追踪的王位置 + 走法信息）
-// ============================================================
 export function isKingInCheckFast(
   b: Board,
   color: Color,
@@ -125,9 +114,6 @@ export function isKingInCheckFast(
   return isSquareAttackedFast(b, kRow, kCol, enemyColor)
 }
 
-// ============================================================
-// 生成合法走法
-// ============================================================
 export function generateLegalMoves(
   b: Board,
   color: Color,

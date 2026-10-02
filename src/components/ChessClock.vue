@@ -41,18 +41,15 @@ const props = withDefaults(defineProps<Props>(), {
     testId: 'chess-clock',
 })
 
-// 判断是否 ≤10 秒（包括已超时为 0 的情况，保留红色样式）
 const isLowTime = (value: number | null | undefined) => {
     if (value === null || value === undefined) return false
     return value <= 10
 }
 
-// 根据时间值的分数部分推导冒号可见性（与倒计时同步，0.5s 亮 / 0.5s 暗）
 const colonVisible = (value: number) => {
     return (value % 1) >= 0.5
 }
 
-// 基础格式化（无冒号闪烁）
 const formatTime = (value: number | null | undefined) => {
     if (value === null || value === undefined || value < 0) {
         return '--:--'
@@ -69,7 +66,6 @@ const formatTime = (value: number | null | undefined) => {
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
-// 带冒号闪烁的格式化
 const formatTimeWithBlink = (value: number) => {
     if (value < 0) return '--:--'
 
@@ -86,7 +82,6 @@ const formatTimeWithBlink = (value: number) => {
     return `${formatUnit(minutes)}${c}${formatUnit(seconds)}`
 }
 
-// 带 0.1 秒精度 + 冒号闪烁的格式化
 const formatTimeWithTenthsAndBlink = (value: number) => {
     if (value < 0) return '--:--'
 
@@ -105,7 +100,6 @@ const formatTimeWithTenthsAndBlink = (value: number) => {
     return `${formatUnit(minutes)}${c}${formatUnit(wholeSeconds)}.${tenths}`
 }
 
-// 仅 ≤10 秒时显示 0.1 秒精度（无闪烁版本，给非激活方用）
 const formatTimeWithTenths = (value: number) => {
     if (value < 0) return '--:--'
 
@@ -123,7 +117,6 @@ const formatTimeWithTenths = (value: number) => {
     return `${formatUnit(minutes)}:${formatUnit(wholeSeconds)}.${tenths}`
 }
 
-// 计算每个方向的时间显示
 const formatWhiteTime = computed(() => {
     const val = props.whiteTimeSeconds
     if (val === null || val === undefined || !props.hasGameStarted) {
@@ -154,14 +147,12 @@ const formatBlackTime = computed(() => {
 </script>
 
 <style scoped>
-/* 2 列左右布局 */
 .clock-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
 }
 
-/* 基础样式与内容居中 */
 .clock-side {
     display: flex;
     justify-content: center;
@@ -172,24 +163,20 @@ const formatBlackTime = computed(() => {
     transition: all 0.2s ease;
 }
 
-/* 白色方容器 */
 .clock-side.side-white {
     background-color: var(--color-board-light);
     color: var(--color-board-dark);
 }
 
-/* 黑色方容器 */
 .clock-side.side-black {
     background-color: var(--color-board-dark);
     color: var(--color-board-light);
 }
 
-/* 激活状态的高亮指示 */
 .clock-side.is-active {
     border-color: var(--color-highlight);
 }
 
-/* 低时间状态（< 10秒）的高亮边框 */
 .clock-side.is-low-time {
     border-color: var(--color-danger, #dc3545);
 }
@@ -200,7 +187,6 @@ const formatBlackTime = computed(() => {
     font-variant-numeric: tabular-nums;
 }
 
-/* 低于10秒时文本变红 */
 .clock-time.text-low-time {
     color: var(--color-danger, #dc3545);
     font-weight: bold;

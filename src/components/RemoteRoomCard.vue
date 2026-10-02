@@ -1,5 +1,4 @@
 <template>
-  <!-- 大厅：大号房间码卡片 -->
   <div v-if="variant === 'full'" class="card room-card">
     <p class="room-card-title">{{ t('remote.roomCode') }}</p>
 
@@ -16,7 +15,6 @@
     </p>
   </div>
 
-  <!-- 对局中 / 侧边栏：紧凑条 -->
   <div v-else class="room-strip" :title="statusText">
     <span class="room-strip-code can-select">{{ roomCode }}</span>
     <span class="status-dot" :class="statusClass"></span>
@@ -184,7 +182,6 @@ const statusText = computed(() => {
   }
 }
 
-/* ---- 紧凑条 ---- */
 .room-strip {
   display: flex;
   align-items: center;

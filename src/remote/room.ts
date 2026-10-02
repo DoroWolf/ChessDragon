@@ -1,9 +1,3 @@
-// ============================================================
-// 远程对局：混合建连编排
-//   - 房主：同时监听 BroadcastChannel 与各信令后端，先连上的那条成为正式链路
-//   - 加入方：先用 BroadcastChannel 试探（同浏览器最快），失败再按优先级回退信令
-//   - 全局唯一信令（PeerJS）报告房间码占用时立即抛出 RoomCodeTakenError，由上层换码重试
-// ============================================================
 import {
   createBroadcastGuestTransport,
   createBroadcastHostTransport,
@@ -19,7 +13,6 @@ import {
 } from './transport'
 import type { RemoteLinkKind, RemoteRole } from './types'
 
-/** 房间码已在 PeerJS 信令服务上被占用 */
 export class RoomCodeTakenError extends Error {
   readonly code: string
 
@@ -32,7 +25,6 @@ export class RoomCodeTakenError extends Error {
 
 export interface RoomSession {
   role: RemoteRole
-  /** 实际生效的链路类型 */
   kind: RemoteLinkKind
   transport: RemoteTransport
 }
@@ -41,20 +33,17 @@ export interface RoomSession {
 const isAbortedError = (error: unknown): boolean =>
   error instanceof RemoteTransportError && error.message === 'aborted'
 
-/** 房主建房时参与竞速的一条候选链路 */
 interface HostCandidate {
   controller: AbortController
   promise: Promise<RemoteTransport>
 }
 
-/** 全部候选都失败时，把错误归类成上层可识别的形态 */
 const toHostError = (errors: unknown[], code: string): Error => {
   const transportError = errors.find((error) => error instanceof RemoteTransportError)
   if (transportError instanceof Error) return transportError
   return new RemoteTransportError('connection-failed', `all signaling failed: ${code}`)
 }
 
-/** 房主建房：等待任意一条链路连上 */
 export const createRoomHost = (code: string, signal?: AbortSignal): Promise<RoomSession> =>
   new Promise<RoomSession>((resolve, reject) => {
     const candidates: HostCandidate[] = []
@@ -113,7 +102,6 @@ export const createRoomHost = (code: string, signal?: AbortSignal): Promise<Room
       signal.addEventListener('abort', handleAbort, { once: true })
     }
 
-    // 胜出者：关闭其余所有候选链路
     const finish = (winner: HostCandidate, transport: RemoteTransport) => {
       if (settled) return
       settled = true

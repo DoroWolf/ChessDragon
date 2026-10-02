@@ -1,11 +1,9 @@
-// ============================================================
 // Iterative Deepening（迭代加深搜索）
 // 从深度 1 开始逐步增加搜索深度，直到达到最大深度或超时
 // 核心优势：
 //   1. 时间控制：任何时候超时都能返回当前最佳走法
 //   2. 走法排序优化：浅层搜索结果为深层搜索提供更好的走法排序
 //   3. 配合置换表，深层搜索可复用浅层搜索结果
-// ============================================================
 import { getPositionKey, type Color, type Square } from '../chess'
 import { INF, MATE_SCORE } from './types'
 import type { AIDetailedMove } from './types'
@@ -38,9 +36,6 @@ import {
   removeRepetition,
 } from './searchState'
 
-// ============================================================
-// 迭代加深入口
-// ============================================================
 export function iterativeDeepening(
   initialEpTarget: { row: number; col: number } | null,
   lastMove: { from: Square; to: Square } | null,

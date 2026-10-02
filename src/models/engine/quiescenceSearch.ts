@@ -1,11 +1,9 @@
-// ============================================================
 // Quiescence Search（静态搜索 / 静止搜索）
 // 在到达搜索深度后继续搜索吃子走法，避免"地平线效应"
 // 即：在没有吃子的平静局面才停止搜索，防止漏算重要吃子
 // 核心概念：
 //   - Stand Pat：如果不被将军，可以选择停止搜索（不接受吃子）
 //   - Delta Pruning：跳过即使吃掉对方棋子也无法改善评分的走法
-// ============================================================
 import type { Color, Square } from '../chess'
 import { PIECE_VALUES } from './types'
 import { INF, MATE_SCORE } from './types'
@@ -34,9 +32,6 @@ import {
   incSearchNodes,
 } from './searchState'
 
-// ============================================================
-// Quiescence Search
-// ============================================================
 export function quiescenceSearch(
   alpha: number,
   beta: number,
@@ -55,7 +50,6 @@ export function quiescenceSearch(
   const savedBKC = trackedBlackKingCol
   const savedMat = trackedMaterial
 
-  // --- Stand Pat 检查 ---
   const kRow = getKingRow(currentColor)
   const kCol = getKingCol(currentColor)
   const inCheck = isSquareAttackedFast(board, kRow, kCol, oppositeColor(currentColor))

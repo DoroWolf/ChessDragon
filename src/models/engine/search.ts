@@ -1,11 +1,9 @@
-// ============================================================
 // Search API（搜索公共接口）
 // 提供 AI 引擎的外部调用接口：
 //   - getBestAIMove：获取最佳走法
 //   - getPromotionChoice：选择升变棋子类型
 //   - getTotalLegalMoveCount：计算合法走法总数
 //   - getMaterialAdvantage：计算子力优势
-// ============================================================
 import type { Board, Color, Square } from '../chess'
 import { getEnPassantTarget } from '../chess'
 import type { AIDifficulty, AIStyle, AIDetailedMove } from './types'
@@ -23,9 +21,6 @@ import {
 import { probeBookForLevel, pickBookMove } from './openingBook'
 import { getSyzygyStore } from './syzygy/store'
 
-// ============================================================
-// getBestAIMove
-// ============================================================
 export async function getBestAIMove(
   b: Board,
   color: Color,
@@ -134,9 +129,6 @@ export async function getBestAIMove(
   return result.bestMove
 }
 
-// ============================================================
-// getPromotionChoice
-// ============================================================
 export function getPromotionChoice(
   b: Board,
   toRow: number,
@@ -158,9 +150,6 @@ export function getPromotionChoice(
   return 'queen'
 }
 
-// ============================================================
-// getTotalLegalMoveCount
-// ============================================================
 export function getTotalLegalMoveCount(
   b: Board,
   color: Color,
@@ -171,9 +160,6 @@ export function getTotalLegalMoveCount(
   return generateLegalMoves(b, color, epTarget, false, lastMove, kInfo.row, kInfo.col).length
 }
 
-// ============================================================
-// getMaterialAdvantage
-// ============================================================
 export function getMaterialAdvantage(b: Board, color: Color): number {
   let score = 0
   for (let row = 0; row < 8; row++) {
