@@ -71,14 +71,17 @@ const isCursorSelected = computed(() => props.selected.kind === 'cursor')
 
 .palette-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
+  align-items: center;
   gap: 6px;
 }
 
 .palette-btn {
-  width: 48px;
-  height: 48px;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 48px;
+  aspect-ratio: 1 / 1;
   padding: 2px;
   box-sizing: border-box;
   border: 2px solid var(--color-border-light);
