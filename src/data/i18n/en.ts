@@ -9,6 +9,8 @@ const en: Record<MessageKey, string> = {
 
   // ---- Top bar ----
   'app.settings': 'Settings',
+  'app.help': 'Help',
+  'app.editor': 'Board Editor',
 
   // ---- Home ----
   'home.vsAI': 'Play Against AI',
@@ -21,6 +23,7 @@ const en: Record<MessageKey, string> = {
   'setup.boardChess960': 'Chess960',
   'setup.boardCustom': 'Custom',
   'setup.fenPlaceholder': 'Paste FEN here',
+  'setup.openEditor': 'Edit in Board Editor',
   'setup.invalidFen': 'Invalid FEN',
   'setup.fenKingCount': 'Illegal position: there must be exactly one white and one black king',
   'setup.fenPawnRank': 'Illegal position: a pawn cannot stand on its own back rank',
@@ -56,7 +59,6 @@ const en: Record<MessageKey, string> = {
   'remote.joinRoom': 'Join Room',
   'remote.roomCode': 'Room Code',
   'remote.copyCode': 'Copy room code',
-  'remote.generateCode': 'Generate Room Code',
   'remote.waitingOpponent': 'Waiting for opponent…',
   'remote.joinHint': 'Enter the 6-character room code shared by the host',
   'remote.join': 'Join',
@@ -118,6 +120,36 @@ const en: Record<MessageKey, string> = {
   'settings.language': 'Language',
   'settings.langZh': '中文',
   'settings.langEn': 'English',
+
+  // ---- Board editor ----
+  'editor.title': 'Board Editor',
+  'editor.move': 'Move',
+  'editor.remove': 'Remove',
+  'editor.whiteTurn': 'White Turn',
+  'editor.blackTurn': 'Black Turn',
+  'editor.piecePawn': 'Pawn',
+  'editor.pieceKnight': 'Knight',
+  'editor.pieceBishop': 'Bishop',
+  'editor.pieceRook': 'Rook',
+  'editor.pieceQueen': 'Queen',
+  'editor.pieceKing': 'King',
+  'editor.turn': 'Side to Move',
+  'editor.castling': 'Castling Rights',
+  'editor.castleWhiteShort': 'White kingside',
+  'editor.castleWhiteLong': 'White queenside',
+  'editor.castleBlackShort': 'Black kingside',
+  'editor.castleBlackLong': 'Black queenside',
+  'editor.enPassant': 'En Passant',
+  'editor.initial': 'Initial Position',
+  'editor.clearBoard': 'Clear Board',
+  'editor.fen': 'FEN',
+  'editor.copyFen': 'Copy',
+  'editor.copied': 'Copied',
+  'editor.copyFailed': 'Copy failed',
+  'editor.quickPlay': 'Quick Play',
+  'editor.quickPlayAi': 'vs AI',
+  'editor.quickPlayHuman': 'Two Players',
+  'editor.quickPlayRemote': 'Remote',
 }
 
 export default en

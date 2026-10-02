@@ -7,6 +7,8 @@ const zhCN = {
 
   // ---- 顶栏 ----
   'app.settings': '设置',
+  'app.help': '帮助',
+  'app.editor': '棋盘编辑器',
 
   // ---- 首页 ----
   'home.vsAI': '人机对局',
@@ -19,6 +21,7 @@ const zhCN = {
   'setup.boardChess960': 'Chess960',
   'setup.boardCustom': '自定义棋盘',
   'setup.fenPlaceholder': '在此处粘贴 FEN 文本',
+  'setup.openEditor': '在棋盘编辑器中编辑',
   'setup.invalidFen': '无效的 FEN',
   'setup.fenKingCount': '不合法的局面：必须各有一枚白王与黑王',
   'setup.fenPawnRank': '不合法的局面：兵不能停留在自己的底线上',
@@ -54,7 +57,6 @@ const zhCN = {
   'remote.joinRoom': '加入房间',
   'remote.roomCode': '房间码',
   'remote.copyCode': '复制房间码',
-  'remote.generateCode': '生成房间码',
   'remote.waitingOpponent': '等待对手加入…',
   'remote.joinHint': '输入房主分享给你的 6 位房间码',
   'remote.join': '加入',
@@ -116,6 +118,36 @@ const zhCN = {
   'settings.language': '语言',
   'settings.langZh': '中文',
   'settings.langEn': 'English',
+
+  // ---- 棋盘编辑器 ----
+  'editor.title': '棋盘编辑器',
+  'editor.move': '移动',
+  'editor.remove': '移除',
+  'editor.whiteTurn': '白方走棋',
+  'editor.blackTurn': '黑方走棋',
+  'editor.piecePawn': '兵',
+  'editor.pieceKnight': '马',
+  'editor.pieceBishop': '象',
+  'editor.pieceRook': '车',
+  'editor.pieceQueen': '后',
+  'editor.pieceKing': '王',
+  'editor.turn': '走棋方',
+  'editor.castling': '易位权',
+  'editor.castleWhiteShort': '白方短易位',
+  'editor.castleWhiteLong': '白方长易位',
+  'editor.castleBlackShort': '黑方短易位',
+  'editor.castleBlackLong': '黑方长易位',
+  'editor.enPassant': '吃过路兵',
+  'editor.initial': '初始局面',
+  'editor.clearBoard': '清空棋盘',
+  'editor.fen': 'FEN',
+  'editor.copyFen': '复制',
+  'editor.copied': '已复制',
+  'editor.copyFailed': '复制失败',
+  'editor.quickPlay': '快速对局',
+  'editor.quickPlayAi': '人机对局',
+  'editor.quickPlayHuman': '双人对局',
+  'editor.quickPlayRemote': '远程对局',
 }
 
 export type MessageKey = keyof typeof zhCN

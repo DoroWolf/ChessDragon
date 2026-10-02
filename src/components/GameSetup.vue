@@ -95,13 +95,23 @@
         </label>
       </div>
 
-      <input
-        v-if="boardMode === 'custom'"
-        v-model="fenInput"
-        type="text"
-        class="fen-input"
-        :placeholder="t('setup.fenPlaceholder')"
-      />
+      <div v-if="boardMode === 'custom'" class="fen-input-row">
+        <input
+          v-model="fenInput"
+          type="text"
+          class="fen-input"
+          :placeholder="t('setup.fenPlaceholder')"
+        />
+        <!-- 在当前局面下打开棋盘编辑器；FEN 合法时顺带带过去 -->
+        <button
+          type="button"
+          class="btn fen-editor-btn"
+          :title="t('setup.openEditor')"
+          @click="openBoardEditor"
+        >
+          <span class="btn-icon" v-html="iconCustomSvg"></span>
+        </button>
+      </div>
 
       <template v-if="boardMode === 'custom' && fenInput.trim()">
         <!-- 用棋盘与棋子 icon 拼出当前 FEN 的预览 -->
@@ -219,7 +229,7 @@
         :disabled="!canStartRemote"
         @click="handleCreateRoom"
       >
-        {{ t('remote.generateCode') }}
+        {{ t('remote.createRoom') }}
       </button>
       <button
         v-else
@@ -241,12 +251,24 @@ import iconClassicSvg from '../assets/icon/classic.svg?raw'
 import iconChess960Svg from '../assets/icon/chess960.svg?raw'
 import iconCustomSvg from '../assets/icon/custom.svg?raw'
 import { useI18n } from '../composables/useI18n'
-import { validateFen, type FenErrorCode } from '../models/fen'
+import { validateFen } from '../models/fen'
+import { FEN_ERROR_KEYS } from '../data/fenErrorKeys'
+import { EDITOR_PAGE, encodeFenQuery, openToolTab } from '../data/toolPages'
 import type { MessageKey } from '../data/i18n'
 import type { RemoteConnectionState, RemoteErrorCode, RemoteLinkKind } from '../remote/types'
 import { isValidRoomCode, normalizeRoomCode } from '../remote/roomCode'
 import FenPreview from './FenPreview.vue'
 import RemoteRoomCard from './RemoteRoomCard.vue'
+
+/** 「快速对局」交接的初始设置：由棋盘编辑器跳转过来时预置界面状态 */
+export interface GameSetupInitial {
+  /** 需要直接进入的界面 */
+  screen: 'setup' | 'remote-create'
+  gameMode: 'ai' | 'human' | 'remote'
+  boardMode: 'standard' | 'custom' | 'chess960'
+  /** 预填的自定义棋盘 FEN */
+  fen: string
+}
 
 const props = withDefaults(
   defineProps<{
@@ -255,6 +277,8 @@ const props = withDefaults(
     remoteRoomCode?: string
     remoteLinkKind?: RemoteLinkKind | null
     remoteErrorCode?: RemoteErrorCode | null
+    /** 「快速对局」交接的初始设置；缺省时按原有的首页流程展示 */
+    initialSetup?: GameSetupInitial
   }>(),
   {
     theme: 'light',
@@ -290,13 +314,15 @@ const emit = defineEmits<{
 
 type Screen = 'home' | 'setup' | 'remote' | 'remote-create' | 'remote-join' | 'remote-waiting'
 
-const screen = ref<Screen>('home')
-const gameMode = ref<'ai' | 'human' | 'remote'>('ai')
+const screen = ref<Screen>(props.initialSetup?.screen ?? 'home')
+const gameMode = ref<'ai' | 'human' | 'remote'>(props.initialSetup?.gameMode ?? 'ai')
 const difficulty = ref(3)
 const aiStyle = ref<AIStyle>('balanced')
 
-const boardMode = ref<'standard' | 'custom' | 'chess960'>('standard')
-const fenInput = ref('')
+const boardMode = ref<'standard' | 'custom' | 'chess960'>(
+  props.initialSetup?.boardMode ?? 'standard',
+)
+const fenInput = ref(props.initialSetup?.fen ?? '')
 const chess960Id = ref(518)
 const timeMinutes = ref(10)
 const incrementSeconds = ref(0)
@@ -428,20 +454,6 @@ watch(boardMode, (newMode) => {
 // ============================================================
 const fenValidation = computed(() => validateFen(fenInput.value))
 
-// 各类校验失败原因对应的提示文案
-const FEN_ERROR_KEYS: Record<FenErrorCode, MessageKey> = {
-  format: 'setup.invalidFen',
-  king: 'setup.fenKingCount',
-  pawnRank: 'setup.fenPawnRank',
-  pieceCount: 'setup.fenPieceCount',
-  castling: 'setup.fenCastling',
-  enPassant: 'setup.fenEnPassant',
-  illegalCheck: 'setup.fenIllegalCheck',
-  checkmate: 'setup.fenCheckmate',
-  stalemate: 'setup.fenStalemate',
-  insufficientMaterial: 'setup.fenInsufficientMaterial',
-}
-
 // 空输入时只禁止开始，不提示错误
 const isFenValid = computed(() => {
   if (boardMode.value !== 'custom') return true
@@ -459,6 +471,13 @@ const fenErrorKey = computed<MessageKey | null>(() => {
   const error = fenValidation.value.error
   return error ? FEN_ERROR_KEYS[error] : null
 })
+
+/** 在新窗口打开棋盘编辑器；当前 FEN 合法时通过 ?fen= 参数带过去，否则打开默认局面 */
+const openBoardEditor = () => {
+  const trimmed = fenInput.value.trim()
+  const fen = trimmed && fenValidation.value.valid ? trimmed : ''
+  openToolTab(EDITOR_PAGE, fen ? `?fen=${encodeURIComponent(encodeFenQuery(fen))}` : '')
+}
 
 const buildChess960Fen = (): string => {
   const pieces = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'] as const
@@ -687,6 +706,43 @@ const handleStart = () => {
   margin: 10px 0 0;
   width: 100%;
   box-sizing: border-box;
+}
+
+/* FEN 输入框 + 右侧「在棋盘编辑器中打开」按钮 */
+.fen-input-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.fen-input-row .fen-input {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.fen-editor-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0 10px;
+}
+
+.fen-editor-btn .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+.fen-editor-btn .btn-icon :deep(svg) {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .fen-hint {

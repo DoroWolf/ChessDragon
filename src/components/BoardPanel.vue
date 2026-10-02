@@ -6,7 +6,10 @@
         @touchend="handleBoardGridTouchEnd($event)">
         <template v-for="displayRow in 8" :key="`rank-${displayRow}`">
           <button v-for="displayCol in 8" :key="`${displayRow}-${displayCol}`" type="button" class="board-square"
-            :class="{ 'draggable-piece': board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]?.color === currentTurn }"
+            :class="{
+              'draggable-piece': board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]?.color === currentTurn,
+              'has-piece': !!board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)],
+            }"
             @mousedown="$emit('square-mousedown', actualRow(displayRow - 1), actualCol(displayCol - 1), $event)"
             @touchstart.prevent="handleSquareTouchStart(actualRow(displayRow - 1), actualCol(displayCol - 1), $event)"
             @mouseenter="$emit('square-mouseenter', actualRow(displayRow - 1), actualCol(displayCol - 1))"

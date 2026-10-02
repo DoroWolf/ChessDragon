@@ -15,5 +15,13 @@ export default defineConfig({
   },
   build: {
     assetsInlineLimit: 10240,
+    // 多页入口：主程序 + 两个独立工具页（帮助 / 棋盘编辑器）
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        editor: fileURLToPath(new URL('./editor.html', import.meta.url)),
+        help: fileURLToPath(new URL('./help.html', import.meta.url)),
+      },
+    },
   },
 })

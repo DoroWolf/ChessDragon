@@ -2,7 +2,8 @@
   <section class="game-container" :class="{ 'global-dragging': isMouseDown && dragStartSquare }"
     :style="{ '--piece-scale': pieceScale }">
 
-    <GameSetup v-if="showSetup" :theme="theme" :remote-state="remoteState" :remote-room-code="remoteRoomCode"
+    <GameSetup v-if="showSetup" :initial-setup="initialSetup" :theme="theme" :remote-state="remoteState"
+      :remote-room-code="remoteRoomCode"
       :remote-link-kind="remoteLinkKind" :remote-error-code="remoteErrorCode" @start="handleGameSetupStart"
       @remote-create="handleRemoteCreate" @remote-join="handleRemoteJoin" @remote-cancel="handleRemoteCancel"
       @remote-reset-error="resetRemoteError" />
@@ -47,6 +48,16 @@
       @toggle-flip="isFlipped = !isFlipped" :has-game-started="hasGameStarted" @undo="handleUndo"
       @draw="handleDrawOffer" @resign="handleResign" @restart="handleRestart" @back-to-home="handleLeaveToHome" />
 
+    <!-- 左上角固定按钮组：帮助 / 棋盘编辑器（均在新窗口打开，不打断当前对局） -->
+    <div class="top-left-fabs">
+      <button type="button" class="fab-btn" :title="t('app.help')" @click="openHelpWindow">
+        <span class="fab-icon" v-html="tutorialSvg"></span>
+      </button>
+      <button type="button" class="fab-btn" :title="t('app.editor')" @click="openEditorWindow">
+        <span class="fab-icon" v-html="iconCustomSvg"></span>
+      </button>
+    </div>
+
     <!-- 右上角固定按钮组 -->
     <div class="top-right-fabs">
       <a href="https://github.com/DoroWolf/ChessDragon" target="_blank" rel="noopener" class="fab-btn" title="GitHub">
@@ -73,20 +84,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import Sidebar from './components/Sidebar.vue'
 import SettingsModal from './components/SettingsModal.vue'
 import GameSetup from './components/GameSetup.vue'
 import BoardPanel from './components/BoardPanel.vue'
 import RemoteOverlay from './components/RemoteOverlay.vue'
-import type { GameSetupConfig } from './components/GameSetup.vue'
+import type { GameSetupConfig, GameSetupInitial } from './components/GameSetup.vue'
 import { useSettings } from './composables/useSettings'
 import { useBoardDisplay } from './composables/useBoardDisplay'
 import { useGameState } from './composables/useGameState'
 import { useRemoteGame } from './composables/useRemoteGame'
 import { useI18n } from './composables/useI18n'
+import { consumeQuickPlay } from './data/quickPlay'
+import { EDITOR_PAGE, TUTORIAL_PAGE, openToolTab, openToolWindow } from './data/toolPages'
 import settingSvg from './assets/icon/setting.svg?raw'
 import githubSvg from './assets/icon/github.svg?raw'
+import tutorialSvg from './assets/icon/openedBook.svg?raw'
+import iconCustomSvg from './assets/icon/custom.svg?raw'
 
 // ---- 设置持久化 ----
 const { isSoundEnabled, coordinateLabelMode, theme } = useSettings()
@@ -96,6 +111,33 @@ const { t } = useI18n()
 
 // ---- 设置弹窗状态 ----
 const showSettingsModal = ref(false)
+
+// ---- 辅助工具页：帮助用受控弹窗，棋盘编辑器用普通标签页（保留前进后退/刷新/可编辑 URL）----
+const openHelpWindow = () => {}
+  // TODO: 教程
+
+const openEditorWindow = () => openToolTab(EDITOR_PAGE)
+
+// ---- 「快速对局」交接：编辑器跳转过来时直接进入棋盘设置并预填 FEN ----
+// 一次性消费 sessionStorage，避免刷新页面时重复进入设置界面
+const quickPlayPayload = consumeQuickPlay()
+
+const initialSetup = ref<GameSetupInitial | undefined>(
+  quickPlayPayload
+    ? {
+        screen: quickPlayPayload.gameMode === 'remote' ? 'remote-create' : 'setup',
+        gameMode: quickPlayPayload.gameMode,
+        boardMode: 'custom',
+        fen: quickPlayPayload.fen,
+      }
+    : undefined,
+)
+
+// 仅用于首次挂载：GameSetup 在 setup 阶段即读取该 prop，
+// 挂载后立刻清空，之后「返回首页」重挂载时便不会再次跳过首页。
+onMounted(() => {
+  initialSetup.value = undefined
+})
 
 // ---- 棋盘显示 ----
 const {
@@ -256,6 +298,15 @@ onUnmounted(() => {
   position: absolute;
   top: 16px;
   right: 16px;
+  z-index: 10000;
+  display: flex;
+  gap: 10px;
+}
+
+.top-left-fabs {
+  position: absolute;
+  top: 16px;
+  left: 16px;
   z-index: 10000;
   display: flex;
   gap: 10px;

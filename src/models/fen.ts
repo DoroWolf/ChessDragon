@@ -311,3 +311,124 @@ export const validateFen = (fen: string): FenValidationResult => {
 
   return { valid: true, error: null, board, turn }
 }
+
+// ============================================================
+// 棋盘 -> FEN 序列化（棋盘编辑器使用）
+// ============================================================
+
+/** FEN 中的棋子字符：小写为黑方，大写为白方 */
+const PIECE_FEN_CHARS: Record<Piece['type'], string> = {
+  pawn: 'p',
+  knight: 'n',
+  bishop: 'b',
+  rook: 'r',
+  queen: 'q',
+  king: 'k',
+}
+
+/** 标准易位权顺序，用于归一化输出 */
+const CASTLING_RIGHT_ORDER = ['K', 'Q', 'k', 'q'] as const
+
+export type CastlingRight = (typeof CASTLING_RIGHT_ORDER)[number]
+
+export interface FenSerializeOptions {
+  /** 走棋方，缺省为白方 */
+  turn?: Color
+  /** 易位权，如 'KQkq'；空字符串表示无易位权 */
+  castling?: string
+  /** 吃过路兵目标格，如 'e3'；非法或空表示无 */
+  enPassant?: string
+  /** 半回合计数，缺省 0 */
+  halfmoveClock?: number
+  /** 回合数，缺省 1 */
+  fullmoveNumber?: number
+}
+
+/** 把棋盘序列化为完整的 FEN 字符串，缺失的可选字段按 FEN 规范取默认值。 */
+export const boardToFen = (board: Board, options: FenSerializeOptions = {}): string => {
+  const rows: string[] = []
+
+  for (let row = 0; row < 8; row += 1) {
+    let rowText = ''
+    let emptyCount = 0
+
+    for (let col = 0; col < 8; col += 1) {
+      const piece = board[row]?.[col] ?? null
+
+      if (!piece) {
+        emptyCount += 1
+        continue
+      }
+
+      if (emptyCount > 0) {
+        rowText += String(emptyCount)
+        emptyCount = 0
+      }
+
+      const char = PIECE_FEN_CHARS[piece.type]
+      rowText += piece.color === 'white' ? char.toUpperCase() : char
+    }
+
+    if (emptyCount > 0) rowText += String(emptyCount)
+    rows.push(rowText)
+  }
+
+  const castling = CASTLING_RIGHT_ORDER.filter((right) =>
+    (options.castling ?? '').includes(right),
+  ).join('')
+  const enPassant = /^[a-h][36]$/.test(options.enPassant ?? '') ? (options.enPassant as string) : '-'
+  const halfmoveClock = Math.max(0, Math.trunc(options.halfmoveClock ?? 0))
+  const fullmoveNumber = Math.max(1, Math.trunc(options.fullmoveNumber ?? 1))
+
+  return `${rows.join('/')} ${options.turn === 'black' ? 'b' : 'w'} ${castling || '-'} ${enPassant} ${halfmoveClock} ${fullmoveNumber}`
+}
+
+/** 某方在标准格位（王在 e 线、车在 a/h 线）上是否保有相应易位权 */
+const hasStandardCastlingRight = (board: Board, color: Color, side: 'king' | 'queen'): boolean => {
+  const rank = board[color === 'white' ? 7 : 0]
+  if (!rank) return false
+
+  const king = rank[4]
+  if (king?.type !== 'king' || king.color !== color) return false
+
+  const rook = rank[side === 'king' ? 7 : 0]
+  return rook?.type === 'rook' && rook.color === color
+}
+
+/** 某个标准易位权在当前棋盘上是否结构可行（供编辑器启用/禁用复选框） */
+export const canHaveCastlingRight = (board: Board, right: CastlingRight): boolean =>
+  hasStandardCastlingRight(
+    board,
+    right === right.toUpperCase() ? 'white' : 'black',
+    right === 'K' || right === 'k' ? 'king' : 'queen',
+  )
+
+/**
+ * 依据棋盘推导标准易位权，返回 'KQkq' 形式的字符串；无易位权时返回空字符串。
+ * 仅识别标准初始格位（王 e1/e8、车 a1/h1/a8/h8），Chess960 的字母易位权需手动填写 FEN。
+ */
+export const deriveCastlingRights = (board: Board): string =>
+  CASTLING_RIGHT_ORDER.filter((right) => canHaveCastlingRight(board, right)).join('')
+
+/**
+ * 依据棋盘推导「吃过路兵目标格」候选。
+ * 判定条件与 validateFen 保持一致：刚走过两格的兵仍在落点上、起点与目标格均为空。
+ */
+export const deriveEnPassantTargets = (board: Board, turn: Color): string[] => {
+  const targetRow = turn === 'white' ? 2 : 5
+  const pawnRow = turn === 'white' ? 3 : 4
+  const originRow = turn === 'white' ? 1 : 6
+  const pawnColor: Color = turn === 'white' ? 'black' : 'white'
+  const targets: string[] = []
+
+  for (let col = 0; col < 8; col += 1) {
+    const pawn = board[pawnRow]?.[col] ?? null
+    if (pawn?.type !== 'pawn' || pawn.color !== pawnColor) continue
+    if ((board[originRow]?.[col] ?? null) !== null) continue
+    if ((board[targetRow]?.[col] ?? null) !== null) continue
+
+    targets.push(`${String.fromCharCode(97 + col)}${8 - targetRow}`)
+  }
+
+  return targets
+}
