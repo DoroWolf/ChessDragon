@@ -182,17 +182,10 @@ const showConfirmModal = ref(false)
 const confirmMessage = ref('')
 const pendingAction = ref<'draw' | 'resign' | 'home' | null>(null)
 
-/**
- * 是否已经走出足够多的走子，可以把「返回」按钮换成「悔棋」：
- * - 双人对局：走满一个完整回合（黑白各一步）
- * - 远程对局：自己走出第一步之后（白方先行，故白方先切换、黑方维持返回）
- * - 人机对局：走出任意半回合
- * 判定基于只增不减的记录，悔棋到底也不会退回「返回」。
- */
 const isUndoUnlocked = computed(() => {
   const moved = props.movedColors
   if (props.gameMode === 'human') return moved.white && moved.black
-  if (props.gameMode === 'remote') {
+  if (props.gameMode === 'ai' || props.gameMode === 'remote') {
     return props.playerColor === 'black' ? moved.black : moved.white
   }
   return moved.white || moved.black
