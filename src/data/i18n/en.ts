@@ -160,7 +160,6 @@ const en: Record<MessageKey, string> = {
   'tutorial.intro.queen1': 'The queen is the strongest piece on the board: it moves in straight lines like a rook and diagonally like a bishop, as far as it likes.',
   'tutorial.intro.queen2': 'Look at the highlighted squares: the queen can reach more squares than any other piece.',
   'tutorial.intro.king1': 'The king is the most important piece of all, but it is slow: it can only step one square in any direction.',
-  'tutorial.intro.king2': 'Look at the highlighted squares: the king can only step to one of the 8 neighbouring squares.',
   'tutorial.intro.knight1': 'The knight moves in a special way: two squares straight and then one square sideways, tracing the shape of an "L", one jump per turn.',
   'tutorial.intro.knight2': 'Even better, the knight jumps over anything in its path — even if friendly pieces surround it, it can still jump out.',
   'tutorial.intro.pawn1': 'A pawn only moves forward, one square at a time; from its starting square it may also move two squares at once.',

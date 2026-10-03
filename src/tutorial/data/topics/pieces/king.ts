@@ -9,7 +9,7 @@ export const kingTopic: TutorialTopic = {
   steps: [
     {
       kind: 'intro',
-      paragraphs: ['tutorial.intro.king1', 'tutorial.intro.king2'],
+      paragraphs: ['tutorial.intro.king1'],
       demo: { piece: { type: 'king', color: 'white', row: 7, col: 4 } },
     },
     {

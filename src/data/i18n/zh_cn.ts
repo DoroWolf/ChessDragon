@@ -158,7 +158,6 @@ const zhCN = {
   'tutorial.intro.queen1': '后是棋盘上最强的棋子：既能像车一样走横线、竖线，也能像象一样走斜线，一次想走多远就走多远。',
   'tutorial.intro.queen2': '后能到达的格子比任何棋子都要多。',
   'tutorial.intro.king1': '王是全局最重要的棋子，但它走得很慢：每次只能朝周围任意方向走一格。',
-  'tutorial.intro.king2': '王一次最多只能走到相邻的 8 个格子之一。',
   'tutorial.intro.knight1': '马的走法很特别：先直走两格、再横走一格，路线像“日”字。',
   'tutorial.intro.knight2': '而且，马可以跳过挡在路上的棋子。就算被同伴挡住，也照样能跳出去。',
   'tutorial.intro.pawn1': '兵只能向前走，每次一格；如果它还站在初始位置，也可以一次向前走两格。',
