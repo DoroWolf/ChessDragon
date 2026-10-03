@@ -8,7 +8,12 @@
         <div class="setting-item">
           <span class="setting-label">{{ t('settings.sound') }}</span>
           <label class="checkbox-label">
-            <input type="checkbox" class="custom-checkbox" :checked="isSoundEnabled" @change="handleSoundChange" />
+            <input
+              type="checkbox"
+              class="custom-checkbox"
+              :checked="isSoundEnabled"
+              @change="handleSoundChange"
+            />
           </label>
         </div>
 
@@ -16,7 +21,11 @@
         <div class="setting-item">
           <span class="setting-label">{{ t('settings.boardLabels') }}</span>
           <div class="select-wrapper">
-            <select :value="coordinateLabelMode" @change="handleCoordinateChange" class="custom-select">
+            <select
+              :value="coordinateLabelMode"
+              @change="handleCoordinateChange"
+              class="custom-select"
+            >
               <option value="off">{{ t('settings.labelsOff') }}</option>
               <option value="inside">{{ t('settings.labelsInside') }}</option>
               <option value="outside">{{ t('settings.labelsOutside') }}</option>
@@ -162,5 +171,4 @@ const handleLocaleChange = (e: Event) => {
 .select-wrapper {
   width: auto;
 }
-
 </style>

@@ -77,7 +77,6 @@ export const getReachableSquares = (
       let col = from.col + colStep
       while (inBoard(row, col)) {
         squares.push({ row, col })
-        // 障碍视作棋子：落上去即吃掉，但不能越过
         if (isOccupied(obstacles, row, col)) break
         row += rowStep
         col += colStep
@@ -171,17 +170,14 @@ export function useCollectCoins(challenge: TutorialChallenge, isSoundEnabled: Re
   const pieceColor: Color = initialPieces[0]?.color ?? 'white'
   const opponentColor: Color = pieceColor === 'white' ? 'black' : 'white'
 
-  // 玩家可移动的棋子，各带当前位置；被吃掉 / 走子后实时更新
   const pieces = ref<TutorialPiece[]>(initialPieces.map((piece) => ({ ...piece })))
   const coins = ref<Square[]>(challengeCoins.map((coin) => ({ ...coin })))
-  // 棋盘上可被吃掉的对方棋子；被吃掉 / 移动后实时更新
   const opponents = ref<TutorialPiece[]>(challengeOpponents.map((piece) => ({ ...piece })))
   const status = ref<ChallengeStatus>('playing')
   const lastMove = ref<{ from: Square; to: Square } | null>(null)
   // 失败提示：默认用挑战自带的 failMessage，对方的回应着法可以覆盖
   const failMessage = ref<MessageKey | null>(challenge.failMessage ?? null)
 
-  // 交互 / 拖拽状态
   const isMouseDown = ref(false)
   const isDragging = ref(false)
   const dragStartSquare = ref<Square | null>(null)
@@ -189,7 +185,6 @@ export function useCollectCoins(challenge: TutorialChallenge, isSoundEnabled: Re
   const hoverSquare = ref<Square | null>(null)
   const mousePos = ref({ x: 0, y: 0 })
 
-  // 当前选中的玩家棋子（决定可达格；多枚可选时用选中的那枚）
   const selectedPiece = computed<TutorialPiece | null>(() => {
     const square = selectedSquare.value
     if (!square) return null
@@ -214,7 +209,7 @@ export function useCollectCoins(challenge: TutorialChallenge, isSoundEnabled: Re
   const createEmptyBoard = (): Board =>
     Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => null as Piece | null))
 
-  /** 用当前 pieces + opponents 拼出棋盘（金币只是标记，不参与阻挡） */
+  // 金币只是标记，不参与阻挡
   const buildBoard = (): Board => {
     const board = createEmptyBoard()
     for (const piece of [...pieces.value, ...opponents.value]) {
@@ -299,7 +294,6 @@ export function useCollectCoins(challenge: TutorialChallenge, isSoundEnabled: Re
     ).filter((square) => !ownSquares.some((own) => sameSquare(own, square)))
     // 王的易位落点也算可达（走两格）
     const candidates = [...squares, ...castlingTargets(piece)]
-    // 过滤掉会让己方王被将军的落点
     return candidates.filter(
       (square) =>
         !leavesKingInCheck(
@@ -310,13 +304,11 @@ export function useCollectCoins(challenge: TutorialChallenge, isSoundEnabled: Re
     )
   })
 
-  /** 让棋盘上的一枚对方棋子「从 from 走到 to」（例如吃回玩家刚走过来的棋子）。 */
   const moveOpponent = (from: Square, to: Square): boolean => {
     const index = opponents.value.findIndex((opponent) => sameSquare(opponent, from))
     const moving = index >= 0 ? opponents.value[index] : undefined
     if (!moving) return false
 
-    // 落点上的玩家棋子被对方吃掉
     pieces.value = pieces.value.filter((piece) => !sameSquare(piece, to))
 
     opponents.value = opponents.value
@@ -325,10 +317,8 @@ export function useCollectCoins(challenge: TutorialChallenge, isSoundEnabled: Re
     return true
   }
 
-  /** 用真实走法引擎判断某一方是否被将军 */
   const isColorInCheck = (color: Color): boolean => isKingInCheck(buildBoard(), color)
 
-  // 对方反吃的延迟：先显示失败，稍后黑方棋子再走进来吃子
   let replyTimer: number | null = null
 
   const clearReplyTimer = () => {
@@ -362,7 +352,6 @@ export function useCollectCoins(challenge: TutorialChallenge, isSoundEnabled: Re
   const cancelPromotion = () => {
     const pending = promotionPending.value
     if (pending) {
-      // 把棋子退回升变前的位置
       pieces.value = pieces.value.map((piece) =>
         sameSquare(piece, pending.to)
           ? { ...piece, row: pending.from.row, col: pending.from.col }
@@ -378,7 +367,6 @@ export function useCollectCoins(challenge: TutorialChallenge, isSoundEnabled: Re
   const applyPromotion = (newType: string) => {
     const pending = promotionPending.value
     if (!pending) return
-    // 升变：直接改这枚兵的棋子类型
     pieces.value = pieces.value.map((piece) =>
       sameSquare(piece, pending.to) ? { ...piece, type: newType as PieceType } : piece,
     )
@@ -447,7 +435,6 @@ export function useCollectCoins(challenge: TutorialChallenge, isSoundEnabled: Re
           coin.row >= Math.min(from.row, to.row) && coin.row <= Math.max(from.row, to.row),
       )
 
-    // 移动选中的那枚棋子
     pieces.value = pieces.value.map((piece, i) =>
       i === index ? { ...piece, row: to.row, col: to.col } : piece,
     )
@@ -497,7 +484,6 @@ export function useCollectCoins(challenge: TutorialChallenge, isSoundEnabled: Re
       clearReplyTimer()
       replyTimer = window.setTimeout(() => {
         replyTimer = null
-        // 对方这手是否吃掉了玩家的棋子（吃回 / 王吃掉将军的棋子）
         const replyCaptures = pieces.value.some((piece) => sameSquare(piece, reply.to))
         if (!moveOpponent(reply.from, reply.to)) return
         lastMove.value = { from: { ...reply.from }, to: { ...reply.to } }

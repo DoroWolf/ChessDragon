@@ -3,8 +3,12 @@
     <section v-for="category in TUTORIAL_CATEGORIES" :key="category.id" class="category-section">
       <h2 class="category-title">{{ t(category.titleKey) }}</h2>
       <div class="topic-grid">
-        <a v-for="topic in category.topics" :key="topic.id" class="topic-button"
-          :href="tutorialTopicUrl(category.id, topic.id)">
+        <a
+          v-for="topic in category.topics"
+          :key="topic.id"
+          class="topic-button"
+          :href="tutorialTopicUrl(category.id, topic.id)"
+        >
           <span class="topic-name">{{ t(topic.titleKey) }}</span>
           <span class="topic-desc">{{ t(topic.descKey) }}</span>
         </a>

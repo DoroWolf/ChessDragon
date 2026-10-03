@@ -2,25 +2,47 @@
   <!-- 调色板：白方 / 黑方各一行；光标跟在白兵之后，橡皮擦跟在黑兵之后 -->
   <div class="palette">
     <div class="palette-row">
-      <button v-for="type in PIECE_TYPES" :key="`white-${type}`" type="button" class="palette-btn"
-        :class="{ active: isSelected('white', type) }" :title="t(PIECE_LABEL_KEYS[type])"
-        @click="emit('select', { kind: 'piece', type, color: 'white' })">
+      <button
+        v-for="type in PIECE_TYPES"
+        :key="`white-${type}`"
+        type="button"
+        class="palette-btn"
+        :class="{ active: isSelected('white', type) }"
+        :title="t(PIECE_LABEL_KEYS[type])"
+        @click="emit('select', { kind: 'piece', type, color: 'white' })"
+      >
         <img :src="pieceIconImg(type, 'white')" alt="" draggable="false" />
       </button>
-      <button type="button" class="palette-btn" :class="{ active: isCursorSelected }"
-        :title="t('editor.move')" @click="emit('select', { kind: 'cursor' })">
+      <button
+        type="button"
+        class="palette-btn"
+        :class="{ active: isCursorSelected }"
+        :title="t('editor.move')"
+        @click="emit('select', { kind: 'cursor' })"
+      >
         <span class="tool-icon" v-html="moveSvg"></span>
       </button>
     </div>
 
     <div class="palette-row">
-      <button v-for="type in PIECE_TYPES" :key="`black-${type}`" type="button" class="palette-btn"
-        :class="{ active: isSelected('black', type) }" :title="t(PIECE_LABEL_KEYS[type])"
-        @click="emit('select', { kind: 'piece', type, color: 'black' })">
+      <button
+        v-for="type in PIECE_TYPES"
+        :key="`black-${type}`"
+        type="button"
+        class="palette-btn"
+        :class="{ active: isSelected('black', type) }"
+        :title="t(PIECE_LABEL_KEYS[type])"
+        @click="emit('select', { kind: 'piece', type, color: 'black' })"
+      >
         <img :src="pieceIconImg(type, 'black')" alt="" draggable="false" />
       </button>
-      <button type="button" class="palette-btn" :class="{ active: isEraserSelected }"
-        :title="t('editor.remove')" @click="emit('select', { kind: 'empty' })">
+      <button
+        type="button"
+        class="palette-btn"
+        :class="{ active: isEraserSelected }"
+        :title="t('editor.remove')"
+        @click="emit('select', { kind: 'empty' })"
+      >
         <span class="tool-icon" v-html="removeSvg"></span>
       </button>
     </div>

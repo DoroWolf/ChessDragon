@@ -1,8 +1,5 @@
 import type { TutorialTopic } from '../../types'
 
-/**
- * 基础 · 吃过路兵：兵的特殊吃法。
- */
 export const enPassantTopic: TutorialTopic = {
   id: 'enPassant',
   titleKey: 'tutorial.topic.enPassant',

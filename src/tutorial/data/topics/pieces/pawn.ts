@@ -1,6 +1,5 @@
 import type { TutorialTopic } from '../../types'
 
-/** 认识棋子 · 兵：向前走、初始可两格、斜吃、升变 */
 export const pawnTopic: TutorialTopic = {
   id: 'pawn',
   titleKey: 'tutorial.topic.pawn',

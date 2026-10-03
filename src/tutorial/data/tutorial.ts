@@ -31,11 +31,10 @@ export const TUTORIAL_CATEGORIES: TutorialCategory[] = [
   {
     id: 'base',
     titleKey: 'tutorial.category.base',
-    topics: [captureTopic, enPassantTopic, checkTopic, outOfCheckTopic, checkmateTopic, castlingTopic],
+    topics: [captureTopic, castlingTopic, enPassantTopic, checkTopic, outOfCheckTopic, checkmateTopic],
   },
 ]
 
-/** 依据路由参数查找分类 */
 export const findCategory = (categoryId: string | null): TutorialCategory | null =>
   TUTORIAL_CATEGORIES.find((category) => category.id === categoryId) ?? null
 

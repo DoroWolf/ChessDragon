@@ -1,8 +1,14 @@
 <template>
   <TutorialShell wide :overview-url="overviewUrl">
     <template #default="{ isSoundEnabled, coordinateLabelMode, theme }">
-      <TopicView v-if="topic && category" :topic="topic" :category="category"
-        :is-sound-enabled="isSoundEnabled" :coordinate-label-mode="coordinateLabelMode" :theme="theme" />
+      <TopicView
+        v-if="topic && category"
+        :topic="topic"
+        :category="category"
+        :is-sound-enabled="isSoundEnabled"
+        :coordinate-label-mode="coordinateLabelMode"
+        :theme="theme"
+      />
       <div v-else class="card not-found">
         <p class="not-found-text">{{ t('tutorial.notFound') }}</p>
         <a class="btn" :href="overviewUrl">{{ t('tutorial.backToOverview') }}</a>

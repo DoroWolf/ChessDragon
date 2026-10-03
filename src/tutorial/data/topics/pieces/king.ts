@@ -1,6 +1,5 @@
 import type { TutorialTopic } from '../../types'
 
-/** 认识棋子 · 王：每次只走一格 */
 export const kingTopic: TutorialTopic = {
   id: 'king',
   titleKey: 'tutorial.topic.king',
@@ -16,7 +15,6 @@ export const kingTopic: TutorialTopic = {
       id: 'king-1',
       kind: 'collect-coins',
       instruction: 'tutorial.challenge.instruction',
-      // 王在 d4，金币在 d5：旁边一格，一步可达
       piece: { type: 'king', color: 'white', row: 7, col: 4 },
       coins: [{ row: 6, col: 5 }],
     },

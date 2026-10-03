@@ -25,7 +25,6 @@ interface TutorialStepBase {
 export interface TutorialReplyMove {
   /** 触发这次回应的着法落点；可再用 trigger.from 限定必须由哪一枚棋子走过去 */
   trigger: TutorialTarget
-  /** 对方要移动的棋子当前所在格 */
   from: Square
   /** 对方棋子的落点（通常就是 trigger，也就是吃回刚走过来的棋子） */
   to: Square
@@ -33,7 +32,6 @@ export interface TutorialReplyMove {
   failMessage?: MessageKey
 }
 
-/** 挑战公共字段 */
 interface TutorialChallengeBase extends TutorialStepBase {
   /**
    * 玩家可移动的棋子。

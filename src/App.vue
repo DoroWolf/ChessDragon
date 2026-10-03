@@ -1,18 +1,41 @@
 <template>
-  <section class="game-container" :class="{ 'global-dragging': isMouseDown && dragStartSquare }"
-    :style="{ '--piece-scale': pieceScale }">
-
-    <GameSetup v-if="showSetup" :initial-setup="initialSetup" :theme="theme" :remote-state="remoteState"
+  <section
+    class="game-container"
+    :class="{ 'global-dragging': isMouseDown && dragStartSquare }"
+    :style="{ '--piece-scale': pieceScale }"
+  >
+    <GameSetup
+      v-if="showSetup"
+      :initial-setup="initialSetup"
+      :theme="theme"
+      :remote-state="remoteState"
       :remote-room-code="remoteRoomCode"
-      :remote-link-kind="remoteLinkKind" :remote-error-code="remoteErrorCode" @start="handleGameSetupStart"
-      @remote-create="handleRemoteCreate" @remote-join="handleRemoteJoin" @remote-cancel="handleRemoteCancel"
-      @remote-reset-error="resetRemoteError" />
+      :remote-link-kind="remoteLinkKind"
+      :remote-error-code="remoteErrorCode"
+      @start="handleGameSetupStart"
+      @remote-create="handleRemoteCreate"
+      @remote-join="handleRemoteJoin"
+      @remote-cancel="handleRemoteCancel"
+      @remote-reset-error="resetRemoteError"
+    />
 
-    <BoardPanel v-if="!showSetup" :board="board" :current-turn="currentTurn" :selected-square="selectedSquare"
-      :possible-moves="possibleMoves" :is-dragging="isDragging" :drag-start-square="dragStartSquare"
-      :hover-square="hoverSquare" :mouse-pos="mousePos" :is-mouse-down="isMouseDown"
-      :promotion-pending="promotionPending" :promotion-style="promotionStyle" :is-draw="isDraw"
-      :has-resigned="hasResigned" :timeout-winner="timeoutWinner" :coordinate-label-mode="coordinateLabelMode"
+    <BoardPanel
+      v-if="!showSetup"
+      :board="board"
+      :current-turn="currentTurn"
+      :selected-square="selectedSquare"
+      :possible-moves="possibleMoves"
+      :is-dragging="isDragging"
+      :drag-start-square="dragStartSquare"
+      :hover-square="hoverSquare"
+      :mouse-pos="mousePos"
+      :is-mouse-down="isMouseDown"
+      :promotion-pending="promotionPending"
+      :promotion-style="promotionStyle"
+      :is-draw="isDraw"
+      :has-resigned="hasResigned"
+      :timeout-winner="timeoutWinner"
+      :coordinate-label-mode="coordinateLabelMode"
       :is-flipped="isFlipped"
       :theme="theme"
       :premove="premove"
@@ -23,29 +46,58 @@
       :get-piece-image="getPieceImage"
       :get-square-label="getSquareLabel"
       :is-white-square="isWhiteSquare"
-      @update:piece-scale="(val: number) => pieceScale = val"
-      @square-mousedown="(row: number, col: number, event: MouseEvent) => handleMouseDown(row, col, event)"
-      @square-touchstart="(row: number, col: number, event: TouchEvent) => handleTouchStart(row, col, event)"
-      @square-mouseenter="(row: number, col: number) => hoverSquare = { row, col }"
+      @update:piece-scale="(val: number) => (pieceScale = val)"
+      @square-mousedown="
+        (row: number, col: number, event: MouseEvent) => handleMouseDown(row, col, event)
+      "
+      @square-touchstart="
+        (row: number, col: number, event: TouchEvent) => handleTouchStart(row, col, event)
+      "
+      @square-mouseenter="(row: number, col: number) => (hoverSquare = { row, col })"
       @square-mouseleave="hoverSquare = null"
       @board-touchmove="(event: TouchEvent) => handleTouchMove(event)"
       @board-touchend="(event: TouchEvent) => handleTouchEnd(event)"
       @cancel-promotion="cancelPromotion"
-      @apply-promotion="(piece: string) => applyPromotion(piece)" />
+      @apply-promotion="(piece: string) => applyPromotion(piece)"
+    />
 
-    <Sidebar v-if="!showSetup" :is-clock-enabled="isClockEnabled" :move-history="moveHistory" :current-turn="currentTurn"
-      :starting-turn="startingTurn" :starting-fullmove-number="startingFullmoveNumber"
-      :game-status="gameStatusMessage" :halfmove-clock="halfmoveClock" :position-count="getPositionCount()"
-      :is-game-over="isGameOver" :is-flipped="isFlipped" :board="board" :material-board="materialBoard" :player-color="playerColor"
+    <Sidebar
+      v-if="!showSetup"
+      :is-clock-enabled="isClockEnabled"
+      :move-history="moveHistory"
+      :current-turn="currentTurn"
+      :starting-turn="startingTurn"
+      :starting-fullmove-number="startingFullmoveNumber"
+      :game-status="gameStatusMessage"
+      :halfmove-clock="halfmoveClock"
+      :position-count="getPositionCount()"
+      :is-game-over="isGameOver"
+      :is-flipped="isFlipped"
+      :board="board"
+      :material-board="materialBoard"
+      :player-color="playerColor"
       :white-time-seconds="whiteTimeSeconds"
-      :black-time-seconds="blackTimeSeconds" :active-color="currentTurn" :clock-test-id="'sidebar-chess-clock'"
+      :black-time-seconds="blackTimeSeconds"
+      :active-color="currentTurn"
+      :clock-test-id="'sidebar-chess-clock'"
       :game-mode="gameMode"
-      :theme="theme" :game-result="gameResult" :is-remote="isRemote"
-      :room-code="remoteRoomCode" :remote-state="remoteState" :remote-link-kind="remoteLinkKind"
-      v-model:is-sound-enabled="isSoundEnabled" v-model:coordinate-label-mode="coordinateLabelMode"
+      :theme="theme"
+      :game-result="gameResult"
+      :is-remote="isRemote"
+      :room-code="remoteRoomCode"
+      :remote-state="remoteState"
+      :remote-link-kind="remoteLinkKind"
+      v-model:is-sound-enabled="isSoundEnabled"
+      v-model:coordinate-label-mode="coordinateLabelMode"
       :moved-colors="hasMovedByColor"
-      @toggle-flip="isFlipped = !isFlipped" :has-game-started="hasGameStarted" @undo="handleUndo"
-      @draw="handleDrawOffer" @resign="handleResign" @restart="handleRestart" @back-to-home="handleLeaveToHome" />
+      @toggle-flip="isFlipped = !isFlipped"
+      :has-game-started="hasGameStarted"
+      @undo="handleUndo"
+      @draw="handleDrawOffer"
+      @resign="handleResign"
+      @restart="handleRestart"
+      @back-to-home="handleLeaveToHome"
+    />
 
     <div class="top-left-fabs">
       <button type="button" class="fab-btn" :title="t('app.tutorial')" @click="openHelpWindow">
@@ -57,24 +109,49 @@
     </div>
 
     <div class="top-right-fabs">
-      <a href="https://github.com/DoroWolf/ChessDragon" target="_blank" rel="noopener" class="fab-btn" title="GitHub">
+      <a
+        href="https://github.com/DoroWolf/ChessDragon"
+        target="_blank"
+        rel="noopener"
+        class="fab-btn"
+        title="GitHub"
+      >
         <span class="fab-icon" v-html="githubSvg"></span>
       </a>
-      <button type="button" class="fab-btn" @click="showSettingsModal = true" :title="t('app.settings')">
+      <button
+        type="button"
+        class="fab-btn"
+        @click="showSettingsModal = true"
+        :title="t('app.settings')"
+      >
         <span class="fab-icon" v-html="settingSvg"></span>
       </button>
     </div>
 
-    <SettingsModal :visible="showSettingsModal" :is-sound-enabled="isSoundEnabled"
-      :coordinate-label-mode="coordinateLabelMode" :theme="theme" @close="showSettingsModal = false"
-      @update:is-sound-enabled="(val: boolean) => isSoundEnabled = val"
-      @update:coordinate-label-mode="(val: 'off' | 'inside' | 'outside') => coordinateLabelMode = val"
-      @update:theme="(val: 'light' | 'dark') => theme = val" />
+    <SettingsModal
+      :visible="showSettingsModal"
+      :is-sound-enabled="isSoundEnabled"
+      :coordinate-label-mode="coordinateLabelMode"
+      :theme="theme"
+      @close="showSettingsModal = false"
+      @update:is-sound-enabled="(val: boolean) => (isSoundEnabled = val)"
+      @update:coordinate-label-mode="
+        (val: 'off' | 'inside' | 'outside') => (coordinateLabelMode = val)
+      "
+      @update:theme="(val: 'light' | 'dark') => (theme = val)"
+    />
 
-    <RemoteOverlay v-if="!showSetup" :pending-undo-request="pendingUndoRequest"
-      :pending-draw-offer="pendingDrawOffer" :pending-rematch-request="pendingRematchRequest"
-      :outgoing-request="outgoingRequest" :opponent-left="isOpponentLeft"
-      @respond="handleRemoteRespond" @cancel-request="() => cancelOutgoingRequest()" @back-to-home="handleLeaveToHome" />
+    <RemoteOverlay
+      v-if="!showSetup"
+      :pending-undo-request="pendingUndoRequest"
+      :pending-draw-offer="pendingDrawOffer"
+      :pending-rematch-request="pendingRematchRequest"
+      :outgoing-request="outgoingRequest"
+      :opponent-left="isOpponentLeft"
+      @respond="handleRemoteRespond"
+      @cancel-request="() => cancelOutgoingRequest()"
+      @back-to-home="handleLeaveToHome"
+    />
   </section>
 </template>
 
@@ -125,13 +202,8 @@ onMounted(() => {
   initialSetup.value = undefined
 })
 
-const {
-  isFlipped,
-  getOverlayTexture,
-  getPieceImage,
-  getSquareLabel,
-  isWhiteSquare,
-} = useBoardDisplay()
+const { isFlipped, getOverlayTexture, getPieceImage, getSquareLabel, isWhiteSquare } =
+  useBoardDisplay()
 
 const pieceScale = ref(2)
 
@@ -203,7 +275,12 @@ const {
 const remote = useRemoteGame()
 remote.registerGame(game)
 
-const { state: remoteState, roomCode: remoteRoomCode, linkKind: remoteLinkKind, errorCode: remoteErrorCode } = remote
+const {
+  state: remoteState,
+  roomCode: remoteRoomCode,
+  linkKind: remoteLinkKind,
+  errorCode: remoteErrorCode,
+} = remote
 
 const isOpponentLeft = computed(() => remoteState.value === 'opponent-left')
 
@@ -261,7 +338,11 @@ onUnmounted(() => {
   box-sizing: border-box;
   padding: 20px;
   padding-top: 60px;
-  font-family: 'Unifont', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Unifont',
+    system-ui,
+    -apple-system,
+    sans-serif;
   color: var(--color-text-primary);
   gap: 1rem;
   flex-wrap: wrap;
@@ -304,7 +385,9 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 0;
-  transition: background-color 0.15s, color 0.15s;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
   text-decoration: none;
 }
 

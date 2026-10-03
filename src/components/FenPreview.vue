@@ -3,12 +3,22 @@
     <div class="preview-grid">
       <template v-for="displayRow in 8" :key="`rank-${displayRow}`">
         <div v-for="displayCol in 8" :key="`${displayRow}-${displayCol}`" class="preview-square">
-          <img class="square-texture" draggable="false" alt=""
-            :src="isWhiteSquare(displayRow - 1, displayCol - 1) ? lightSquareTexture : darkSquareTexture" />
+          <img
+            class="square-texture"
+            draggable="false"
+            alt=""
+            :src="
+              isWhiteSquare(displayRow - 1, displayCol - 1) ? lightSquareTexture : darkSquareTexture
+            "
+          />
 
-          <img v-if="pieceAt(displayRow - 1, displayCol - 1)" class="preview-piece" draggable="false"
+          <img
+            v-if="pieceAt(displayRow - 1, displayCol - 1)"
+            class="preview-piece"
+            draggable="false"
             :src="pieceIcon(pieceAt(displayRow - 1, displayCol - 1)!)"
-            :alt="pieceAt(displayRow - 1, displayCol - 1)!.type" />
+            :alt="pieceAt(displayRow - 1, displayCol - 1)!.type"
+          />
         </div>
       </template>
     </div>

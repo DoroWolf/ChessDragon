@@ -1,6 +1,5 @@
 import type { TutorialTopic } from '../../types'
 
-/** 认识棋子 · 车：沿直线移动 */
 export const rookTopic: TutorialTopic = {
   id: 'rook',
   titleKey: 'tutorial.topic.rook',

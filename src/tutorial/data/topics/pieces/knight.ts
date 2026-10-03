@@ -1,6 +1,5 @@
 import type { TutorialTopic } from '../../types'
 
-/** 认识棋子 · 马：走「日」字，且能跳子 */
 export const knightTopic: TutorialTopic = {
   id: 'knight',
   titleKey: 'tutorial.topic.knight',

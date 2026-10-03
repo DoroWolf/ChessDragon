@@ -12,11 +12,11 @@
   --color-text-secondary: #333333;
   --color-text-muted: #666666;
   --color-text-on-primary: #ffffff;
-  --color-text-inverse: #F3F9FC;
+  --color-text-inverse: #f3f9fc;
 
   /* ===== 棋盘 ===== */
-  --color-board-light: #F3F9FC;
-  --color-board-dark: #484A4B;
+  --color-board-light: #f3f9fc;
+  --color-board-dark: #484a4b;
 
   /* ===== 棋盘坐标标签 ===== */
   /* 分别对应「亮格上的标签」与「暗格上的标签」，需与棋盘纹理保持一致对比度 */
@@ -68,7 +68,7 @@
   --color-text-secondary: #e7e7e7;
   --color-text-muted: #a0a0a0;
   --color-text-on-primary: #ffffff;
-  --color-text-inverse: #F3F9FC;
+  --color-text-inverse: #f3f9fc;
 
   /* ===== 棋盘坐标标签 ===== */
   /* 暗色棋盘为 gray(#484A4B)/black(#1D1E1E)，两格标签统一使用白色以保证可见 */

@@ -15,7 +15,6 @@ export const queenTopic: TutorialTopic = {
       id: 'queen-1',
       kind: 'collect-coins',
       instruction: 'tutorial.challenge.instruction',
-      // 后在 d4，金币在 d7：同一条竖线，一步可达
       piece: { type: 'queen', color: 'white', row: 7, col: 3 },
       coins: [{ row: 3, col: 3 }],
     },

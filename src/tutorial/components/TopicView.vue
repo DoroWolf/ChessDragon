@@ -2,21 +2,42 @@
   <div class="topic-view">
     <div v-if="currentIntro" :key="step" class="step-row">
       <div v-if="currentDemoBoard" class="board-col" :style="{ '--piece-scale': pieceScale }">
-        <BoardPanel v-model:board-size="boardSize" :board="currentDemoBoard.board"
+        <BoardPanel
+          v-model:board-size="boardSize"
+          :board="currentDemoBoard.board"
           :current-turn="currentDemoBoard.turnColor"
-          :selected-square="null" :possible-moves="currentDemoBoard.reachable" :is-dragging="false"
-          :drag-start-square="null" :hover-square="null" :mouse-pos="idleMousePos" :is-mouse-down="false"
-          :promotion-pending="null" :promotion-style="null" :is-draw="false" :has-resigned="null"
-          :timeout-winner="null" :coordinate-label-mode="coordinateLabelMode" :is-flipped="false" :theme="theme"
-          :premove="null" :last-move="null" :can-premove="false" :is-chess960="false"
-          :get-overlay-texture="getOverlayTexture" :get-piece-image="getPieceImage"
-          :get-square-label="getSquareLabel" :is-white-square="isWhiteSquare"
-          @update:piece-scale="(val: number) => pieceScale = val" />
+          :selected-square="null"
+          :possible-moves="currentDemoBoard.reachable"
+          :is-dragging="false"
+          :drag-start-square="null"
+          :hover-square="null"
+          :mouse-pos="idleMousePos"
+          :is-mouse-down="false"
+          :promotion-pending="null"
+          :promotion-style="null"
+          :is-draw="false"
+          :has-resigned="null"
+          :timeout-winner="null"
+          :coordinate-label-mode="coordinateLabelMode"
+          :is-flipped="false"
+          :theme="theme"
+          :premove="null"
+          :last-move="null"
+          :can-premove="false"
+          :is-chess960="false"
+          :get-overlay-texture="getOverlayTexture"
+          :get-piece-image="getPieceImage"
+          :get-square-label="getSquareLabel"
+          :is-white-square="isWhiteSquare"
+          @update:piece-scale="(val: number) => (pieceScale = val)"
+        />
       </div>
 
       <div class="info-col">
         <h2 v-if="step === 0" class="topic-title">{{ t(topic.titleKey) }}</h2>
-        <p v-for="(key, index) in currentIntro.instruction" :key="index" class="topic-paragraph">{{ t(key) }}</p>
+        <p v-for="(key, index) in currentIntro.instruction" :key="index" class="topic-paragraph">
+          {{ t(key) }}
+        </p>
         <div class="step-actions">
           <button type="button" class="btn btn-primary" @click="step += 1">
             {{ t('tutorial.continue') }}
@@ -27,16 +48,36 @@
 
     <div v-else-if="currentInfo" :key="currentInfo.id" class="step-row">
       <div class="board-col" :style="{ '--piece-scale': pieceScale }">
-        <BoardPanel v-if="currentInfoBoard" v-model:board-size="boardSize" :board="currentInfoBoard.board"
+        <BoardPanel
+          v-if="currentInfoBoard"
+          v-model:board-size="boardSize"
+          :board="currentInfoBoard.board"
           :current-turn="currentInfoBoard.turnColor"
-          :selected-square="null" :possible-moves="[]" :is-dragging="false"
-          :drag-start-square="null" :hover-square="null" :mouse-pos="idleMousePos" :is-mouse-down="false"
-          :promotion-pending="null" :promotion-style="null" :is-draw="false" :has-resigned="null"
-          :timeout-winner="null" :coordinate-label-mode="coordinateLabelMode" :is-flipped="false" :theme="theme"
-          :premove="null" :last-move="null" :can-premove="false" :is-chess960="false"
-          :get-overlay-texture="getInfoOverlayTexture" :get-piece-image="getPieceImage"
-          :get-square-label="getSquareLabel" :is-white-square="isWhiteSquare"
-          @update:piece-scale="(val: number) => pieceScale = val" />
+          :selected-square="null"
+          :possible-moves="[]"
+          :is-dragging="false"
+          :drag-start-square="null"
+          :hover-square="null"
+          :mouse-pos="idleMousePos"
+          :is-mouse-down="false"
+          :promotion-pending="null"
+          :promotion-style="null"
+          :is-draw="false"
+          :has-resigned="null"
+          :timeout-winner="null"
+          :coordinate-label-mode="coordinateLabelMode"
+          :is-flipped="false"
+          :theme="theme"
+          :premove="null"
+          :last-move="null"
+          :can-premove="false"
+          :is-chess960="false"
+          :get-overlay-texture="getInfoOverlayTexture"
+          :get-piece-image="getPieceImage"
+          :get-square-label="getSquareLabel"
+          :is-white-square="isWhiteSquare"
+          @update:piece-scale="(val: number) => (pieceScale = val)"
+        />
       </div>
 
       <div class="info-col">
@@ -49,10 +90,18 @@
       </div>
     </div>
 
-    <TutorialBoard v-else-if="currentChallenge" :key="currentChallenge.id" v-model:board-size="boardSize"
-      :challenge="currentChallenge" :step="displayStep" :total="totalChallenges"
-      :is-sound-enabled="isSoundEnabled" :coordinate-label-mode="coordinateLabelMode" :theme="theme"
-      @solved="handleSolved" />
+    <TutorialBoard
+      v-else-if="currentChallenge"
+      :key="currentChallenge.id"
+      v-model:board-size="boardSize"
+      :challenge="currentChallenge"
+      :step="displayStep"
+      :total="totalChallenges"
+      :is-sound-enabled="isSoundEnabled"
+      :coordinate-label-mode="coordinateLabelMode"
+      :theme="theme"
+      @solved="handleSolved"
+    />
 
     <div v-if="isDone" class="modal-backdrop">
       <div class="card dialog-box">
@@ -118,7 +167,9 @@ const step = ref(0)
 const stepIndex = computed(() => Math.min(step.value, props.topic.steps.length - 1))
 const currentStep = computed<TutorialStep | null>(() => props.topic.steps[stepIndex.value] ?? null)
 
-const currentIntro = computed(() => (currentStep.value?.kind === 'intro' ? currentStep.value : null))
+const currentIntro = computed(() =>
+  currentStep.value?.kind === 'intro' ? currentStep.value : null,
+)
 const currentInfo = computed<InfoStep | null>(() => {
   const current = currentStep.value
   return current && current.kind === 'info' ? current : null
@@ -154,7 +205,6 @@ const createDemoBoard = (demo: TutorialDemo): Board => {
   for (const blocker of demo.blockers ?? []) {
     board[blocker.row]![blocker.col] = { type: blocker.type, color: blocker.color, hasMoved: true }
   }
-  // 没有主角棋子（例如吃子教学）时只展示 blockers 摆出的局面
   if (demo.piece) {
     board[demo.piece.row]![demo.piece.col] = {
       type: demo.piece.type,
@@ -174,14 +224,12 @@ const buildDemo = (
     board: createDemoBoard(demo),
     // 演示棋盘不可交互：有主角时把「走棋方」设为对方，避免主角出现可抓取光标
     turnColor: piece ? (piece.color === 'white' ? 'black' : 'white') : 'black',
-    // 只有指定了主角棋子才演示走法轨迹；没有主角的专题不强制显示轨迹
     reachable: piece
       ? getReachableSquares(piece.type, piece, piece.color, demo.blockers ?? [])
       : [],
   }
 }
 
-// 当前讲解页的演示棋盘
 const currentDemoBoard = computed(() => buildDemo(currentIntro.value?.demo))
 
 const currentInfoBoard = computed<{ board: Board; turnColor: Color } | null>(() => {

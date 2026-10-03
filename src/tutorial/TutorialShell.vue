@@ -1,7 +1,12 @@
 <template>
   <section class="tutorial-container">
     <div class="top-left-fabs">
-      <a v-if="overviewUrl" class="fab-btn" :href="overviewUrl" :title="t('tutorial.backToOverview')">
+      <a
+        v-if="overviewUrl"
+        class="fab-btn"
+        :href="overviewUrl"
+        :title="t('tutorial.backToOverview')"
+      >
         <span class="fab-icon" v-html="tutorialSvg"></span>
       </a>
       <a class="fab-btn" :href="editorUrl" target="_blank" rel="noopener" :title="t('app.editor')">
@@ -10,24 +15,45 @@
     </div>
 
     <div class="top-right-fabs">
-      <a href="https://github.com/DoroWolf/ChessDragon" target="_blank" rel="noopener" class="fab-btn"
-        title="GitHub">
+      <a
+        href="https://github.com/DoroWolf/ChessDragon"
+        target="_blank"
+        rel="noopener"
+        class="fab-btn"
+        title="GitHub"
+      >
         <span class="fab-icon" v-html="githubSvg"></span>
       </a>
-      <button type="button" class="fab-btn" :title="t('app.settings')" @click="showSettingsModal = true">
+      <button
+        type="button"
+        class="fab-btn"
+        :title="t('app.settings')"
+        @click="showSettingsModal = true"
+      >
         <span class="fab-icon" v-html="settingSvg"></span>
       </button>
     </div>
 
     <main class="tutorial-main" :class="{ 'tutorial-main-wide': wide }">
-      <slot :isSoundEnabled="isSoundEnabled" :coordinateLabelMode="coordinateLabelMode" :theme="theme" />
+      <slot
+        :isSoundEnabled="isSoundEnabled"
+        :coordinateLabelMode="coordinateLabelMode"
+        :theme="theme"
+      />
     </main>
 
-    <SettingsModal :visible="showSettingsModal" :is-sound-enabled="isSoundEnabled"
-      :coordinate-label-mode="coordinateLabelMode" :theme="theme" @close="showSettingsModal = false"
-      @update:is-sound-enabled="(val: boolean) => isSoundEnabled = val"
-      @update:coordinate-label-mode="(val: 'off' | 'inside' | 'outside') => coordinateLabelMode = val"
-      @update:theme="(val: 'light' | 'dark') => theme = val" />
+    <SettingsModal
+      :visible="showSettingsModal"
+      :is-sound-enabled="isSoundEnabled"
+      :coordinate-label-mode="coordinateLabelMode"
+      :theme="theme"
+      @close="showSettingsModal = false"
+      @update:is-sound-enabled="(val: boolean) => (isSoundEnabled = val)"
+      @update:coordinate-label-mode="
+        (val: 'off' | 'inside' | 'outside') => (coordinateLabelMode = val)
+      "
+      @update:theme="(val: 'light' | 'dark') => (theme = val)"
+    />
   </section>
 </template>
 
@@ -43,7 +69,6 @@ import settingSvg from '../assets/icon/setting.svg?raw'
 import editorSvg from '../assets/icon/custom.svg?raw'
 
 interface Props {
-  /** 专题页是「左棋盘 + 右信息」，需要更宽的容器 */
   wide?: boolean
   overviewUrl?: string | null
 }
@@ -80,7 +105,11 @@ const showSettingsModal = ref(false)
   box-sizing: border-box;
   padding: 20px;
   padding-top: 60px;
-  font-family: 'Unifont', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Unifont',
+    system-ui,
+    -apple-system,
+    sans-serif;
   color: var(--color-text-primary);
 }
 
@@ -114,7 +143,9 @@ const showSettingsModal = ref(false)
   align-items: center;
   justify-content: center;
   padding: 0;
-  transition: background-color 0.15s, color 0.15s;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
   text-decoration: none;
 }
 

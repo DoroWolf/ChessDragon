@@ -1,21 +1,45 @@
 <template>
   <div class="step-row">
     <div class="board-col" :style="{ '--piece-scale': pieceScale }">
-      <BoardPanel :board-size="boardSize" :board="board" :current-turn="pieceColor"
+      <BoardPanel
+        :board-size="boardSize"
+        :board="board"
+        :current-turn="pieceColor"
         :selected-square="selectedSquare"
-        :possible-moves="visibleReachable" :is-dragging="isDragging" :drag-start-square="dragStartSquare"
-        :hover-square="hoverSquare" :mouse-pos="mousePos" :is-mouse-down="isMouseDown"
-        :promotion-pending="promotionPending" :promotion-style="promotionStyle" :is-draw="false" :has-resigned="null"
-        :timeout-winner="null" :coordinate-label-mode="coordinateLabelMode" :is-flipped="false" :theme="theme"
-        :premove="null" :last-move="lastMove" :can-premove="false" :is-chess960="false" :markers="coinMarkers"
-        :get-overlay-texture="getChallengeOverlayTexture" :get-piece-image="getPieceImage"
-        :get-square-label="getSquareLabel" :is-white-square="isWhiteSquare"
-        @update:piece-scale="(val: number) => pieceScale = val"
+        :possible-moves="visibleReachable"
+        :is-dragging="isDragging"
+        :drag-start-square="dragStartSquare"
+        :hover-square="hoverSquare"
+        :mouse-pos="mousePos"
+        :is-mouse-down="isMouseDown"
+        :promotion-pending="promotionPending"
+        :promotion-style="promotionStyle"
+        :is-draw="false"
+        :has-resigned="null"
+        :timeout-winner="null"
+        :coordinate-label-mode="coordinateLabelMode"
+        :is-flipped="false"
+        :theme="theme"
+        :premove="null"
+        :last-move="lastMove"
+        :can-premove="false"
+        :is-chess960="false"
+        :markers="coinMarkers"
+        :get-overlay-texture="getChallengeOverlayTexture"
+        :get-piece-image="getPieceImage"
+        :get-square-label="getSquareLabel"
+        :is-white-square="isWhiteSquare"
+        @update:piece-scale="(val: number) => (pieceScale = val)"
         @update:board-size="(val: number) => emit('update:boardSize', val)"
-        @square-mousedown="handleMouseDown" @square-touchstart="handleTouchStart"
-        @square-mouseenter="handleSquareEnter" @square-mouseleave="handleSquareLeave"
-        @board-touchmove="handleTouchMove" @board-touchend="handleTouchEnd"
-        @cancel-promotion="cancelPromotion" @apply-promotion="(piece: string) => applyPromotion(piece)" />
+        @square-mousedown="handleMouseDown"
+        @square-touchstart="handleTouchStart"
+        @square-mouseenter="handleSquareEnter"
+        @square-mouseleave="handleSquareLeave"
+        @board-touchmove="handleTouchMove"
+        @board-touchend="handleTouchEnd"
+        @cancel-promotion="cancelPromotion"
+        @apply-promotion="(piece: string) => applyPromotion(piece)"
+      />
     </div>
 
     <div class="info-col">
@@ -70,7 +94,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-// 直接使用项目自带的 BoardPanel（与对局页 / 编辑器同一用法）
 const { getOverlayTexture, getPieceImage, getSquareLabel, isWhiteSquare } = useBoardDisplay()
 const pieceScale = ref(2)
 
@@ -98,14 +121,16 @@ const {
   handleTouchMove,
   handleTouchEnd,
   reset,
-} = useCollectCoins(props.challenge, computed(() => props.isSoundEnabled))
+} = useCollectCoins(
+  props.challenge,
+  computed(() => props.isSoundEnabled),
+)
 
 const createEmptyBoard = (): Board =>
   Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => null as Piece | null))
 
 const board = computed<Board>(() => {
   const next = createEmptyBoard()
-  // 对方棋子（吃子挑战用）：被吃掉后从数组移除，自然不再绘制
   for (const opponent of opponents.value) {
     next[opponent.row]![opponent.col] = {
       type: opponent.type,
@@ -113,7 +138,6 @@ const board = computed<Board>(() => {
       hasMoved: true,
     }
   }
-  // 玩家可移动的棋子（可能有多枚）：被吃掉后从数组移除，不再绘制
   for (const piece of pieces.value) {
     next[piece.row]![piece.col] = {
       type: piece.type,

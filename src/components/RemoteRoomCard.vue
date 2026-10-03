@@ -4,7 +4,12 @@
 
     <div class="room-code-row">
       <span class="room-code can-select">{{ roomCode }}</span>
-      <button type="button" class="btn room-copy-btn" :title="t('remote.copyCode')" @click="copyCode">
+      <button
+        type="button"
+        class="btn room-copy-btn"
+        :title="t('remote.copyCode')"
+        @click="copyCode"
+      >
         <span class="room-copy-icon" v-html="copied ? checkSvg : copySvg"></span>
       </button>
     </div>

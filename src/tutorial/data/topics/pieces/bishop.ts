@@ -1,6 +1,5 @@
 import type { TutorialTopic } from '../../types'
 
-/** 认识棋子 · 象：沿斜线移动 */
 export const bishopTopic: TutorialTopic = {
   id: 'bishop',
   titleKey: 'tutorial.topic.bishop',

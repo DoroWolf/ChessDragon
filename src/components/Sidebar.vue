@@ -1,50 +1,83 @@
 <template>
   <aside class="sidebar">
-    <RemoteRoomCard v-if="isRemote && roomCode" :room-code="roomCode" :state="remoteState"
-      :link-kind="remoteLinkKind" variant="compact" />
+    <RemoteRoomCard
+      v-if="isRemote && roomCode"
+      :room-code="roomCode"
+      :state="remoteState"
+      :link-kind="remoteLinkKind"
+      variant="compact"
+    />
 
-    <ChessClock :is-clock-enabled="isClockEnabled" :white-time-seconds="whiteTimeSeconds"
-      :black-time-seconds="blackTimeSeconds" :active-color="activeColor" :has-game-started="hasGameStarted" :test-id="clockTestId" />
+    <ChessClock
+      :is-clock-enabled="isClockEnabled"
+      :white-time-seconds="whiteTimeSeconds"
+      :black-time-seconds="blackTimeSeconds"
+      :active-color="activeColor"
+      :has-game-started="hasGameStarted"
+      :test-id="clockTestId"
+    />
 
     <div class="material-row">
-      <div class=" material-diff">
+      <div class="material-diff">
         <span v-if="materialDiffText" class="material-diff-text">{{ materialDiffText }}</span>
         <span v-else class="material-diff-text"></span>
       </div>
-      <button type="button" class="btn btn-flip" :title="t('sidebar.flipBoard')" @click="$emit('toggle-flip')">
+      <button
+        type="button"
+        class="btn btn-flip"
+        :title="t('sidebar.flipBoard')"
+        @click="$emit('toggle-flip')"
+      >
         <span class="btn-icon" v-html="refreshSvg"></span>
         <span>{{ t('sidebar.flipBoard') }}</span>
       </button>
     </div>
 
-    <div 
+    <div
       class="card game-status"
       :class="{ 'turn-black': currentTurn === 'black', 'turn-white': currentTurn === 'white' }"
     >
       <div v-if="gameStatus" class="status-message">{{ gameStatus }}</div>
-      <div v-else class="current-turn">{{ t('sidebar.turnToMove', { side: currentTurn === 'white' ? t('sidebar.sideWhite') : t('sidebar.sideBlack') }) }}</div>
+      <div v-else class="current-turn">
+        {{
+          t('sidebar.turnToMove', {
+            side: currentTurn === 'white' ? t('sidebar.sideWhite') : t('sidebar.sideBlack'),
+          })
+        }}
+      </div>
     </div>
 
     <div v-if="isGameOver" class="button-group">
       <button type="button" class="btn" :title="t('sidebar.home')" @click="$emit('back-to-home')">
         <span class="btn-icon" v-html="homeSvg"></span>
       </button>
-      <button type="button" class="btn btn-primary" :title="t('sidebar.restart')" @click="$emit('restart')">
+      <button
+        type="button"
+        class="btn btn-primary"
+        :title="t('sidebar.restart')"
+        @click="$emit('restart')"
+      >
         <span class="btn-icon" v-html="refreshSvg"></span>
       </button>
-      <button 
-        type="button" 
-        class="btn" 
-        :class="{ 'btn-success': isCopied }" 
-        :title="t('sidebar.copyPgn')" 
-        :disabled="!pgnText" 
+      <button
+        type="button"
+        class="btn"
+        :class="{ 'btn-success': isCopied }"
+        :title="t('sidebar.copyPgn')"
+        :disabled="!pgnText"
         @click="copyPGN"
       >
         <span class="btn-icon" v-html="isCopied ? checkSvg : exportPgnSvg"></span>
       </button>
     </div>
     <div v-else class="button-group">
-      <button type="button" class="btn btn-warning" :title="t('sidebar.undo')" :disabled="isUndoDisabled" @click="$emit('undo')">
+      <button
+        type="button"
+        class="btn btn-warning"
+        :title="t('sidebar.undo')"
+        :disabled="isUndoDisabled"
+        @click="$emit('undo')"
+      >
         <span class="btn-icon" v-html="undoSvg"></span>
       </button>
       <button
@@ -57,11 +90,23 @@
       >
         <span class="btn-icon" v-html="drawSvg"></span>
       </button>
-      <button v-if="!isUndoUnlocked" type="button" class="btn btn-danger" :title="t('sidebar.home')"
-        @click="handleHomeClick">
+      <button
+        v-if="!isUndoUnlocked"
+        type="button"
+        class="btn btn-danger"
+        :title="t('sidebar.home')"
+        @click="handleHomeClick"
+      >
         <span class="btn-icon" v-html="homeSvg"></span>
       </button>
-      <button v-else type="button" class="btn btn-danger" :title="t('sidebar.resign')" :disabled="isGameActionDisabled" @click="handleResignClick">
+      <button
+        v-else
+        type="button"
+        class="btn btn-danger"
+        :title="t('sidebar.resign')"
+        :disabled="isGameActionDisabled"
+        @click="handleResignClick"
+      >
         <span class="btn-icon" v-html="resignSvg"></span>
       </button>
     </div>
@@ -71,7 +116,9 @@
         <p class="dialog-message">{{ confirmMessage }}</p>
         <div class="dialog-buttons">
           <button type="button" class="btn" @click="cancelConfirm">{{ t('common.cancel') }}</button>
-          <button type="button" class="btn btn-primary" @click="executeConfirm">{{ t('common.confirm') }}</button>
+          <button type="button" class="btn btn-primary" @click="executeConfirm">
+            {{ t('common.confirm') }}
+          </button>
         </div>
       </div>
     </div>
@@ -193,7 +240,8 @@ const isUndoUnlocked = computed(() => {
 const isUndoDisabled = computed(() => {
   if (props.moveHistory.length === 0 || props.isGameOver || !!props.gameStatus) return true
   // 黑方执棋 + AI 模式：只剩 AI 第一步时禁止撤销，避免死锁
-  if (props.gameMode === 'ai' && props.playerColor === 'black' && props.moveHistory.length <= 1) return true
+  if (props.gameMode === 'ai' && props.playerColor === 'black' && props.moveHistory.length <= 1)
+    return true
   return false
 })
 
@@ -226,7 +274,9 @@ const movePairs = computed<MovePair[]>(() => {
 
   for (let i = firstPairedMove; i < props.moveHistory.length; i += 2) {
     pairs.push({
-      number: props.startingFullmoveNumber + Math.floor((i + (props.startingTurn === 'black' ? 1 : 0)) / 2),
+      number:
+        props.startingFullmoveNumber +
+        Math.floor((i + (props.startingTurn === 'black' ? 1 : 0)) / 2),
       white: props.moveHistory[i] || '...',
       black: props.moveHistory[i + 1],
     })
@@ -362,10 +412,20 @@ const materialDiffText = computed(() => {
   if (!board) return ''
 
   const whiteCounts: Record<PieceType, number> = {
-    pawn: 0, rook: 0, knight: 0, bishop: 0, queen: 0, king: 0,
+    pawn: 0,
+    rook: 0,
+    knight: 0,
+    bishop: 0,
+    queen: 0,
+    king: 0,
   }
   const blackCounts: Record<PieceType, number> = {
-    pawn: 0, rook: 0, knight: 0, bishop: 0, queen: 0, king: 0,
+    pawn: 0,
+    rook: 0,
+    knight: 0,
+    bishop: 0,
+    queen: 0,
+    king: 0,
   }
 
   for (let r = 0; r < 8; r++) {
@@ -468,7 +528,9 @@ const materialDiffText = computed(() => {
   padding: 0.75rem;
   text-align: center;
   font-weight: bold;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .game-status.turn-black {

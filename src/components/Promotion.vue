@@ -1,10 +1,10 @@
 <template>
   <div class="promotion" :style="computedStyle">
-    <button 
-      v-for="p in pieces" 
-      :key="p" 
-      type="button" 
-      class="promote-btn" 
+    <button
+      v-for="p in pieces"
+      :key="p"
+      type="button"
+      class="promote-btn"
       @click="$emit('select', p)"
     >
       <img :src="promotionImg(p, color)" :alt="p" />
@@ -16,10 +16,10 @@
 import { computed, type CSSProperties } from 'vue'
 import { promotionImg } from '../assets/resourcePaths'
 
-const props = defineProps<{ 
-  color: 'white' | 'black'; 
-  style?: CSSProperties;
-  isFlipped?: boolean;
+const props = defineProps<{
+  color: 'white' | 'black'
+  style?: CSSProperties
+  isFlipped?: boolean
 }>()
 
 defineEmits<{
@@ -27,9 +27,10 @@ defineEmits<{
 }>()
 
 const pieces = computed(() => {
-  const basePieces = props.color === 'white' 
-    ? ['queen', 'knight', 'rook', 'bishop'] 
-    : ['bishop', 'rook', 'knight', 'queen']
+  const basePieces =
+    props.color === 'white'
+      ? ['queen', 'knight', 'rook', 'bishop']
+      : ['bishop', 'rook', 'knight', 'queen']
   return props.isFlipped ? [...basePieces].reverse() : basePieces
 })
 
@@ -57,10 +58,10 @@ const computedStyle = computed(() => ({
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   width: 100%;
-  aspect-ratio: 1 / 1; 
-  
+  aspect-ratio: 1 / 1;
+
   cursor: pointer;
 }
 

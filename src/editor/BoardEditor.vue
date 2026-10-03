@@ -1,6 +1,9 @@
 <template>
-  <section class="editor-container" :class="{ 'cursor-mode': isCursorTool, 'is-dragging': isDragging }"
-    :style="{ '--piece-scale': pieceScale }">
+  <section
+    class="editor-container"
+    :class="{ 'cursor-mode': isCursorTool, 'is-dragging': isDragging }"
+    :style="{ '--piece-scale': pieceScale }"
+  >
     <div class="top-left-fabs">
       <button type="button" class="fab-btn" :title="t('app.tutorial')" @click="openHelpWindow">
         <span class="fab-icon" v-html="tutorialSvg"></span>
@@ -8,32 +11,61 @@
     </div>
 
     <div class="top-right-fabs">
-      <a href="https://github.com/DoroWolf/ChessDragon" target="_blank" rel="noopener" class="fab-btn"
-        title="GitHub">
+      <a
+        href="https://github.com/DoroWolf/ChessDragon"
+        target="_blank"
+        rel="noopener"
+        class="fab-btn"
+        title="GitHub"
+      >
         <span class="fab-icon" v-html="githubSvg"></span>
       </a>
-      <button type="button" class="fab-btn" :title="t('app.settings')" @click="showSettingsModal = true">
+      <button
+        type="button"
+        class="fab-btn"
+        :title="t('app.settings')"
+        @click="showSettingsModal = true"
+      >
         <span class="fab-icon" v-html="settingSvg"></span>
       </button>
     </div>
 
     <div class="editor-body">
       <section class="board-column" @contextmenu.prevent="handleContextMenu">
-        <BoardPanel :board="board" :current-turn="turn" :selected-square="null" :possible-moves="[]"
-          :is-dragging="isDragging" :drag-start-square="dragStartSquare" :hover-square="hoverSquare"
-          :mouse-pos="mousePos" :is-mouse-down="isDragging" :promotion-pending="null"
-          :promotion-style="null" :is-draw="false" :has-resigned="null" :timeout-winner="null"
-          :coordinate-label-mode="coordinateLabelMode" :is-flipped="isFlipped" :theme="theme"
-          :premove="null" :last-move="null" :can-premove="false" :is-chess960="false"
-          :get-overlay-texture="getEditorOverlayTexture" :get-piece-image="getEditorPieceImage"
-          :get-square-label="getSquareLabel" :is-white-square="isWhiteSquare"
-          @update:piece-scale="(val: number) => pieceScale = val"
+        <BoardPanel
+          :board="board"
+          :current-turn="turn"
+          :selected-square="null"
+          :possible-moves="[]"
+          :is-dragging="isDragging"
+          :drag-start-square="dragStartSquare"
+          :hover-square="hoverSquare"
+          :mouse-pos="mousePos"
+          :is-mouse-down="isDragging"
+          :promotion-pending="null"
+          :promotion-style="null"
+          :is-draw="false"
+          :has-resigned="null"
+          :timeout-winner="null"
+          :coordinate-label-mode="coordinateLabelMode"
+          :is-flipped="isFlipped"
+          :theme="theme"
+          :premove="null"
+          :last-move="null"
+          :can-premove="false"
+          :is-chess960="false"
+          :get-overlay-texture="getEditorOverlayTexture"
+          :get-piece-image="getEditorPieceImage"
+          :get-square-label="getSquareLabel"
+          :is-white-square="isWhiteSquare"
+          @update:piece-scale="(val: number) => (pieceScale = val)"
           @square-mousedown="handleSquareMouseDown"
           @square-touchstart="handleSquareTouchStart"
           @square-mouseenter="handleSquareMouseEnter"
           @square-mouseleave="hoverSquare = null"
           @board-touchmove="handleBoardTouchMove"
-          @board-touchend="handleBoardTouchEnd" />
+          @board-touchend="handleBoardTouchEnd"
+        />
       </section>
 
       <section class="panel-column">
@@ -51,10 +83,18 @@
 
           <h4 class="sub-heading">{{ t('editor.castling') }}</h4>
           <div class="castle-grid">
-            <label v-for="right in CASTLING_RIGHTS" :key="right" class="option-chip"
-              :class="{ active: castling[right], disabled: !castlingAvailable[right] }">
-              <input type="checkbox" :checked="castling[right]" :disabled="!castlingAvailable[right]"
-                @change="toggleCastling(right, ($event.target as HTMLInputElement).checked)" />
+            <label
+              v-for="right in CASTLING_RIGHTS"
+              :key="right"
+              class="option-chip"
+              :class="{ active: castling[right], disabled: !castlingAvailable[right] }"
+            >
+              <input
+                type="checkbox"
+                :checked="castling[right]"
+                :disabled="!castlingAvailable[right]"
+                @change="toggleCastling(right, ($event.target as HTMLInputElement).checked)"
+              />
               <span>{{ t(CASTLING_LABEL_KEYS[right]) }}</span>
             </label>
           </div>
@@ -64,7 +104,9 @@
             <div class="select-wrapper">
               <select v-model="enPassant" class="select-input">
                 <option value="-">-</option>
-                <option v-for="target in enPassantOptions" :key="target" :value="target">{{ target }}</option>
+                <option v-for="target in enPassantOptions" :key="target" :value="target">
+                  {{ target }}
+                </option>
               </select>
             </div>
           </div>
@@ -73,10 +115,22 @@
         <div class="card panel-section">
           <h3 class="section-heading">{{ t('editor.fen') }}</h3>
           <div class="fen-input-row">
-            <input v-model="fenText" type="text" class="fen-input can-select" spellcheck="false"
-              autocomplete="off" @blur="commitFen" @keyup.enter="commitFen" />
-            <button type="button" class="btn icon-btn" :class="{ 'btn-success': isCopied }"
-              :title="isCopied ? t('editor.copied') : t('editor.copyFen')" @click="copyFen">
+            <input
+              v-model="fenText"
+              type="text"
+              class="fen-input can-select"
+              spellcheck="false"
+              autocomplete="off"
+              @blur="commitFen"
+              @keyup.enter="commitFen"
+            />
+            <button
+              type="button"
+              class="btn icon-btn"
+              :class="{ 'btn-success': isCopied }"
+              :title="isCopied ? t('editor.copied') : t('editor.copyFen')"
+              @click="copyFen"
+            >
               <span class="btn-icon" v-html="isCopied ? checkSvg : copySvg"></span>
             </button>
           </div>
@@ -88,15 +142,25 @@
 
         <div class="plain-section">
           <div class="button-stack">
-            <button type="button" class="btn" @click="loadInitialPosition">{{ t('editor.initial') }}</button>
-            <button type="button" class="btn" @click="clearBoard">{{ t('editor.clearBoard') }}</button>
-            <button type="button" class="btn" @click="isFlipped = !isFlipped">{{t('sidebar.flipBoard') }}</button>
+            <button type="button" class="btn" @click="loadInitialPosition">
+              {{ t('editor.initial') }}
+            </button>
+            <button type="button" class="btn" @click="clearBoard">
+              {{ t('editor.clearBoard') }}
+            </button>
+            <button type="button" class="btn" @click="isFlipped = !isFlipped">
+              {{ t('sidebar.flipBoard') }}
+            </button>
           </div>
         </div>
 
         <div class="plain-section">
-          <button type="button" class="btn btn-primary" :disabled="!fenValid"
-            @click="showQuickPlayModes = true">
+          <button
+            type="button"
+            class="btn btn-primary"
+            :disabled="!fenValid"
+            @click="showQuickPlayModes = true"
+          >
             {{ t('editor.quickPlay') }}
           </button>
         </div>
@@ -107,22 +171,34 @@
     <div v-if="showQuickPlayModes" class="modal-backdrop" @click="showQuickPlayModes = false">
       <div class="card dialog-box" @click.stop>
         <div class="dialog-buttons">
-          <button type="button" class="btn" @click="startQuickPlay('ai')">{{ t('editor.quickPlayAi') }}</button>
-          <button type="button" class="btn" @click="startQuickPlay('human')">{{ t('editor.quickPlayHuman') }}</button>
-          <button type="button" class="btn" @click="startQuickPlay('remote')">{{ t('editor.quickPlayRemote') }}</button>
+          <button type="button" class="btn" @click="startQuickPlay('ai')">
+            {{ t('editor.quickPlayAi') }}
+          </button>
+          <button type="button" class="btn" @click="startQuickPlay('human')">
+            {{ t('editor.quickPlayHuman') }}
+          </button>
+          <button type="button" class="btn" @click="startQuickPlay('remote')">
+            {{ t('editor.quickPlayRemote') }}
+          </button>
         </div>
       </div>
     </div>
 
     <!-- 与主页一致的游戏设置弹窗 -->
-    <SettingsModal :visible="showSettingsModal" :is-sound-enabled="isSoundEnabled"
-      :coordinate-label-mode="coordinateLabelMode" :theme="theme" @close="showSettingsModal = false"
-      @update:is-sound-enabled="(val: boolean) => isSoundEnabled = val"
-      @update:coordinate-label-mode="(val: 'off' | 'inside' | 'outside') => coordinateLabelMode = val"
-      @update:theme="(val: 'light' | 'dark') => theme = val" />
+    <SettingsModal
+      :visible="showSettingsModal"
+      :is-sound-enabled="isSoundEnabled"
+      :coordinate-label-mode="coordinateLabelMode"
+      :theme="theme"
+      @close="showSettingsModal = false"
+      @update:is-sound-enabled="(val: boolean) => (isSoundEnabled = val)"
+      @update:coordinate-label-mode="
+        (val: 'off' | 'inside' | 'outside') => (coordinateLabelMode = val)
+      "
+      @update:theme="(val: 'light' | 'dark') => (theme = val)"
+    />
   </section>
 </template>
-
 
 <script setup lang="ts">
 import { computed, ref, watch, watchEffect } from 'vue'
@@ -146,7 +222,14 @@ import {
 import { FEN_ERROR_KEYS } from '../data/fenErrorKeys'
 import type { MessageKey } from '../data/i18n'
 import { writeQuickPlay, type QuickPlayGameMode } from '../data/quickPlay'
-import { TUTORIAL_PAGE, MAIN_PAGE, decodeFenQuery, encodeFenQuery, openToolTab, toolPageUrl } from '../data/toolPages'
+import {
+  TUTORIAL_PAGE,
+  MAIN_PAGE,
+  decodeFenQuery,
+  encodeFenQuery,
+  openToolTab,
+  toolPageUrl,
+} from '../data/toolPages'
 import { boardMoveHighlighted, pieceImg } from '../assets/resourcePaths'
 import { copyText } from '../remote/roomCode'
 import tutorialSvg from '../assets/icon/openedBook.svg?raw'
@@ -304,8 +387,7 @@ const resetEnPassantIfStale = () => {
   }
 }
 
-const isInside = (row: number, col: number): boolean =>
-  row >= 0 && row < 8 && col >= 0 && col < 8
+const isInside = (row: number, col: number): boolean => row >= 0 && row < 8 && col >= 0 && col < 8
 
 /** 统一走「复制 → 修改 → 整体替换」，保证 watch(board) 能拿到新引用 */
 const writeBoard = (mutate: (next: Board) => void) => {
@@ -647,7 +729,11 @@ const openHelpWindow = () => openToolTab(TUTORIAL_PAGE)
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  font-family: 'Unifont', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Unifont',
+    system-ui,
+    -apple-system,
+    sans-serif;
   color: var(--color-text-primary);
   cursor: auto;
 }
@@ -683,7 +769,9 @@ const openHelpWindow = () => openToolTab(TUTORIAL_PAGE)
   align-items: center;
   justify-content: center;
   padding: 0;
-  transition: background-color 0.15s, color 0.15s;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
   text-decoration: none;
 }
 
@@ -807,7 +895,7 @@ const openHelpWindow = () => openToolTab(TUTORIAL_PAGE)
 }
 
 .field-row {
-display: flex;
+  display: flex;
   align-items: center;
   justify-content: space-between; /* 两端对齐：左侧标题，右侧菜单 */
   margin-top: 12px;
@@ -972,5 +1060,3 @@ display: flex;
   }
 }
 </style>
-
-

@@ -1,72 +1,195 @@
 <template>
   <div class="game-panel" :style="boardSizeStyle">
-    <div ref="boardFrameRef" class="board-frame" :class="{ 'coordinates-outside': coordinateLabelMode === 'outside' }" :style="boardSizeStyle">
-      <div class="board-grid" ref="boardGridRef" :class="{ 'promotion-active': !!promotionPending }"
+    <div
+      ref="boardFrameRef"
+      class="board-frame"
+      :class="{ 'coordinates-outside': coordinateLabelMode === 'outside' }"
+      :style="boardSizeStyle"
+    >
+      <div
+        class="board-grid"
+        ref="boardGridRef"
+        :class="{ 'promotion-active': !!promotionPending }"
         @touchmove.prevent="handleBoardGridTouchMove($event)"
-        @touchend="handleBoardGridTouchEnd($event)">
+        @touchend="handleBoardGridTouchEnd($event)"
+      >
         <template v-for="displayRow in 8" :key="`rank-${displayRow}`">
-          <button v-for="displayCol in 8" :key="`${displayRow}-${displayCol}`" type="button" class="board-square"
+          <button
+            v-for="displayCol in 8"
+            :key="`${displayRow}-${displayCol}`"
+            type="button"
+            class="board-square"
             :class="{
-              'draggable-piece': !promotionPending && board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]?.color === currentTurn,
+              'draggable-piece':
+                !promotionPending &&
+                board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]?.color ===
+                  currentTurn,
               'has-piece': !!board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)],
             }"
-            @mousedown="$emit('square-mousedown', actualRow(displayRow - 1), actualCol(displayCol - 1), $event)"
-            @touchstart.prevent="handleSquareTouchStart(actualRow(displayRow - 1), actualCol(displayCol - 1), $event)"
-            @mouseenter="$emit('square-mouseenter', actualRow(displayRow - 1), actualCol(displayCol - 1))"
+            @mousedown="
+              $emit(
+                'square-mousedown',
+                actualRow(displayRow - 1),
+                actualCol(displayCol - 1),
+                $event,
+              )
+            "
+            @touchstart.prevent="
+              handleSquareTouchStart(actualRow(displayRow - 1), actualCol(displayCol - 1), $event)
+            "
+            @mouseenter="
+              $emit('square-mouseenter', actualRow(displayRow - 1), actualCol(displayCol - 1))
+            "
             @mouseleave="$emit('square-mouseleave')"
             :data-row="actualRow(displayRow - 1)"
             :data-col="actualCol(displayCol - 1)"
-            :aria-label="getSquareLabel(actualRow(displayRow - 1), actualCol(displayCol - 1))">
-
-            <img class="square-background base" draggable="false"
-              :src="isWhiteSquare(actualRow(displayRow - 1), actualCol(displayCol - 1)) ? lightSquareTexture : darkSquareTexture"
-              alt="" />
-
-            <img v-if="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove, canPremove, isChess960)"
-              class="square-background overlay"
-              :class="{ 'placeable': isMovePlaceableOverlay(actualRow(displayRow - 1), actualCol(displayCol - 1)), 'placeable-mirror': shouldMirrorMoveableOverlay(actualRow(displayRow - 1), actualCol(displayCol - 1)) }"
+            :aria-label="getSquareLabel(actualRow(displayRow - 1), actualCol(displayCol - 1))"
+          >
+            <img
+              class="square-background base"
               draggable="false"
-              :src="getOverlayTexture(board, selectedSquare, possibleMoves, isDragging, hoverSquare, actualRow(displayRow - 1), actualCol(displayCol - 1), premove, lastMove, canPremove, isChess960)!"
-              alt="" />
+              :src="
+                isWhiteSquare(actualRow(displayRow - 1), actualCol(displayCol - 1))
+                  ? lightSquareTexture
+                  : darkSquareTexture
+              "
+              alt=""
+            />
 
-            <img v-if="board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]" class="piece"
-              draggable="false" :class="{
-                'dragging-hidden': isDragging && dragStartSquare?.row === actualRow(displayRow - 1) && dragStartSquare?.col === actualCol(displayCol - 1)
-              }" :src="getPieceImage(board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]!, board, isDraw, hasResigned, timeoutWinner)"
-              :alt="board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]!.type" />
+            <img
+              v-if="
+                getOverlayTexture(
+                  board,
+                  selectedSquare,
+                  possibleMoves,
+                  isDragging,
+                  hoverSquare,
+                  actualRow(displayRow - 1),
+                  actualCol(displayCol - 1),
+                  premove,
+                  lastMove,
+                  canPremove,
+                  isChess960,
+                )
+              "
+              class="square-background overlay"
+              :class="{
+                placeable: isMovePlaceableOverlay(
+                  actualRow(displayRow - 1),
+                  actualCol(displayCol - 1),
+                ),
+                'placeable-mirror': shouldMirrorMoveableOverlay(
+                  actualRow(displayRow - 1),
+                  actualCol(displayCol - 1),
+                ),
+              }"
+              draggable="false"
+              :src="
+                getOverlayTexture(
+                  board,
+                  selectedSquare,
+                  possibleMoves,
+                  isDragging,
+                  hoverSquare,
+                  actualRow(displayRow - 1),
+                  actualCol(displayCol - 1),
+                  premove,
+                  lastMove,
+                  canPremove,
+                  isChess960,
+                )!
+              "
+              alt=""
+            />
 
-            <img v-if="markerAt(actualRow(displayRow - 1), actualCol(displayCol - 1))" class="marker"
-              draggable="false" alt=""
-              :src="markerAt(actualRow(displayRow - 1), actualCol(displayCol - 1))!.image" />
+            <img
+              v-if="board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]"
+              class="piece"
+              draggable="false"
+              :class="{
+                'dragging-hidden':
+                  isDragging &&
+                  dragStartSquare?.row === actualRow(displayRow - 1) &&
+                  dragStartSquare?.col === actualCol(displayCol - 1),
+              }"
+              :src="
+                getPieceImage(
+                  board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]!,
+                  board,
+                  isDraw,
+                  hasResigned,
+                  timeoutWinner,
+                )
+              "
+              :alt="board[actualRow(displayRow - 1)]?.[actualCol(displayCol - 1)]!.type"
+            />
 
-            <div v-if="coordinateLabelMode === 'inside' && displayCol === 1" class="coordinate-label rank"
-              :class="isWhiteSquare(actualRow(displayRow - 1), actualCol(displayCol - 1)) ? 'text-black' : 'text-white'">
+            <img
+              v-if="markerAt(actualRow(displayRow - 1), actualCol(displayCol - 1))"
+              class="marker"
+              draggable="false"
+              alt=""
+              :src="markerAt(actualRow(displayRow - 1), actualCol(displayCol - 1))!.image"
+            />
+
+            <div
+              v-if="coordinateLabelMode === 'inside' && displayCol === 1"
+              class="coordinate-label rank"
+              :class="
+                isWhiteSquare(actualRow(displayRow - 1), actualCol(displayCol - 1))
+                  ? 'text-black'
+                  : 'text-white'
+              "
+            >
               {{ 8 - actualRow(displayRow - 1) }}
             </div>
 
-            <div v-if="coordinateLabelMode === 'inside' && displayRow === 8" class="coordinate-label file"
-              :class="isWhiteSquare(actualRow(displayRow - 1), actualCol(displayCol - 1)) ? 'text-black' : 'text-white'">
+            <div
+              v-if="coordinateLabelMode === 'inside' && displayRow === 8"
+              class="coordinate-label file"
+              :class="
+                isWhiteSquare(actualRow(displayRow - 1), actualCol(displayCol - 1))
+                  ? 'text-black'
+                  : 'text-white'
+              "
+            >
               {{ String.fromCharCode(97 + actualCol(displayCol - 1)) }}
             </div>
           </button>
         </template>
-        <div v-if="promotionPending" class="promotion-overlay" @click="$emit('cancel-promotion')"></div>
-        <Promotion v-if="promotionPending" :color="promotionPending.color" :style="promotionStyle ?? undefined"
+        <div
+          v-if="promotionPending"
+          class="promotion-overlay"
+          @click="$emit('cancel-promotion')"
+        ></div>
+        <Promotion
+          v-if="promotionPending"
+          :color="promotionPending.color"
+          :style="promotionStyle ?? undefined"
           :is-flipped="isFlipped"
-          @select="(piece: string) => $emit('apply-promotion', piece)" />
+          @select="(piece: string) => $emit('apply-promotion', piece)"
+        />
       </div>
 
       <div v-if="coordinateLabelMode === 'outside'" class="coordinates-outside-layer">
         <div class="coordinate-bottom-row">
-          <span v-for="displayCol in 8" :key="`file-${displayCol}`" class="coordinate-label outer-file"
-            :style="{ left: `${(displayCol - 0.5) * 12.5}%` }">
+          <span
+            v-for="displayCol in 8"
+            :key="`file-${displayCol}`"
+            class="coordinate-label outer-file"
+            :style="{ left: `${(displayCol - 0.5) * 12.5}%` }"
+          >
             {{ displayedFile(displayCol) }}
           </span>
         </div>
 
         <div class="coordinate-side-col">
-          <span v-for="displayRow in 8" :key="`rank-${displayRow}`" class="coordinate-label outer-rank"
-            :style="{ top: `${(displayRow - 0.5) * 12.5}%` }">
+          <span
+            v-for="displayRow in 8"
+            :key="`rank-${displayRow}`"
+            class="coordinate-label outer-rank"
+            :style="{ top: `${(displayRow - 0.5) * 12.5}%` }"
+          >
             {{ displayedRank(displayRow) }}
           </span>
         </div>
@@ -85,9 +208,22 @@
       </button>
     </div>
 
-    <img v-if="isDragging && dragStartSquare" class="floating-piece " draggable="false"
-      :src="getPieceImage(board[dragStartSquare.row]?.[dragStartSquare.col]!, board, isDraw, hasResigned, timeoutWinner)"
-      :style="{ left: mousePos.x + 'px', top: mousePos.y + 'px' }" alt="" />
+    <img
+      v-if="isDragging && dragStartSquare"
+      class="floating-piece"
+      draggable="false"
+      :src="
+        getPieceImage(
+          board[dragStartSquare.row]?.[dragStartSquare.col]!,
+          board,
+          isDraw,
+          hasResigned,
+          timeoutWinner,
+        )
+      "
+      :style="{ left: mousePos.x + 'px', top: mousePos.y + 'px' }"
+      alt=""
+    />
   </div>
 </template>
 
@@ -111,7 +247,11 @@ const props = defineProps<{
   hoverSquare: { row: number; col: number } | null
   mousePos: { x: number; y: number }
   isMouseDown: boolean
-  promotionPending: { color: 'white' | 'black'; from: { row: number; col: number }; to: { row: number; col: number } } | null
+  promotionPending: {
+    color: 'white' | 'black'
+    from: { row: number; col: number }
+    to: { row: number; col: number }
+  } | null
   promotionStyle: CSSProperties | null
   isDraw: boolean
   hasResigned: Color | null
@@ -177,17 +317,14 @@ const handleBoardGridTouchEnd = (event: TouchEvent) => {
   emit('board-touchend', event)
 }
 
-const actualRow = (displayRow: number): number =>
-  props.isFlipped ? 7 - displayRow : displayRow
+const actualRow = (displayRow: number): number => (props.isFlipped ? 7 - displayRow : displayRow)
 
-const actualCol = (displayCol: number): number =>
-  props.isFlipped ? 7 - displayCol : displayCol
+const actualCol = (displayCol: number): number => (props.isFlipped ? 7 - displayCol : displayCol)
 
 const displayedFile = (displayCol: number): string =>
   String.fromCharCode(97 + actualCol(displayCol - 1))
 
-const displayedRank = (displayRow: number): string =>
-  `${8 - actualRow(displayRow - 1)}`
+const displayedRank = (displayRow: number): string => `${8 - actualRow(displayRow - 1)}`
 
 /** 查找某个格子上的额外图层（教程金币等） */
 const markerAt = (row: number, col: number): { row: number; col: number; image: string } | null =>
@@ -218,14 +355,12 @@ const shouldMirrorMoveableOverlay = (row: number, col: number): boolean => {
   if (!selected) {
     return false
   }
-  const piece =
-    props.board[selected.row]?.[selected.col]
+  const piece = props.board[selected.row]?.[selected.col]
 
   if (!piece) {
     return false
   }
-  const topColor: Color =
-    props.isFlipped ? 'white' : 'black'
+  const topColor: Color = props.isFlipped ? 'white' : 'black'
 
   return piece.color === topColor
 }
@@ -271,7 +406,7 @@ const handleResizePointerDown = (event: PointerEvent) => {
 
 const handleResizePointerMove = (event: PointerEvent) => {
   if (event.pointerId !== resizePointerId) return
-  const delta = ((event.clientX - resizeStartX) + (event.clientY - resizeStartY)) / 2
+  const delta = (event.clientX - resizeStartX + (event.clientY - resizeStartY)) / 2
   setBoardSize(clampBoardSize(resizeStartSize + delta))
 }
 
