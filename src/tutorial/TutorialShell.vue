@@ -75,6 +75,8 @@ const showSettingsModal = ref(false)
   position: relative;
   width: 100%;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
   padding: 20px;
   padding-top: 60px;
@@ -135,6 +137,7 @@ const showSettingsModal = ref(false)
 }
 
 .tutorial-main {
+  width: 100%;
   max-width: 960px;
   margin: 0 auto;
   padding-bottom: 2rem;
@@ -142,5 +145,9 @@ const showSettingsModal = ref(false)
 
 .tutorial-main-wide {
   max-width: 1280px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 </style>

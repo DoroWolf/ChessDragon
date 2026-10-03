@@ -155,7 +155,6 @@ const en: Record<MessageKey, string> = {
   'tutorial.topic.pawn': 'Pawn',
   'tutorial.topic.pawn.desc': 'The little soldier marching forward',
   'tutorial.intro.rook1': 'A rook moves in straight lines along ranks and files, as far as it likes until it reaches the edge of the board.',
-  'tutorial.intro.rook2': 'Look at the highlighted squares: they show every square the rook can reach right now — 14 in total.',
   'tutorial.intro.bishop1': 'A bishop moves diagonally, and like the rook it can travel any distance until it hits the edge.',
   'tutorial.intro.bishop2': 'So a bishop always stays on the same colour of square. The dots below show where it can go.',
   'tutorial.intro.queen1': 'The queen is the strongest piece on the board: it moves in straight lines like a rook and diagonally like a bishop, as far as it likes.',
@@ -169,6 +168,8 @@ const en: Record<MessageKey, string> = {
   'tutorial.challenge.pawnMoveOne': 'Move one square forward as required',
   'tutorial.challenge.pawnMoveTwo': 'Move two squares forward as required',
   'tutorial.challenge.pawnPromote': 'March the pawn to the last rank and promote',
+  'tutorial.challenge.pawnFail1': 'That move is legal, but it is not what this challenge asks for — try again',
+  'tutorial.challenge.pawnFail2': 'You missed the coin — a pawn can only move forward, so try again',
 
   'tutorial.notFound': 'This tutorial page could not be found.',
   'tutorial.backToOverview': 'Back to overview',

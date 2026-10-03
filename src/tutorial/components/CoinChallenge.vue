@@ -218,6 +218,7 @@ watch(status, (value) => {
   display: flex;
   /* 右侧信息列相对棋盘垂直居中，棋盘本身保持顶部对齐 */
   align-items: center;
+  justify-content: center;
   gap: 1.5rem;
   flex-wrap: wrap;
 }
@@ -228,7 +229,7 @@ watch(status, (value) => {
 }
 
 .info-col {
-  flex: 1 1 240px;
+  flex: 0 1 360px;
   min-width: 220px;
   display: flex;
   flex-direction: column;

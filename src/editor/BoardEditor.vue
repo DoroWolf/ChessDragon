@@ -645,6 +645,7 @@ const openHelpWindow = () => openToolTab(TUTORIAL_PAGE)
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 1rem;
   font-family: 'Unifont', system-ui, -apple-system, sans-serif;
   color: var(--color-text-primary);
