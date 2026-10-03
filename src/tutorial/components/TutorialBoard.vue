@@ -1,7 +1,7 @@
 <template>
   <div class="step-row">
     <div class="board-col" :style="{ '--piece-scale': pieceScale }">
-      <BoardPanel :board-size="boardSize" :board="board" :current-turn="challenge.piece.color"
+      <BoardPanel :board-size="boardSize" :board="board" :current-turn="pieceColor"
         :selected-square="selectedSquare"
         :possible-moves="visibleReachable" :is-dragging="isDragging" :drag-start-square="dragStartSquare"
         :hover-square="hoverSquare" :mouse-pos="mousePos" :is-mouse-down="isMouseDown"
@@ -23,10 +23,10 @@
       <p class="challenge-instruction">{{ t(challenge.instruction) }}</p>
       <p v-if="status === 'won'" class="challenge-feedback win">{{ t(praiseKey) }}</p>
       <p v-if="status === 'failed'" class="challenge-feedback lose">
-        {{ t(challenge.failMessage ?? 'tutorial.challenge.failed') }}
+        {{ t(failMessage ?? 'tutorial.challenge.failed') }}
       </p>
       <div v-if="status === 'failed'" class="challenge-actions">
-        <button type="button" class="btn btn-primary" @click="handleReset">
+        <button type="button" class="btn" @click="handleReset">
           {{ t('tutorial.challenge.reset') }}
         </button>
       </div>
@@ -37,14 +37,14 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue'
 import BoardPanel from '../../components/BoardPanel.vue'
-import { useBoardDisplay } from '../../composables/useBoardDisplay'
-import { useCollectCoins } from '../composables/useCollectCoins'
-import { playTutorialSound } from '../sound'
-import { boardMoveCapture, boardMoveHover, pieceCoin } from '../../assets/resourcePaths'
-import { useI18n } from '../../composables/useI18n'
-import type { Board, Piece } from '../../models/chess'
-import type { MessageKey } from '../../data/i18n'
-import type { TutorialChallenge } from '../data/types'
+import { useBoardDisplay } from '../../composables/useBoardDisplay.ts'
+import { useCollectCoins } from '../composables/tutorialChallange.ts'
+import { playTutorialSound } from '../sound.ts'
+import { boardMoveCapture, boardMoveHover, pieceCoin } from '../../assets/resourcePaths.ts'
+import { useI18n } from '../../composables/useI18n.ts'
+import type { Board, Piece } from '../../models/chess.ts'
+import type { MessageKey } from '../../data/i18n/index.ts'
+import type { TutorialChallenge } from '../data/types.ts'
 
 interface Props {
   challenge: TutorialChallenge
@@ -75,12 +75,14 @@ const { getOverlayTexture, getPieceImage, getSquareLabel, isWhiteSquare } = useB
 const pieceScale = ref(2)
 
 const {
-  position,
+  pieces,
+  pieceColor,
   coins,
+  opponents,
   status,
+  failMessage,
   reachable,
   lastMove,
-  displayType,
   promotionPending,
   promotionStyle,
   applyPromotion,
@@ -103,10 +105,21 @@ const createEmptyBoard = (): Board =>
 
 const board = computed<Board>(() => {
   const next = createEmptyBoard()
-  next[position.value.row]![position.value.col] = {
-    type: displayType.value,
-    color: props.challenge.piece.color,
-    hasMoved: true,
+  // 对方棋子（吃子挑战用）：被吃掉后从数组移除，自然不再绘制
+  for (const opponent of opponents.value) {
+    next[opponent.row]![opponent.col] = {
+      type: opponent.type,
+      color: opponent.color,
+      hasMoved: true,
+    }
+  }
+  // 玩家可移动的棋子（可能有多枚）：被吃掉后从数组移除，不再绘制
+  for (const piece of pieces.value) {
+    next[piece.row]![piece.col] = {
+      type: piece.type,
+      color: piece.color,
+      hasMoved: true,
+    }
   }
   return next
 })

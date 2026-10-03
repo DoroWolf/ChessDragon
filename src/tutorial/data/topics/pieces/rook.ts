@@ -9,7 +9,7 @@ export const rookTopic: TutorialTopic = {
   steps: [
     {
       kind: 'intro',
-      paragraphs: ['tutorial.intro.rook1'],
+      instruction: ['tutorial.intro.rook1'],
       demo: { piece: { type: 'rook', color: 'white', row: 7, col: 0 } },
     },
     {

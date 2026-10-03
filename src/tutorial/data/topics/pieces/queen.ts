@@ -8,7 +8,7 @@ export const queenTopic: TutorialTopic = {
   steps: [
     {
       kind: 'intro',
-      paragraphs: ['tutorial.intro.queen1', 'tutorial.intro.queen2'],
+      instruction: ['tutorial.intro.queen1', 'tutorial.intro.queen2'],
       demo: { piece: { type: 'queen', color: 'white', row: 7, col: 3 } },
     },
     {

@@ -9,7 +9,7 @@ export const pawnTopic: TutorialTopic = {
   steps: [
     {
       kind: 'intro',
-      paragraphs: ['tutorial.intro.pawn1'],
+      instruction: ['tutorial.intro.pawn1'],
       demo: { piece: { type: 'pawn', color: 'white', row: 6, col: 4 } },
     },
     {

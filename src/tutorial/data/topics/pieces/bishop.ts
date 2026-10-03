@@ -9,7 +9,7 @@ export const bishopTopic: TutorialTopic = {
   steps: [
     {
       kind: 'intro',
-      paragraphs: ['tutorial.intro.bishop1', 'tutorial.intro.bishop2'],
+      instruction: ['tutorial.intro.bishop1', 'tutorial.intro.bishop2'],
       demo: { piece: { type: 'bishop', color: 'white', row: 7, col: 2 } },
     },
     {

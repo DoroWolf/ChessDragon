@@ -9,12 +9,12 @@ export const knightTopic: TutorialTopic = {
   steps: [
     {
       kind: 'intro',
-      paragraphs: ['tutorial.intro.knight1'],
+      instruction: ['tutorial.intro.knight1'],
       demo: { piece: { type: 'knight', color: 'white', row: 7, col: 1 } },
     },
     {
       kind: 'intro',
-      paragraphs: ['tutorial.intro.knight2'],
+      instruction: ['tutorial.intro.knight2'],
       demo: {
         piece: { type: 'knight', color: 'white', row: 7, col: 1 },
         blockers: [

@@ -1,3 +1,9 @@
+import { castlingTopic } from './topics/base/castling'
+import { checkTopic } from './topics/base/check'
+import { checkmateTopic } from './topics/base/checkmate'
+import { outOfCheckTopic } from './topics/base/outofcheck'
+import { enPassantTopic } from './topics/base/enpassant'
+import { captureTopic } from './topics/base/capture'
 import { bishopTopic } from './topics/pieces/bishop'
 import { kingTopic } from './topics/pieces/king'
 import { knightTopic } from './topics/pieces/knight'
@@ -21,6 +27,11 @@ export const TUTORIAL_CATEGORIES: TutorialCategory[] = [
     id: 'pieces',
     titleKey: 'tutorial.category.pieces',
     topics: [rookTopic, bishopTopic, queenTopic, kingTopic, knightTopic, pawnTopic],
+  },
+  {
+    id: 'base',
+    titleKey: 'tutorial.category.base',
+    topics: [captureTopic, enPassantTopic, checkTopic, outOfCheckTopic, checkmateTopic, castlingTopic],
   },
 ]
 

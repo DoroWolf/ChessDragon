@@ -16,7 +16,7 @@
 
       <div class="info-col">
         <h2 v-if="step === 0" class="topic-title">{{ t(topic.titleKey) }}</h2>
-        <p v-for="(key, index) in currentIntro.paragraphs" :key="index" class="topic-paragraph">{{ t(key) }}</p>
+        <p v-for="(key, index) in currentIntro.instruction" :key="index" class="topic-paragraph">{{ t(key) }}</p>
         <div class="step-actions">
           <button type="button" class="btn btn-primary" @click="step += 1">
             {{ t('tutorial.continue') }}
@@ -49,7 +49,7 @@
       </div>
     </div>
 
-    <CoinChallenge v-else-if="currentChallenge" :key="currentChallenge.id" v-model:board-size="boardSize"
+    <TutorialBoard v-else-if="currentChallenge" :key="currentChallenge.id" v-model:board-size="boardSize"
       :challenge="currentChallenge" :step="displayStep" :total="totalChallenges"
       :is-sound-enabled="isSoundEnabled" :coordinate-label-mode="coordinateLabelMode" :theme="theme"
       @solved="handleSolved" />
@@ -71,9 +71,9 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref } from 'vue'
 import BoardPanel from '../../components/BoardPanel.vue'
-import CoinChallenge from './CoinChallenge.vue'
+import TutorialBoard from './TutorialBoard.vue'
 import { useBoardDisplay } from '../../composables/useBoardDisplay'
-import { getReachableSquares } from '../composables/useCollectCoins'
+import { getReachableSquares } from '../composables/tutorialChallange.ts'
 import { boardMoveCapture } from '../../assets/resourcePaths'
 import { TUTORIAL_PAGE, tutorialTopicUrl, toolPageUrl } from '../../data/toolPages'
 import { useI18n } from '../../composables/useI18n'
@@ -105,7 +105,7 @@ const { t } = useI18n()
 
 const { getOverlayTexture, getPieceImage, getSquareLabel, isWhiteSquare } = useBoardDisplay()
 const pieceScale = ref(2)
-// 棋盘尺寸由专题页持有：切换挑战时 CoinChallenge 会重挂载，用户手动调整过的尺寸仍保留
+// 棋盘尺寸由专题页持有：切换挑战时 TutorialBoard 会重挂载，用户手动调整过的尺寸仍保留
 const boardSize = ref<number | null>(null)
 const idleMousePos = { x: 0, y: 0 }
 
@@ -154,10 +154,13 @@ const createDemoBoard = (demo: TutorialDemo): Board => {
   for (const blocker of demo.blockers ?? []) {
     board[blocker.row]![blocker.col] = { type: blocker.type, color: blocker.color, hasMoved: true }
   }
-  board[demo.piece.row]![demo.piece.col] = {
-    type: demo.piece.type,
-    color: demo.piece.color,
-    hasMoved: true,
+  // 没有主角棋子（例如吃子教学）时只展示 blockers 摆出的局面
+  if (demo.piece) {
+    board[demo.piece.row]![demo.piece.col] = {
+      type: demo.piece.type,
+      color: demo.piece.color,
+      hasMoved: true,
+    }
   }
   return board
 }
@@ -166,12 +169,15 @@ const buildDemo = (
   demo: TutorialDemo | undefined,
 ): { board: Board; turnColor: Color; reachable: Square[] } | null => {
   if (!demo) return null
+  const piece = demo.piece
   return {
     board: createDemoBoard(demo),
-    // 演示棋盘不可交互：把「走棋方」设为对方，避免棋子出现可抓取光标
-    turnColor: demo.piece.color === 'white' ? 'black' : 'white',
-    // 陪衬棋子只用于展示（马可以跳过它们），不参与可达格计算
-    reachable: getReachableSquares(demo.piece.type, demo.piece, demo.piece.color),
+    // 演示棋盘不可交互：有主角时把「走棋方」设为对方，避免主角出现可抓取光标
+    turnColor: piece ? (piece.color === 'white' ? 'black' : 'white') : 'black',
+    // 只有指定了主角棋子才演示走法轨迹；没有主角的专题不强制显示轨迹
+    reachable: piece
+      ? getReachableSquares(piece.type, piece, piece.color, demo.blockers ?? [])
+      : [],
   }
 }
 
