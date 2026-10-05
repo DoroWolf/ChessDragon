@@ -1,11 +1,16 @@
+import { writeSync } from 'node:fs'
 import * as readline from 'node:readline'
 import { UciEngine } from './engine'
 
-const engine = new UciEngine({
-  write: (line) => {
-    process.stdout.write(`${line}\n`)
-  },
-})
+const writeLine = (line: string): void => {
+  try {
+    writeSync(1, `${line}\n`)
+  } catch {
+    // 管道已关闭时忽略写入错误
+  }
+}
+
+const engine = new UciEngine({ write: writeLine })
 
 const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity })
 
@@ -24,7 +29,11 @@ rl.on('line', (line) => {
       }
     })
     .catch((err: unknown) => {
-      process.stderr.write(`uci adapter error: ${String(err)}\n`)
+      try {
+        writeSync(2, `uci adapter error: ${String(err)}\n`)
+      } catch {
+        // 忽略
+      }
     })
 })
 
