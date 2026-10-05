@@ -141,7 +141,7 @@ const en: Record<MessageKey, string> = {
   'editor.quickPlayRemote': 'Remote',
 
   'tutorial.title': 'Tutorial',
-  'tutorial.category.pieces': 'Meet the Pieces',
+  'tutorial.category.pieces': 'Pieces',
   'tutorial.category.base': 'Basics',
   'tutorial.topic.rook': 'Rook',
   'tutorial.topic.rook.desc': 'Moves in straight lines',

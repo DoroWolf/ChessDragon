@@ -203,7 +203,7 @@ const zhCN = {
   'tutorial.challenge.checkmate': '一步将杀对方的王',
   'tutorial.challenge.castling1': '将王向右移动两格进行王翼易位',
   'tutorial.challenge.castling2': '将王向左移动两格进行后翼易位',
-  'tutorial.challenge.castling3': '选择一个方向进行易位',
+  'tutorial.challenge.castling3': '选择合法方向进行易位',
 
   'tutorial.notFound': '没有找到这个教程页面。',
   'tutorial.backToOverview': '返回教程目录',

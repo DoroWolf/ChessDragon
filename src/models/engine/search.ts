@@ -1,9 +1,3 @@
-// Search API（搜索公共接口）
-// 提供 AI 引擎的外部调用接口：
-//   - getBestAIMove：获取最佳走法
-//   - getPromotionChoice：选择升变棋子类型
-//   - getTotalLegalMoveCount：计算合法走法总数
-//   - getMaterialAdvantage：计算子力优势
 import type { Board, Color, Square } from '../chess'
 import { getEnPassantTarget } from '../chess'
 import type { AIDifficulty, AIStyle, AIDetailedMove } from './types'
@@ -21,25 +15,46 @@ import {
 import { probeBookForLevel, pickBookMove } from './openingBook'
 import { getSyzygyStore } from './syzygy/store'
 
-export async function getBestAIMove(
-  b: Board,
-  color: Color,
-  difficulty: AIDifficulty,
-  style: AIStyle,
-  lastMove: { from: Square; to: Square } | null,
-  aiTimeRemainingMs?: number,
-  positionHistory: readonly string[] = [],
-): Promise<AIDetailedMove | null> {
-  // 初始化搜索状态（传递 AI 方棋钟剩余时间，低时间时自动缩减搜索深度）
-  initSearchState(b, color, style, difficulty, lastMove, aiTimeRemainingMs, positionHistory)
+export interface SearchPositionOptions {
+  board: Board
+  color: Color
+  difficulty: AIDifficulty
+  style: AIStyle
+  lastMove: { from: Square; to: Square } | null
+  aiTimeRemainingMs?: number
+  positionHistory?: readonly string[]
+  maxDepth?: number
+  timeLimitMs?: number
+  useOpeningBook?: boolean
+  useRandomness?: boolean
+}
 
-  // 清空杀手走法
+const DEFAULT_MAX_DEPTH = 12
+
+export async function searchPosition(
+  options: SearchPositionOptions,
+): Promise<AIDetailedMove | null> {
+  const {
+    board: b,
+    color,
+    difficulty,
+    style,
+    lastMove,
+    aiTimeRemainingMs,
+    positionHistory = [],
+    maxDepth = DEFAULT_MAX_DEPTH,
+    timeLimitMs,
+    useOpeningBook = true,
+    useRandomness = true,
+  } = options
+
+  initSearchState(b, color, style, difficulty, lastMove, aiTimeRemainingMs, positionHistory, timeLimitMs)
+
   for (let d = 0; d < MAX_DEPTH; d++) {
     killerMoves[d]![0] = null
     killerMoves[d]![1] = null
   }
 
-  // 清空历史表
   for (let ci = 0; ci < 2; ci++) {
     for (let fr = 0; fr < 8; fr++) {
       for (let fc = 0; fc < 8; fc++) {
@@ -53,18 +68,14 @@ export async function getBestAIMove(
     }
   }
 
-  const maxDepth = 12
-
   const epTarget = getEnPassantTarget(lastMove)
 
-  // 生成合法走法
   const kRow = getKingRow(color)
   const kCol = getKingCol(color)
   const moves = generateLegalMoves(board, color, epTarget, false, lastMove, kRow, kCol)
   if (moves.length === 0) return null
   if (moves.length === 1) return moves[0]!
 
-  // 残局库（Syzygy）：DTZ 只提供根节点搜索的走法排序提示，不直接接管选着。
   const syzygy = getSyzygyStore()
   syzygy.setLevel(difficulty)
   let tablebaseMoveHint: AIDetailedMove | null = null
@@ -77,33 +88,31 @@ export async function getBestAIMove(
     }
   }
 
-  // 尝试开局库：1 级 AI 不使用开局库；其余等级仅采用 minLevel <= difficulty 的走法
-  const bookMoves = probeBookForLevel(searchHash, difficulty)
-  if (bookMoves && bookMoves.length > 0) {
-    const bookMove = pickBookMove(bookMoves)
-    if (bookMove) {
-      // 验证该开局走法在当前合法走法中（防止因走法顺序不同导致的无效走法）
-      const isValidBookMove = moves.some(
-        (m) =>
-          m.fromRow === bookMove.fromRow &&
-          m.fromCol === bookMove.fromCol &&
-          m.toRow === bookMove.toRow &&
-          m.toCol === bookMove.toCol &&
-          m.special === bookMove.special,
-      )
-      if (isValidBookMove) {
-        return bookMove
+  if (useOpeningBook) {
+    const bookMoves = probeBookForLevel(searchHash, difficulty)
+    if (bookMoves && bookMoves.length > 0) {
+      const bookMove = pickBookMove(bookMoves)
+      if (bookMove) {
+        const isValidBookMove = moves.some(
+          (m) =>
+            m.fromRow === bookMove.fromRow &&
+            m.fromCol === bookMove.fromCol &&
+            m.toRow === bookMove.toRow &&
+            m.toCol === bookMove.toCol &&
+            m.special === bookMove.special,
+        )
+        if (isValidBookMove) {
+          return bookMove
+        }
       }
     }
   }
 
-  // 迭代加深搜索
   const result = iterativeDeepening(epTarget, lastMove, maxDepth, tablebaseMoveHint)
 
   if (!result) return moves[0]!
 
-  // 不可预测风格或低难度时加入可控随机性
-  if (style === 'unpredictable' || difficulty <= 2) {
+  if (useRandomness && (style === 'unpredictable' || difficulty <= 2)) {
     const topMoves: AIDetailedMove[] = [result.bestMove]
 
     for (const move of moves) {
@@ -127,6 +136,26 @@ export async function getBestAIMove(
   }
 
   return result.bestMove
+}
+
+export async function getBestAIMove(
+  b: Board,
+  color: Color,
+  difficulty: AIDifficulty,
+  style: AIStyle,
+  lastMove: { from: Square; to: Square } | null,
+  aiTimeRemainingMs?: number,
+  positionHistory: readonly string[] = [],
+): Promise<AIDetailedMove | null> {
+  return searchPosition({
+    board: b,
+    color,
+    difficulty,
+    style,
+    lastMove,
+    aiTimeRemainingMs,
+    positionHistory,
+  })
 }
 
 export function getPromotionChoice(

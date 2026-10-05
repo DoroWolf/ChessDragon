@@ -13,7 +13,9 @@
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
     "format": "prettier --write --experimental-cli src/",
-    "generate:opening-book": "node scripts/generateOpeningBook.ts"
+    "generate:opening-book": "node scripts/generateOpeningBook.ts",
+    "build:uci": "vite build --config vite.uci.config.ts",
+    "uci": "node dist-uci/cli.js"
   },
   "dependencies": {
     "mqtt": "^5.16.0",

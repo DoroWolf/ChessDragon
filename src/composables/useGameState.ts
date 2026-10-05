@@ -16,6 +16,7 @@ import type { GameSetupConfig, AIStyle } from '../components/GameSetup.vue'
 import { parseFen } from '../models/fen'
 import { getPromotionChoice, type AIDifficulty } from '../models/ai'
 import type { AIDetailedMove } from '../models/ai'
+import { buildUciMoveString, resolveMoveFromUci } from '../models/uci'
 import type {
   ClockSnapshot,
   RemoteLinkKind,
@@ -76,18 +77,18 @@ export function useGameState(
   const currentTurn = ref<Color>('white')
   const selectedSquare = ref<{ row: number; col: number } | null>(null)
   const hoverSquare = ref<{ row: number; col: number } | null>(null)
-  const lastMove = ref<{ from: { row: number; col: number }; to: { row: number; col: number } } | null>(null)
-  const positionHistory = ref<string[]>([getPositionKey(board.value, currentTurn.value, lastMove.value)])
+  const lastMove = ref<{
+    from: { row: number; col: number }
+    to: { row: number; col: number }
+  } | null>(null)
+  const positionHistory = ref<string[]>([
+    getPositionKey(board.value, currentTurn.value, lastMove.value),
+  ])
   const halfmoveClock = ref<number>(0)
   const startingTurn = ref<Color>('white')
   const startingFullmoveNumber = ref(1)
 
   const moveHistory = ref<string[]>([])
-  /**
-   * 本局各方是否已经走出过至少一步（按颜色记录，只增不减）。
-   * 与会被悔棋清空的 moveHistory 不同：悔棋一路撤到初始局面后仍保持 true，
-   * 供 UI 区分「尚未开局」与「已开局但撤回了全部走子」。
-   */
   const hasMovedByColor = ref<Record<Color, boolean>>({ white: false, black: false })
   const boardHistory = ref<
     Array<{
@@ -101,6 +102,7 @@ export function useGameState(
       clockStarted: boolean
       activeClockColor: Color | null
       timeoutWinner: Color | null
+      uciMove: string
     }>
   >([])
 
@@ -131,15 +133,8 @@ export function useGameState(
   }>(null)
   const promotionStyle = ref<CSSProperties>({})
 
-  /**
-   * 供「子力优势」展示使用的棋盘。
-   * 升变选择器弹出期间兵已被临时移动（斜走吃子时被吃的子也暂时消失），
-   * 若直接用 board 会让子力差在升变确认前就提前变化；
-   * 这里回退到升变前的快照，等升变完成（board 正式更新）后再反映到子力优势字符串。
-   */
   const materialBoard = computed<Board>(() => promotionPending.value?.prevBoard ?? board.value)
 
-  // ---- 拖拽状态 ----
   const isMouseDown = ref(false)
   const isDragging = ref(false)
   const dragStartSquare = ref<{ row: number; col: number } | null>(null)
@@ -148,7 +143,6 @@ export function useGameState(
   let wasAlreadySelected = false
   let touchStartSquare: { row: number; col: number } | null = null
 
-  // ---- AI 对局状态 ----
   const gameMode = ref<'ai' | 'human' | 'remote'>('human')
   const aiDifficulty = ref<AIDifficulty>(3)
   const aiStyle = ref<AIStyle>('balanced')
@@ -156,39 +150,28 @@ export function useGameState(
   let aiMoveTimer: number | null = null
   let aiWorker: Worker | null = null
 
-  // ---- 远程对局状态 ----
   const roomCode = ref<string>('')
   const remoteRole = ref<RemoteRole | null>(null)
   const remoteLinkKind = ref<RemoteLinkKind | null>(null)
-  /** 对手是否在线（心跳与链路事件共同维护） */
   const remoteConnected = ref(false)
-  /** 房主执棋方，重赛交换颜色时以它为准，保证双方推导一致 */
   const remoteHostColor = ref<Color>('white')
-  /** 对方发起的悔棋请求，等待我方回应 */
   const pendingUndoRequest = ref(false)
-  /** 对方发起的和棋提议，等待我方回应 */
   const pendingDrawOffer = ref(false)
-  /** 对方发起的重赛请求，等待我方回应 */
   const pendingRematchRequest = ref(false)
-  /** 我方已发出的请求，等待对方回应 */
   const outgoingRequest = ref<'undo' | 'draw' | 'rematch' | null>(null)
 
-  /** 各行为的冷却截止时间戳（毫秒），被拒绝后 60 秒内不再真正打扰对手 */
   const requestCooldownUntil = ref<Record<RemoteRequestKind, number>>({
     undo: 0,
     draw: 0,
     rematch: 0,
   })
-  /** 当前未决请求是否真的发给了对方（冷却期内的「已发送」是纯本机提示） */
   let outgoingRequestWasSent = false
-  /** 冷却期内伪造的「已发送」提示到期后自动收起 */
   let localOnlyRequestTimer: number | null = null
 
   const isRemote = computed(() => gameMode.value === 'remote')
   const isRemoteHost = computed(() => isRemote.value && remoteRole.value === 'host')
   const isRemoteGuest = computed(() => isRemote.value && remoteRole.value === 'guest')
 
-  // 远程发送通道由 useRemoteGame 注入，避免与传输层产生循环依赖
   let remoteSender: ((message: RemoteMessage) => void) | null = null
   let remoteClockBroadcastTimer: number | null = null
 
@@ -210,9 +193,11 @@ export function useGameState(
     at: Date.now(),
   })
 
-
   // ---- Premove 状态 ----
-  const premove = ref<{ from: { row: number; col: number }; to: { row: number; col: number } } | null>(null)
+  const premove = ref<{
+    from: { row: number; col: number }
+    to: { row: number; col: number }
+  } | null>(null)
 
   // 辅助函数
   const getStarterColor = (starter: GameSetupConfig['starter']): Color => {
@@ -535,18 +520,13 @@ export function useGameState(
       isCheckmate(board.value, currentTurn.value),
   )
 
-  // 交互控制：setup 未结束 或 游戏结束 或 AI 正在思考 或 当前回合轮到 AI
-  // 远程模式下还要求「轮到我方」且对手在线
   const isAITurn = computed(() => {
     if (gameMode.value !== 'ai') return false
     const aiColor = playerColor.value === 'white' ? 'black' : 'white'
     return currentTurn.value === aiColor
   })
 
-  /** 远程模式下是否轮到我方走子 */
-  const isRemoteMyTurn = computed(
-    () => isRemote.value && currentTurn.value === playerColor.value,
-  )
+  const isRemoteMyTurn = computed(() => isRemote.value && currentTurn.value === playerColor.value)
 
   const canInteract = computed(
     () =>
@@ -554,12 +534,10 @@ export function useGameState(
       !isGameOver.value &&
       !isAIThinking.value &&
       !isAITurn.value &&
-      // 升变选择器弹出期间禁止选中/拖拽棋子（遮罩可能盖不住偏高的棋子）
       !promotionPending.value &&
       (!isRemote.value || (isRemoteMyTurn.value && remoteConnected.value)),
   )
 
-  // premove 允许在 AI 回合时点击己方棋子并预设走法
   const canPremove = computed(
     () =>
       !showSetup.value &&
@@ -569,24 +547,22 @@ export function useGameState(
       gameMode.value === 'ai',
   )
 
-  // 走棋逻辑
   const possibleMoves = computed<Move[]>(() => {
     if (!selectedSquare.value) return []
     if (!canInteract.value && !canPremove.value) return []
-    
+
     const { row, col } = selectedSquare.value
     const piece = board.value[row]?.[col]
     if (!piece) return []
 
-    // 在 premove 模式下，必须确保选中的是玩家自己的棋子
     if (canPremove.value && piece.color !== playerColor.value) return []
 
     const enPassantTarget = getEnPassantTarget(lastMove.value)
     return getLegalMoves(board.value, row, col, { lastMove: lastMove.value, enPassantTarget })
   })
 
-  const highlightedPositions = computed(() =>
-    new Set(possibleMoves.value.map((move) => `${move.row}-${move.col}`)),
+  const highlightedPositions = computed(
+    () => new Set(possibleMoves.value.map((move) => `${move.row}-${move.col}`)),
   )
 
   const isCastlingRookTarget = (
@@ -617,9 +593,7 @@ export function useGameState(
   const isSelectedSquare = (row: number, col: number): boolean =>
     selectedSquare.value?.row === row && selectedSquare.value?.col === col
 
-  // snapshot 用于升变场景：此时 board.value 已被临时改动，需显式传入走子前的棋盘
-  const pushBoardHistory = (mover: Color, snapshot?: Board) => {
-    // 记录一次走子即视为「该方已走出过半回合」，此后即便悔棋到底也不再视为未开局
+  const pushBoardHistory = (mover: Color, snapshot?: Board, uciMove = '') => {
     hasMovedByColor.value[mover] = true
     boardHistory.value.push({
       board: cloneBoard(snapshot ?? board.value),
@@ -632,11 +606,15 @@ export function useGameState(
       clockStarted: clockStarted.value,
       activeClockColor: activeClockColor.value,
       timeoutWinner: timeoutWinner.value,
+      uciMove,
     })
   }
 
-  /** 本地走子后广播给对手（远程对局） */
-  const broadcastLocalMove = (from: { row: number; col: number }, to: { row: number; col: number }, promotion?: PieceType) => {
+  const broadcastLocalMove = (
+    from: { row: number; col: number },
+    to: { row: number; col: number },
+    promotion?: PieceType,
+  ) => {
     if (!isRemote.value || remoteSender === null) return
     sendRemote({
       type: 'move',
@@ -657,12 +635,10 @@ export function useGameState(
     isCapture: boolean,
     origin: 'local' | 'remote' = 'local',
   ) => {
-
     const sourceRow = nextBoard[from.row]!
     const targetRow = nextBoard[move.row]!
     const selectedPiece = board.value[from.row]?.[from.col]!
 
-    // ---- 执行移动 ----
     if (move.special === 'castle' && move.rookFrom && move.rookTo) {
       const rook = nextBoard[move.rookFrom.row]?.[move.rookFrom.col] ?? null
       sourceRow[from.col] = null
@@ -680,7 +656,6 @@ export function useGameState(
       sourceRow[from.col] = null
     }
 
-    // ---- 将/将死检测 ----
     const nextTurn = currentTurn.value === 'white' ? 'black' : 'white'
     let checkStatus: 'check' | 'checkmate' | undefined = undefined
     if (isCheckmate(nextBoard, nextTurn)) {
@@ -689,7 +664,6 @@ export function useGameState(
       checkStatus = 'check'
     }
 
-    // ---- 记录棋谱 ----
     const notation = generateMoveNotation(
       board.value,
       from.row,
@@ -701,11 +675,22 @@ export function useGameState(
       checkStatus,
     )
     moveHistory.value.push(notation)
-    pushBoardHistory(selectedPiece.color)
+    pushBoardHistory(
+      selectedPiece.color,
+      undefined,
+      buildUciMoveString({
+        fromRow: from.row,
+        fromCol: from.col,
+        toRow: move.row,
+        toCol: move.col,
+      }),
+    )
 
-    // ---- 更新状态 ----
     board.value = nextBoard
-    lastMove.value = { from: { row: from.row, col: from.col }, to: { row: move.row, col: move.col } }
+    lastMove.value = {
+      from: { row: from.row, col: from.col },
+      to: { row: move.row, col: move.col },
+    }
     if (isPawnMove || isCapture) {
       halfmoveClock.value = 0
     } else {
@@ -715,11 +700,9 @@ export function useGameState(
     selectedSquare.value = null
     currentTurn.value = nextTurn
 
-    // ---- 时钟与音效 ----
     applyClockAfterMove(selectedPiece.color, nextTurn, nextBoard)
     triggerGameStateAudio(isCapture, nextTurn, nextBoard)
 
-    // ---- 远程对局：走子即视为拒绝对方请求，并把本地走子同步给对手 ----
     if (origin === 'local') {
       clearPendingRequestsOnMove()
       broadcastLocalMove({ row: from.row, col: from.col }, { row: move.row, col: move.col })
@@ -730,41 +713,30 @@ export function useGameState(
     })
   }
 
-  // ---- Premove 状态验证 ----
-  // AI 走棋后调用：检查玩家正在进行的选中/拖拽/预设走法是否仍然有效
   const validatePremoveState = () => {
-    // 1. 检查拖拽状态：如果正在拖拽的棋子已被吃或位置被占据，取消拖拽
     if (isDragging.value && dragStartSquare.value) {
       const dragPiece = board.value[dragStartSquare.value.row]?.[dragStartSquare.value.col]
       if (!dragPiece || dragPiece.color !== playerColor.value) {
-        // 清除拖拽状态
         isMouseDown.value = false
         isDragging.value = false
         dragStartSquare.value = null
         selectedSquare.value = null
         premove.value = null
-        // 移除可能残留的事件监听器
         window.removeEventListener('mousemove', handleMouseMove)
         window.removeEventListener('mouseup', handleMouseUp)
       }
     }
 
-    // 2. 检查已选中但尚未设定目标格的棋子是否仍然存在
     if (!premove.value && selectedSquare.value) {
       const sel = selectedSquare.value
       const selPiece = board.value[sel.row]?.[sel.col]
       if (!selPiece || selPiece.color !== playerColor.value) {
-        // 棋子被吃或位置被占，取消选中
         selectedSquare.value = null
       }
-      // 如果棋子仍然存在，保留选中状态（继续等待玩家选择目标格）
     }
   }
 
-  // ---- Premove 执行逻辑 ----
-  // 在 AI 走棋后，尝试执行预设的 premove
   const tryExecutePremove = () => {
-    // 先验证当前 premove 状态（处理选中/拖拽被吃等情形）
     validatePremoveState()
 
     if (!premove.value) return
@@ -772,7 +744,6 @@ export function useGameState(
     const { from, to } = premove.value
     const piece = board.value[from.row]?.[from.col]
 
-    // 检查 premove 是否仍然合法
     if (!piece || piece.color !== playerColor.value) {
       premove.value = null
       selectedSquare.value = null
@@ -792,20 +763,17 @@ export function useGameState(
     )
 
     if (!matchingMove) {
-      // premove 不再合法，清除
       premove.value = null
       selectedSquare.value = null
       return
     }
 
-    // 执行 premove
     const targetPiece = board.value[to.row]?.[to.col] ?? null
     const isPawnMove = piece.type === 'pawn'
     const isCapture =
       matchingMove.special !== 'castle' &&
       (targetPiece !== null || matchingMove.special === 'enPassant')
 
-    // 兵升变：premove 不支持自动升变（需要玩家选择），清除 premove
     if (isPawnMove && (to.row === 0 || to.row === 7)) {
       premove.value = null
       selectedSquare.value = { row: from.row, col: from.col }
@@ -818,12 +786,12 @@ export function useGameState(
     executeMove(nextBoard, matchingMove, { row: from.row, col: from.col }, isPawnMove, isCapture)
   }
 
-  const handleSquareClick = (row: number, col: number): void => { 
+  const handleSquareClick = (row: number, col: number): void => {
     // ---- Premove 模式：在 AI 回合时预设走法 ----
     if (canPremove.value) {
       const targetPiece = board.value[row]?.[col] ?? null
       const selected = selectedSquare.value
-      const selectedPiece = selected ? board.value[selected.row]?.[selected.col] ?? null : null
+      const selectedPiece = selected ? (board.value[selected.row]?.[selected.col] ?? null) : null
 
       if (selected && selectedPiece && canPremoveTo(row, col)) {
         premove.value = {
@@ -850,7 +818,7 @@ export function useGameState(
 
     const targetPiece = board.value[row]?.[col] ?? null
     const selected = selectedSquare.value
-    const selectedPiece = selected ? board.value[selected.row]?.[selected.col] ?? null : null
+    const selectedPiece = selected ? (board.value[selected.row]?.[selected.col] ?? null) : null
 
     if (selected && selectedPiece && canMoveTo(row, col)) {
       const move = findMoveForTarget(row, col)
@@ -858,8 +826,7 @@ export function useGameState(
 
       const isPawnMove = selectedPiece.type === 'pawn'
       const isCapture =
-        move.special !== 'castle' &&
-        (targetPiece !== null || move.special === 'enPassant')
+        move.special !== 'castle' && (targetPiece !== null || move.special === 'enPassant')
 
       // ---- 兵升变：先把兵临时移动到升变格，再弹出选择器 ----
       // 这样选择器出现时兵已在底线上；斜走吃子时被吃的子也会随之消失。
@@ -983,7 +950,17 @@ export function useGameState(
       checkStatus,
     )
     moveHistory.value.push(notation)
-    pushBoardHistory(selectedPiece.color, prevBoard)
+    pushBoardHistory(
+      selectedPiece.color,
+      prevBoard,
+      buildUciMoveString({
+        fromRow: from.row,
+        fromCol: from.col,
+        toRow: to.row,
+        toCol: to.col,
+        promotion: newType,
+      }),
+    )
 
     board.value = nextBoard
     lastMove.value = { from: { row: from.row, col: from.col }, to: { row: to.row, col: to.col } }
@@ -997,7 +974,6 @@ export function useGameState(
     applyClockAfterMove(selectedPiece.color, nextTurn, nextBoard)
     triggerGameStateAudio(isCapture, nextTurn, nextBoard)
 
-    // ---- 远程对局：走子即视为拒绝对方请求，并把本地走子（含升变）同步给对手 ----
     if (origin === 'local') {
       clearPendingRequestsOnMove()
       broadcastLocalMove(
@@ -1024,7 +1000,8 @@ export function useGameState(
       return
     }
 
-    const isPlayerPiece = piece && piece.color === (canPremove.value ? playerColor.value : currentTurn.value)
+    const isPlayerPiece =
+      piece && piece.color === (canPremove.value ? playerColor.value : currentTurn.value)
 
     if (isPlayerPiece) {
       wasAlreadySelected = selectedSquare.value?.row === row && selectedSquare.value?.col === col
@@ -1060,7 +1037,10 @@ export function useGameState(
     }
   }
 
-  const handleDropResult = (from: { row: number; col: number }, toSquare: { row: number; col: number } | null) => {
+  const handleDropResult = (
+    from: { row: number; col: number },
+    toSquare: { row: number; col: number } | null,
+  ) => {
     if (toSquare) {
       if (from.row === toSquare.row && from.col === toSquare.col) {
         if (wasAlreadySelected) selectedSquare.value = null
@@ -1125,7 +1105,10 @@ export function useGameState(
     }
   }
 
-  const findSquareFromPoint = (clientX: number, clientY: number): { row: number; col: number } | null => {
+  const findSquareFromPoint = (
+    clientX: number,
+    clientY: number,
+  ): { row: number; col: number } | null => {
     const el = document.elementFromPoint(clientX, clientY)
     if (!el) return null
 
@@ -1152,7 +1135,8 @@ export function useGameState(
       handleSquareClick(row, col)
       return
     }
-    const isPlayerPiece = piece && piece.color === (canPremove.value ? playerColor.value : currentTurn.value)
+    const isPlayerPiece =
+      piece && piece.color === (canPremove.value ? playerColor.value : currentTurn.value)
 
     if (isPlayerPiece) {
       wasAlreadySelected = selectedSquare.value?.row === row && selectedSquare.value?.col === col
@@ -1306,8 +1290,6 @@ export function useGameState(
     promotionPending.value = null
     promotionStyle.value = {}
 
-    // 悔棋后若游戏未结束，确保"已开始"状态和棋钟保持运行
-    // （解决悔棋到初始状态时 hasGameStarted 被恢复为 false 的问题）
     if (!isGameOver.value && boardHistory.value.length >= 0) {
       if (!hasGameStarted.value) {
         hasGameStarted.value = true
@@ -1318,7 +1300,7 @@ export function useGameState(
     }
   }
 
-  const restoreHistoryState = (state: NonNullable<typeof boardHistory.value[number]>) => {
+  const restoreHistoryState = (state: NonNullable<(typeof boardHistory.value)[number]>) => {
     board.value = state.board
     currentTurn.value = state.currentTurn
     lastMove.value = state.lastMove
@@ -1456,16 +1438,14 @@ export function useGameState(
 
     board.value = initialBoard
 
-    // 自定义棋盘时使用 FEN 中的走棋方，否则使用随机/手动指定的走棋方
-    // （远程对局始终遵循棋规：白方先行，自定义 FEN 则以 FEN 为准）
     const fenTurn = fenPosition?.turn ?? null
     const starterColor =
-      config.gameMode === 'remote' ? (fenTurn ?? 'white') : (fenTurn ?? getStarterColor(config.starter))
+      config.gameMode === 'remote'
+        ? (fenTurn ?? 'white')
+        : (fenTurn ?? getStarterColor(config.starter))
     currentTurn.value = starterColor
     startingFullmoveNumber.value = fenPosition?.fullmoveNumber ?? 1
 
-    // 远程模式的 playerColor 由 applyRemoteColors 决定；本地双人则直接等于先手方
-    // AI 模式在下方的代码块中单独处理
     if (config.gameMode === 'remote') {
       isFlipped.value = playerColor.value === 'black'
     } else if (config.gameMode !== 'ai') {
@@ -1995,10 +1975,23 @@ export function useGameState(
         checkStatus,
       )
       moveHistory.value.push(notation)
-      pushBoardHistory(piece.color)
+      pushBoardHistory(
+        piece.color,
+        undefined,
+        buildUciMoveString({
+          fromRow: aiMove.fromRow,
+          fromCol: aiMove.fromCol,
+          toRow: aiMove.toRow,
+          toCol: aiMove.toCol,
+          promotion: newType,
+        }),
+      )
 
       board.value = nextBoard
-      lastMove.value = { from: { row: aiMove.fromRow, col: aiMove.fromCol }, to: { row: aiMove.toRow, col: aiMove.toCol } }
+      lastMove.value = {
+        from: { row: aiMove.fromRow, col: aiMove.fromCol },
+        to: { row: aiMove.toRow, col: aiMove.toCol },
+      }
       halfmoveClock.value = 0
       positionHistory.value.push(getPositionKey(nextBoard, nextTurn, lastMove.value))
       currentTurn.value = nextTurn
@@ -2016,6 +2009,48 @@ export function useGameState(
       const nextBoard = cloneBoard(board.value)
       executeMove(nextBoard, move, from, isPawnMove, isCapture)
     }
+  }
+
+  const parseBestmoveLine = (line: string): string | null => {
+    const match = /^bestmove\s+(\S+)/i.exec(line.trim())
+    return match ? match[1]! : null
+  }
+
+  const buildAiUciCommands = (aiTimeRemainingMs: number | null): string[] => {
+    const config = lastSetupConfig.value
+    const moves = boardHistory.value.map((entry) => entry.uciMove).filter((uci) => uci.length > 0)
+
+    let positionCommand: string
+    if (config && config.boardMode !== 'standard' && config.fen) {
+      positionCommand = `position fen ${config.fen}`
+    } else {
+      positionCommand = 'position startpos'
+    }
+    if (moves.length > 0) {
+      positionCommand += ` moves ${moves.join(' ')}`
+    }
+
+    const baseTimeMap: Record<number, number> = { 1: 100, 2: 200, 3: 500, 4: 1000, 5: 2500 }
+    const baseTime = baseTimeMap[aiDifficulty.value] ?? 500
+    let timeLimit: number
+    if (aiTimeRemainingMs === null) {
+      timeLimit = baseTime
+    } else if (aiTimeRemainingMs < 10_000) {
+      timeLimit = Math.min(baseTime, 50)
+    } else if (aiTimeRemainingMs < 30_000) {
+      timeLimit = Math.max(30, baseTime * 0.25)
+    } else if (aiTimeRemainingMs < 60_000) {
+      timeLimit = Math.max(40, baseTime * 0.5)
+    } else {
+      timeLimit = baseTime
+    }
+
+    return [
+      `setoption name Level value ${aiDifficulty.value}`,
+      `setoption name Style value ${aiStyle.value}`,
+      positionCommand,
+      `go movetime ${Math.max(1, Math.round(timeLimit))}`,
+    ]
   }
 
   const scheduleAIMove = () => {
@@ -2036,11 +2071,11 @@ export function useGameState(
     let baseDelay = 1000
     if (aiTimeRemainingMs !== null) {
       if (aiTimeRemainingMs < 10_000) {
-        baseDelay = 100   // 不足 10 秒：几乎立即响应
+        baseDelay = 100 // 不足 10 秒：几乎立即响应
       } else if (aiTimeRemainingMs < 30_000) {
-        baseDelay = 200   // 不足 30 秒：快速响应
+        baseDelay = 200 // 不足 30 秒：快速响应
       } else if (aiTimeRemainingMs < 60_000) {
-        baseDelay = 500   // 不足 60 秒：较快响应
+        baseDelay = 500 // 不足 60 秒：较快响应
       }
     }
     const randomExtra = Math.random() * (6 - aiDifficulty.value) * 500
@@ -2058,7 +2093,6 @@ export function useGameState(
         return
       }
 
-      // ---- AI 主动宣告和棋：3 次重复局面 或 50 步规则 ----
       const currentKey = getPositionKey(board.value, currentTurn.value, lastMove.value)
       const positionRepeatCount = positionHistory.value.filter((key) => key === currentKey).length
 
@@ -2070,8 +2104,6 @@ export function useGameState(
         return
       }
 
-      // 创建新的 Web Worker 用于 AI 计算，避免阻塞 UI 线程
-      // 终止可能残留的旧 Worker（防御性编程）
       if (aiWorker !== null) {
         aiWorker.terminate()
         aiWorker = null
@@ -2085,43 +2117,48 @@ export function useGameState(
         return
       }
 
-      aiWorker.onmessage = (e: MessageEvent<{ type: string; move: AIDetailedMove | null }>) => {
+      aiWorker.onmessage = (e: MessageEvent<string>) => {
+        const line = typeof e.data === 'string' ? e.data : ''
+        const uci = parseBestmoveLine(line)
+        if (uci === null) return
+
+        aiWorker?.terminate()
         aiWorker = null
         isAIThinking.value = false
 
-        if (e.data.type === 'bestMove' && e.data.move) {
-          // 保存玩家的 premove / 选中 / 拖拽状态
-          // （executeAIMoveOnBoard -> executeMove 会清除 selectedSquare，需提前保存）
-          const savedSelectedSquare = selectedSquare.value
-          const savedPremove = premove.value
-          const savedIsDragging = isDragging.value
-          const savedDragStartSquare = dragStartSquare.value
-          const savedIsMouseDown = isMouseDown.value
+        if (uci === '0000') return
 
-          executeAIMoveOnBoard(e.data.move)
+        const resolved = resolveMoveFromUci(board.value, aiColor, lastMove.value, uci)
+        if (!resolved) return
 
-          const resultingPositionKey = getPositionKey(board.value, currentTurn.value, lastMove.value)
-          if (
-            !isGameOver.value &&
-            positionHistory.value.filter((key) => key === resultingPositionKey).length >= 3
-          ) {
-            stopClock()
-            isAgreedDraw.value = true
-            playSound('draw')
-          }
+        const savedSelectedSquare = selectedSquare.value
+        const savedPremove = premove.value
+        const savedIsDragging = isDragging.value
+        const savedDragStartSquare = dragStartSquare.value
+        const savedIsMouseDown = isMouseDown.value
 
-          // 恢复玩家状态，后续 tryExecutePremove 会验证是否仍然合法
-          selectedSquare.value = savedSelectedSquare
-          premove.value = savedPremove
-          isDragging.value = savedIsDragging
-          dragStartSquare.value = savedDragStartSquare
-          isMouseDown.value = savedIsMouseDown
+        executeAIMoveOnBoard(resolved)
 
-          if (!isGameOver.value && gameMode.value === 'ai') {
-            void nextTick(() => {
-              tryExecutePremove()
-            })
-          }
+        const resultingPositionKey = getPositionKey(board.value, currentTurn.value, lastMove.value)
+        if (
+          !isGameOver.value &&
+          positionHistory.value.filter((key) => key === resultingPositionKey).length >= 3
+        ) {
+          stopClock()
+          isAgreedDraw.value = true
+          playSound('draw')
+        }
+
+        selectedSquare.value = savedSelectedSquare
+        premove.value = savedPremove
+        isDragging.value = savedIsDragging
+        dragStartSquare.value = savedDragStartSquare
+        isMouseDown.value = savedIsMouseDown
+
+        if (!isGameOver.value && gameMode.value === 'ai') {
+          void nextTick(() => {
+            tryExecutePremove()
+          })
         }
       }
 
@@ -2138,28 +2175,12 @@ export function useGameState(
         isAIThinking.value = false
       }
 
-      // JSON 序列化确保完全剥离 Vue 响应式 Proxy，避免 postMessage 的 DataCloneError
       try {
-        const plainBoard = JSON.parse(JSON.stringify(board.value)) as Board
-        const plainLastMove = lastMove.value
-          ? (JSON.parse(JSON.stringify(lastMove.value)) as {
-              from: { row: number; col: number }
-              to: { row: number; col: number }
-            })
-          : null
-
-        aiWorker.postMessage({
-          type: 'findBestMove',
-          board: plainBoard,
-          color: aiColor,
-          difficulty: aiDifficulty.value,
-          style: aiStyle.value,
-          lastMove: plainLastMove,
-          aiTimeRemainingMs: aiTimeRemainingMs ?? undefined,
-          positionHistory: [...positionHistory.value],
-        })
+        for (const command of buildAiUciCommands(aiTimeRemainingMs)) {
+          aiWorker.postMessage(command)
+        }
       } catch (err) {
-        console.error('Failed to post message to AI Worker:', err)
+        console.error('Failed to post UCI command to AI Worker:', err)
         aiWorker?.terminate()
         aiWorker = null
         isAIThinking.value = false

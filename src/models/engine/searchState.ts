@@ -183,7 +183,7 @@ export function getCastlingRights(b: Board): CastlingRights {
   return rights
 }
 
-export function initSearchState(b: Board, color: Color, style: AIStyle, difficulty: number, lastMove: { from: { row: number; col: number }; to: { row: number; col: number } } | null, aiTimeRemainingMs?: number, positionHistory: readonly string[] = []): void {
+export function initSearchState(b: Board, color: Color, style: AIStyle, difficulty: number, lastMove: { from: { row: number; col: number }; to: { row: number; col: number } } | null, aiTimeRemainingMs?: number, positionHistory: readonly string[] = [], timeLimitMs?: number): void {
   board = b
   searchColor = color
   searchStyle = style
@@ -209,7 +209,9 @@ export function initSearchState(b: Board, color: Color, style: AIStyle, difficul
   const baseTimeLimit = timeLimitMap[difficulty] ?? 500
 
   searchAITimeRemainingMs = aiTimeRemainingMs ?? null
-  if (searchAITimeRemainingMs !== null) {
+  if (timeLimitMs !== undefined) {
+    searchTimeLimit = Math.max(1, Math.floor(timeLimitMs))
+  } else if (searchAITimeRemainingMs !== null) {
     if (searchAITimeRemainingMs < 10_000) {
       searchTimeLimit = Math.min(baseTimeLimit, 50)
     } else if (searchAITimeRemainingMs < 30_000) {
