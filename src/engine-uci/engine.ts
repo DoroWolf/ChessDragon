@@ -1,6 +1,7 @@
 import type { AIDifficulty, AIStyle } from '../models/engine/types'
 import { MAX_DEPTH } from '../models/engine/types'
 import { searchPosition } from '../models/engine/search'
+import { getDifficultyProfile } from '../models/engine/difficulty'
 import { PositionState } from './position'
 import {
   formatUciMove,
@@ -19,16 +20,6 @@ export interface UciEngineOptions {
 
 const STYLES: readonly AIStyle[] = ['balanced', 'aggressive', 'defensive', 'unpredictable']
 
-/** 各强度等级的默认搜索时间（毫秒），与 App 端 searchState 的映射保持一致 */
-const LEVEL_DEFAULT_TIME_MS: Record<number, number> = {
-  1: 100,
-  2: 200,
-  3: 500,
-  4: 1000,
-  5: 2500,
-}
-
-/** 仅指定深度、未给时间时使用的“足够长”的时间上限，让深度而非时间决定何时停止 */
 const DEPTH_ONLY_TIME_LIMIT_MS = 60_000
 
 export class UciEngine {
@@ -209,8 +200,7 @@ export class UciEngine {
     }
 
     if (params.infinite) {
-      // 不支持真·无限搜索；退化为等级默认时间
-      return LEVEL_DEFAULT_TIME_MS[this.level] ?? 500
+      return getDifficultyProfile(this.level).moveTimeMs
     }
 
     // 交由 initSearchState 按等级推导

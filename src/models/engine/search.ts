@@ -14,6 +14,8 @@ import {
 } from './searchState'
 import { probeBookForLevel, pickBookMove } from './openingBook'
 import { getSyzygyStore } from './syzygy/store'
+import { getDifficultyProfile } from './difficulty'
+import { setTTEnabled } from './transpositionTable'
 
 export interface SearchPositionOptions {
   board: Board
@@ -48,6 +50,8 @@ export async function searchPosition(
     useRandomness = true,
   } = options
 
+  const profile = getDifficultyProfile(difficulty)
+
   initSearchState(b, color, style, difficulty, lastMove, aiTimeRemainingMs, positionHistory, timeLimitMs)
 
   for (let d = 0; d < MAX_DEPTH; d++) {
@@ -77,7 +81,7 @@ export async function searchPosition(
   if (moves.length === 1) return moves[0]!
 
   const syzygy = getSyzygyStore()
-  syzygy.setLevel(difficulty)
+  syzygy.setLevel(profile.tablebaseLevel)
   let tablebaseMoveHint: AIDetailedMove | null = null
   if (syzygy.active && searchCastlingRights === 0) {
     try {
@@ -88,7 +92,7 @@ export async function searchPosition(
     }
   }
 
-  if (useOpeningBook) {
+  if (useOpeningBook && profile.useOpeningBook) {
     const bookMoves = probeBookForLevel(searchHash, difficulty)
     if (bookMoves && bookMoves.length > 0) {
       const bookMove = pickBookMove(bookMoves)
@@ -108,7 +112,19 @@ export async function searchPosition(
     }
   }
 
-  const result = iterativeDeepening(epTarget, lastMove, maxDepth, tablebaseMoveHint)
+  const blunderThisMove =
+    useRandomness && profile.blunderRate > 0 && Math.random() < profile.blunderRate
+  const depthCap = blunderThisMove ? profile.blunderDepth : profile.maxDepth
+  const effectiveMaxDepth = Math.min(maxDepth, depthCap)
+
+  setTTEnabled(!blunderThisMove)
+
+  const result = iterativeDeepening(
+    epTarget,
+    lastMove,
+    effectiveMaxDepth,
+    blunderThisMove ? null : tablebaseMoveHint,
+  )
 
   if (!result) return moves[0]!
 

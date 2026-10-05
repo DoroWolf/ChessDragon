@@ -16,6 +16,7 @@ import type { GameSetupConfig, AIStyle } from '../components/GameSetup.vue'
 import { parseFen } from '../models/fen'
 import { getPromotionChoice, type AIDifficulty } from '../models/ai'
 import type { AIDetailedMove } from '../models/ai'
+import { getDifficultyProfile } from '../models/engine/difficulty'
 import { buildUciMoveString, resolveMoveFromUci } from '../models/uci'
 import type {
   ClockSnapshot,
@@ -2030,8 +2031,7 @@ export function useGameState(
       positionCommand += ` moves ${moves.join(' ')}`
     }
 
-    const baseTimeMap: Record<number, number> = { 1: 100, 2: 200, 3: 500, 4: 1000, 5: 2500 }
-    const baseTime = baseTimeMap[aiDifficulty.value] ?? 500
+    const baseTime = getDifficultyProfile(aiDifficulty.value).moveTimeMs
     let timeLimit: number
     if (aiTimeRemainingMs === null) {
       timeLimit = baseTime

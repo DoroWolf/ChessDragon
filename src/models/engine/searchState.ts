@@ -1,18 +1,16 @@
-// Search State Management（搜索状态管理）
-// 管理搜索过程中的全局状态：棋盘引用、搜索参数、
-// 王的增量追踪位置、总子力等
 import type { Board, Color } from '../chess'
 import type { AIStyle, AIDetailedMove } from './types'
 import { PIECE_VALUES } from './types'
 import { computeHash } from './zobrist'
 import type { CastlingRights } from './zobrist'
 import { getEnPassantTarget, getPositionKey } from '../chess'
+import { getDifficultyProfile } from './difficulty'
 
 export let board: Board = []
 export let searchColor: Color = 'white'
 export let searchStyle: AIStyle = 'balanced'
-// 当前 AI 强度等级（1-5），供残局知识等按等级开放的功能读取
 export let searchDifficulty: number = 3
+export let searchUseKbnkKnowledge: boolean = false
 export let searchHash: number = 0
 export let searchCastlingRights: number = 0
 export let searchStartTime: number = 0
@@ -99,15 +97,11 @@ export function checkTimeLimit(): boolean {
   return false
 }
 
-// 从棋盘计算走法前后子力差
-// 在 makeMove 之前调用（使用走前棋盘状态）
 export function computeMaterialDelta(move: AIDetailedMove): number {
   const piece = board[move.fromRow]![move.fromCol]!
   let delta = 0
 
-  // 被吃棋子：总子力减少
   if (move.special === 'enPassant') {
-    // 吃过路兵吃掉位于 (fromRow, toCol) 的兵
     delta -= PIECE_VALUES['pawn']!
   } else {
     const victim = board[move.toRow]![move.toCol]
@@ -116,7 +110,6 @@ export function computeMaterialDelta(move: AIDetailedMove): number {
     }
   }
 
-  // 升变：兵被移除，高价值棋子加入 → 净增加
   if (move.promotion && piece.type === 'pawn' && (move.toRow === 0 || move.toRow === 7)) {
     const oldVal = PIECE_VALUES['pawn']!
     const newVal = PIECE_VALUES[move.promotion] ?? PIECE_VALUES['queen']!
@@ -140,7 +133,6 @@ export function computeMaterialFromBoard(b: Board): number {
 }
 
 export function isEndgameFast(material: number): boolean {
-  // 残局阈值：除王以外的总子力 <= 1400
   return material <= 1400
 }
 
@@ -188,6 +180,7 @@ export function initSearchState(b: Board, color: Color, style: AIStyle, difficul
   searchColor = color
   searchStyle = style
   searchDifficulty = difficulty
+  searchUseKbnkKnowledge = getDifficultyProfile(difficulty).useKbnkKnowledge
   searchStartTime = performance.now()
   searchStopped = false
   searchNodes = 0
@@ -199,14 +192,7 @@ export function initSearchState(b: Board, color: Color, style: AIStyle, difficul
     repetitionCounts.set(getPositionKey(b, color, lastMove), 1)
   }
 
-  const timeLimitMap: Record<number, number> = {
-    1: 100,
-    2: 200,
-    3: 500,
-    4: 1000,
-    5: 2500,
-  }
-  const baseTimeLimit = timeLimitMap[difficulty] ?? 500
+  const baseTimeLimit = getDifficultyProfile(difficulty).moveTimeMs
 
   searchAITimeRemainingMs = aiTimeRemainingMs ?? null
   if (timeLimitMs !== undefined) {
@@ -225,7 +211,6 @@ export function initSearchState(b: Board, color: Color, style: AIStyle, difficul
     searchTimeLimit = baseTimeLimit
   }
 
-  // 初始化增量追踪（王位置和子力）
   const wk = findKing(b, 'white')
   const bk = findKing(b, 'black')
   trackedWhiteKingRow = wk.row
