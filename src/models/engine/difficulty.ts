@@ -23,7 +23,7 @@ export const DIFFICULTY_PROFILES: Record<AIDifficulty, DifficultyProfile> = {
   2: {
     moveTimeMs: 150,
     maxDepth: 12,
-    blunderRate: 0.28,
+    blunderRate: 0.3,
     blunderDepth: 3,
     tablebaseLevel: 0,
     useKbnkKnowledge: false,
@@ -41,7 +41,7 @@ export const DIFFICULTY_PROFILES: Record<AIDifficulty, DifficultyProfile> = {
   4: {
     moveTimeMs: 500,
     maxDepth: 12,
-    blunderRate: 0,
+    blunderRate: 0.1,
     blunderDepth: 3,
     tablebaseLevel: 4,
     useKbnkKnowledge: true,
