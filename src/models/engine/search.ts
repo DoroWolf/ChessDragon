@@ -31,8 +31,6 @@ export interface SearchPositionOptions {
   useRandomness?: boolean
 }
 
-const DEFAULT_MAX_DEPTH = 12
-
 export async function searchPosition(
   options: SearchPositionOptions,
 ): Promise<AIDetailedMove | null> {
@@ -44,7 +42,7 @@ export async function searchPosition(
     lastMove,
     aiTimeRemainingMs,
     positionHistory = [],
-    maxDepth = DEFAULT_MAX_DEPTH,
+    maxDepth,
     timeLimitMs,
     useOpeningBook = true,
     useRandomness = true,
@@ -115,7 +113,7 @@ export async function searchPosition(
   const blunderThisMove =
     useRandomness && profile.blunderRate > 0 && Math.random() < profile.blunderRate
   const depthCap = blunderThisMove ? profile.blunderDepth : profile.maxDepth
-  const effectiveMaxDepth = Math.min(maxDepth, depthCap)
+  const effectiveMaxDepth = Math.min(maxDepth ?? profile.maxDepth, depthCap)
 
   setTTEnabled(!blunderThisMove)
 
